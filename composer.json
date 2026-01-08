@@ -1,0 +1,57 @@
+{
+    "name": "bleeding-deacons/tsml-for-unity",
+    "description": "Integration between 12 Step Meeting List (TSML) and Unity plugins for WordPress",
+    "type": "wordpress-plugin",
+    "version": "1.0.0",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "The Bleeding Deacons"
+        }
+    ],
+    "require": {
+        "php": ">=8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0",
+        "10up/wp_mock": "^1.0",
+        "mockery/mockery": "^1.6",
+        "squizlabs/php_codesniffer": "^3.7",
+        "phpstan/phpstan": "^1.10",
+        "szepeviktor/phpstan-wordpress": "^1.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "TsmlForUnity\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "TsmlForUnity\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:unit": "phpunit --testsuite=Unit",
+        "test:coverage": "phpunit --coverage-html ./tests/coverage",
+        "cs": "phpcs --standard=WordPress ./src",
+        "cs:fix": "phpcbf --standard=WordPress ./src",
+        "stan": "phpstan analyse -l 5 ./src",
+        "check": [
+            "@cs",
+            "@stan",
+            "@test"
+        ],
+        "build": "php build.php build:production",
+        "build:production": "php build.php build:production",
+        "build:dev": "php build.php build:dev",
+        "build:clean": "php build.php clean"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}
