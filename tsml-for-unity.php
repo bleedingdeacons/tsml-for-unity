@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/bleeding-deacons/tsml-for-unity
  * Description: Integrates 12 Step Meeting List (TSML) with the Unity plugin, providing meeting factory functionality.
  * Version: 1.0.0
- * Requires at least: 5.9
+ * Requires at least: 5.0
  * Requires PHP: 7.4
  * Author: The Bleeding Deacons
  * Author URI: https://github.com/bleeding-deacons
@@ -23,8 +23,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Plugin constants
-define('TSML_FOR_UNITY_VERSION', '1.0.0');
+// Define plugin constants
+if (!function_exists('get_plugin_data')) {
+    require_once(ABSPATH . 'wp-admin/includes/plugin.php');
+}
+$tsml_for_unity_plugin_data = get_plugin_data(__FILE__, false, false);
+define('TSML_FOR_UNITY_VERSION', $tsml_for_unity_plugin_data['Version']);
 define('TSML_FOR_UNITY_PATH', plugin_dir_path(__FILE__));
 define('TSML_FOR_UNITY_URL', plugin_dir_url(__FILE__));
 
