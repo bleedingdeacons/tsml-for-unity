@@ -64,6 +64,18 @@ function unity_is_available(): bool
 }
 
 /**
+ * Check if Unity's group interfaces are available
+ *
+ * @return bool
+ */
+function unity_groups_available(): bool
+{
+    return interface_exists('Unity\\Groups\\Interfaces\\GroupFactoryInterface')
+        && interface_exists('Unity\\Groups\\Interfaces\\GroupInterface')
+        && interface_exists('Unity\\Groups\\Interfaces\\GroupRepositoryInterface');
+}
+
+/**
  * Display admin notice if Unity plugin is not active
  */
 function admin_notice_missing_unity(): void
@@ -105,11 +117,32 @@ add_action('plugins_loaded', __NAMESPACE__ . '\\init', 20);
  */
 function register_with_unity($container): void
 {
-    if (method_exists($container, 'register')) {
+    if (!method_exists($container, 'register')) {
+        return;
+    }
+
+    // Register meeting factory
+    $container->register(
+        'Unity\\Meetings\\Interfaces\\MeetingFactoryInterface',
+        function($container) {
+            return new TsmlMeetingFactory();
+        }
+    );
+
+    // Register group factory and repository if Unity's group interfaces are available
+    if (unity_groups_available()) {
         $container->register(
-            'Unity\\Meetings\\Interfaces\\MeetingFactoryInterface',
+            'Unity\\Groups\\Interfaces\\GroupFactoryInterface',
             function($container) {
-                return new TsmlMeetingFactory();
+                return new TsmlGroupFactory();
+            }
+        );
+
+        $container->register(
+            'Unity\\Groups\\Interfaces\\GroupRepositoryInterface',
+            function($container) {
+                $factory = $container->get('Unity\\Groups\\Interfaces\\GroupFactoryInterface');
+                return new TsmlGroupRepository($factory);
             }
         );
     }
@@ -136,6 +169,50 @@ function get_meeting_factory(): ?TsmlMeetingFactory
     }
 
     return $factory;
+}
+
+/**
+ * Get the TsmlGroupFactory instance
+ *
+ * @return TsmlGroupFactory|null Returns null if Unity groups are not available
+ */
+function get_group_factory(): ?TsmlGroupFactory
+{
+    static $factory = null;
+
+    if (!unity_groups_available()) {
+        return null;
+    }
+
+    if ($factory === null) {
+        $factory = new TsmlGroupFactory();
+    }
+
+    return $factory;
+}
+
+/**
+ * Get the TsmlGroupRepository instance
+ *
+ * @return TsmlGroupRepository|null Returns null if Unity groups are not available
+ */
+function get_group_repository(): ?TsmlGroupRepository
+{
+    static $repository = null;
+
+    if (!unity_groups_available()) {
+        return null;
+    }
+
+    if ($repository === null) {
+        $factory = get_group_factory();
+        if ($factory === null) {
+            return null;
+        }
+        $repository = new TsmlGroupRepository($factory);
+    }
+
+    return $repository;
 }
 
 /**
