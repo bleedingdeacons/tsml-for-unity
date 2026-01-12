@@ -69,7 +69,7 @@ function unity_groups_available(): bool
 {
     return interface_exists('Unity\\Groups\\Interfaces\\GroupFactoryInterface')
         && interface_exists('Unity\\Groups\\Interfaces\\GroupInterface')
-        && interface_exists('Unity\\Groups\\Interfaces\\GroupRepositoryInterface');
+        && class_exists('Unity\\Groups\\Group');
 }
 
 /**
@@ -126,20 +126,12 @@ function register_with_unity($container): void
         }
     );
 
-    // Register group factory and repository if Unity's group interfaces are available
+    // Register group factory if Unity's group interfaces are available
     if (unity_groups_available()) {
         $container->register(
             'Unity\\Groups\\Interfaces\\GroupFactoryInterface',
             function($container) {
                 return new TsmlGroupFactory();
-            }
-        );
-
-        $container->register(
-            'Unity\\Groups\\Interfaces\\GroupRepositoryInterface',
-            function($container) {
-                $factory = $container->get('Unity\\Groups\\Interfaces\\GroupFactoryInterface');
-                return new TsmlGroupRepository($factory);
             }
         );
     }
@@ -186,30 +178,6 @@ function get_group_factory(): ?TsmlGroupFactory
     }
 
     return $factory;
-}
-
-/**
- * Get the TsmlGroupRepository instance
- *
- * @return TsmlGroupRepository|null Returns null if Unity groups are not available
- */
-function get_group_repository(): ?TsmlGroupRepository
-{
-    static $repository = null;
-
-    if (!unity_groups_available()) {
-        return null;
-    }
-
-    if ($repository === null) {
-        $factory = get_group_factory();
-        if ($factory === null) {
-            return null;
-        }
-        $repository = new TsmlGroupRepository($factory);
-    }
-
-    return $repository;
 }
 
 /**

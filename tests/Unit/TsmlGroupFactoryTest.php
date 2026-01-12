@@ -5,36 +5,11 @@ declare(strict_types=1);
 namespace TsmlForUnity\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use TsmlForUnity\TsmlGroup;
 use TsmlForUnity\TsmlGroupFactory;
 use TsmlForUnity\TsmlGroupFields;
+use Unity\Groups\Group;
+use Unity\Groups\Interfaces\GroupInterface;
 use WP_Mock;
-
-// Define mock Unity interfaces if they don't exist
-if (!interface_exists('Unity\\Groups\\Interfaces\\GroupInterface')) {
-    eval('
-    namespace Unity\\Groups\\Interfaces;
-    
-    interface GroupInterface {
-        public function getId(): int;
-        public function getTitle(): string;
-        public function getEmail(): string;
-        public function getMeetingIds(): array;
-        public function getLink(): string;
-        public function isValid(): bool;
-    }
-    ');
-}
-
-if (!interface_exists('Unity\\Groups\\Interfaces\\GroupFactoryInterface')) {
-    eval('
-    namespace Unity\\Groups\\Interfaces;
-    
-    interface GroupFactoryInterface {
-        public function createFromSource(int $sourceId): ?GroupInterface;
-    }
-    ');
-}
 
 /**
  * @covers \TsmlForUnity\TsmlGroupFactory
@@ -144,7 +119,8 @@ class TsmlGroupFactoryTest extends TestCase
 
         $result = $this->factory->createFromSource($postId);
 
-        $this->assertInstanceOf(TsmlGroup::class, $result);
+        $this->assertInstanceOf(Group::class, $result);
+        $this->assertInstanceOf(GroupInterface::class, $result);
         $this->assertEquals($postId, $result->getId());
         $this->assertEquals('Test Group', $result->getTitle());
         $this->assertEquals('group@example.com', $result->getEmail());
@@ -209,7 +185,7 @@ class TsmlGroupFactoryTest extends TestCase
 
         $result = $this->factory->createFromSource($postId);
 
-        $this->assertInstanceOf(TsmlGroup::class, $result);
+        $this->assertInstanceOf(Group::class, $result);
         
         $contacts = $result->getContacts();
         $this->assertCount(3, $contacts);
@@ -260,7 +236,7 @@ class TsmlGroupFactoryTest extends TestCase
 
         $result = $this->factory->createFromSource($postId);
 
-        $this->assertInstanceOf(TsmlGroup::class, $result);
+        $this->assertInstanceOf(Group::class, $result);
         $this->assertEquals($postId, $result->getId());
         $this->assertEquals('Minimal Group', $result->getTitle());
         $this->assertEquals('', $result->getEmail());
@@ -362,7 +338,7 @@ class TsmlGroupFactoryTest extends TestCase
 
         $result = $this->factory->createFromSource($postId);
 
-        $this->assertInstanceOf(TsmlGroup::class, $result);
+        $this->assertInstanceOf(Group::class, $result);
         $this->assertEquals('', $result->getLink());
     }
 
