@@ -150,12 +150,28 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
 
             // Look up location from location_id if present, otherwise use source location field
             $location = '';
+            $locationAddress = '';
+            $locationCity = '';
+            $locationState = '';
+            $locationPostalCode = '';
+            $locationCountry = '';
+            $locationRegion = '';
+            $locationNotes = '';
+
             if (isset($source['location_id']) && !empty($source['location_id'])) {
                 $locationId = (int)$source['location_id'];
                 if ($locationId > 0) {
                     $locationPost = get_post($locationId);
-                    if ($locationPost && !is_wp_error($locationPost)) {
+                    if ($locationPost && !is_wp_error($locationPost) && $locationPost->post_type === 'tsml_location') {
                         $location = $locationPost->post_title;
+                        $locationMeta = get_post_meta($locationId);
+                        $locationAddress = $locationMeta['address'][0] ?? '';
+                        $locationCity = $locationMeta['city'][0] ?? '';
+                        $locationState = $locationMeta['state'][0] ?? '';
+                        $locationPostalCode = $locationMeta['postal_code'][0] ?? '';
+                        $locationCountry = $locationMeta['country'][0] ?? '';
+                        $locationRegion = $locationMeta['region'][0] ?? '';
+                        $locationNotes = $locationMeta['location_notes'][0] ?? '';
                     }
                 }
             }
@@ -163,7 +179,7 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
                 $location = $source['location'];
             }
 
-            if (!function_exists('get_permalink') || !function_exists('get_post_status') || !function_exists('get_post') || !function_exists('is_wp_error')) {
+            if (!function_exists('get_permalink') || !function_exists('get_post_status') || !function_exists('get_post') || !function_exists('is_wp_error') || !function_exists('get_post_meta')) {
                 throw new RuntimeException("Required WordPress functions are not available");
             }
 
@@ -214,6 +230,13 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
                 $name,
                 $slug,
                 $location,
+                $locationAddress,
+                $locationCity,
+                $locationState,
+                $locationPostalCode,
+                $locationCountry,
+                $locationRegion,
+                $locationNotes,
                 $url,
                 $day,
                 $dayOfWeek,

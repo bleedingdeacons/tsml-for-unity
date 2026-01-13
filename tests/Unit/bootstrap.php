@@ -18,7 +18,7 @@ if (!defined('TSML_FOR_UNITY_VERSION')) {
 }
 
 if (!defined('TSML_FOR_UNITY_PATH')) {
-    define('TSML_FOR_UNITY_PATH', dirname(__DIR__) . '/');
+    define('TSML_FOR_UNITY_PATH', dirname(__DIR__) . 'bootstrap.php/');
 }
 
 if (!defined('TSML_FOR_UNITY_URL')) {

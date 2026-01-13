@@ -2,8 +2,8 @@
 /**
  * Plugin Name: TSML for Unity
  * Plugin URI: https://github.com/bleeding-deacons/tsml-for-unity
- * Description: Integrates 12 Step Meeting List (TSML) with the Unity plugin, providing meeting & group support.
- * Version: 1.0.1
+ * Description: Integrates 12 Step Meeting List (TSML) with the Unity plugin, providing meeting, group & location support.
+ * Version: 1.1.0
  * Requires at least: 5.0
  * Requires PHP: 7.4
  * Author: The Bleeding Deacons
@@ -48,7 +48,7 @@ spl_autoload_register(function ($class) {
 });
 
 /**
- * Check if Unity plugin is active and has required interfaces
+ * Check if Unity plugin is active and has required meeting interfaces
  *
  * @return bool
  */
@@ -70,6 +70,18 @@ function unity_groups_available(): bool
     return interface_exists('Unity\\Groups\\Interfaces\\GroupFactoryInterface')
         && interface_exists('Unity\\Groups\\Interfaces\\GroupInterface')
         && class_exists('Unity\\Groups\\Group');
+}
+
+/**
+ * Check if Unity's location interfaces are available
+ *
+ * @return bool
+ */
+function unity_locations_available(): bool
+{
+    return interface_exists('Unity\\Locations\\Interfaces\\LocationFactoryInterface')
+        && interface_exists('Unity\\Locations\\Interfaces\\LocationInterface')
+        && class_exists('Unity\\Locations\\Location');
 }
 
 /**
@@ -107,7 +119,7 @@ function init(): void
 add_action('plugins_loaded', __NAMESPACE__ . '\\init', 20);
 
 /**
- * Register the TsmlMeetingFactory with Unity's dependency container
+ * Register the TSML factories with Unity's dependency container
  * This must be hooked early, before plugins_loaded priority 10 where Unity runs
  *
  * @param mixed $container Unity's dependency container
@@ -121,7 +133,7 @@ function register_with_unity($container): void
     // Register meeting factory
     $container->register(
         'Unity\\Meetings\\Interfaces\\MeetingFactoryInterface',
-        function($container) {
+        function ($container) {
             return new TsmlMeetingFactory();
         }
     );
@@ -130,8 +142,18 @@ function register_with_unity($container): void
     if (unity_groups_available()) {
         $container->register(
             'Unity\\Groups\\Interfaces\\GroupFactoryInterface',
-            function($container) {
+            function ($container) {
                 return new TsmlGroupFactory();
+            }
+        );
+    }
+
+    // Register location factory if Unity's location interfaces are available
+    if (unity_locations_available()) {
+        $container->register(
+            'Unity\\Locations\\Interfaces\\LocationFactoryInterface',
+            function ($container) {
+                return new TsmlLocationFactory();
             }
         );
     }
@@ -175,6 +197,26 @@ function get_group_factory(): ?TsmlGroupFactory
 
     if ($factory === null) {
         $factory = new TsmlGroupFactory();
+    }
+
+    return $factory;
+}
+
+/**
+ * Get the TsmlLocationFactory instance
+ *
+ * @return TsmlLocationFactory|null Returns null if Unity locations are not available
+ */
+function get_location_factory(): ?TsmlLocationFactory
+{
+    static $factory = null;
+
+    if (!unity_locations_available()) {
+        return null;
+    }
+
+    if ($factory === null) {
+        $factory = new TsmlLocationFactory();
     }
 
     return $factory;
