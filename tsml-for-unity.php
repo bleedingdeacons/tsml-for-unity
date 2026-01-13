@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * Plugin Name: TSML for Unity
  * Plugin URI: https://github.com/bleeding-deacons/tsml-for-unity
@@ -11,11 +14,6 @@
  * License: MIT (Modified)
  */
 
-declare(strict_types=1);
-
-namespace TsmlForUnity;
-
-// Prevent direct access
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -29,205 +27,132 @@ define('TSML_FOR_UNITY_VERSION', $tsml_for_unity_plugin_data['Version']);
 define('TSML_FOR_UNITY_PATH', plugin_dir_path(__FILE__));
 define('TSML_FOR_UNITY_URL', plugin_dir_url(__FILE__));
 
-// Autoloader for TsmlForUnity namespace - only loads classes when Unity is available
+// Autoloader for TsmlForUnity namespace
 spl_autoload_register(function ($class) {
-    $prefix = 'TsmlForUnity\\';
-    $base_dir = TSML_FOR_UNITY_PATH . 'src/';
+    try {
+        $prefix = 'TsmlForUnity\\';
+        $base_dir = TSML_FOR_UNITY_PATH . 'src/';
 
-    $len = strlen($prefix);
-    if (strncmp($prefix, $class, $len) !== 0) {
-        return;
-    }
+        $len = strlen($prefix);
+        if (strncmp($prefix, $class, $len) !== 0) {
+            return;
+        }
 
-    $relative_class = substr($class, $len);
-    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+        $relative_class = substr($class, $len);
+        $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
 
-    if (file_exists($file)) {
-        require $file;
+        if (file_exists($file)) {
+            require $file;
+        }
+    } catch (\Exception $e) {
+        error_log('TSML for Unity Autoloader Error: ' . $e->getMessage());
+    } catch (\Throwable $e) {
+        error_log('TSML for Unity Autoloader Fatal Error: ' . $e->getMessage());
     }
 });
 
 /**
- * Check if Unity plugin is active and has required meeting interfaces
+ * Get the TSML Meeting Factory instance
  *
- * @return bool
+ * @return \TsmlForUnity\TsmlMeetingFactory|null Returns null if Unity is not available
  */
-function unity_is_available(): bool
+function tsml_for_unity_meeting_factory(): ?\TsmlForUnity\TsmlMeetingFactory
 {
-    return interface_exists('Unity\\Meetings\\Interfaces\\MeetingFactoryInterface')
-        && interface_exists('Unity\\Meetings\\Interfaces\\MeetingInterface')
-        && class_exists('Unity\\Meetings\\Meeting')
-        && class_exists('Unity\\Meetings\\Contact');
+    return \TsmlForUnity\Plugin::getMeetingFactory();
 }
 
 /**
- * Check if Unity's group interfaces are available
+ * Get the TSML Group Factory instance
  *
- * @return bool
+ * @return \TsmlForUnity\TsmlGroupFactory|null Returns null if Unity groups are not available
  */
-function unity_groups_available(): bool
+function tsml_for_unity_group_factory(): ?\TsmlForUnity\TsmlGroupFactory
 {
-    return interface_exists('Unity\\Groups\\Interfaces\\GroupFactoryInterface')
-        && interface_exists('Unity\\Groups\\Interfaces\\GroupInterface')
-        && class_exists('Unity\\Groups\\Group');
+    return \TsmlForUnity\Plugin::getGroupFactory();
 }
 
 /**
- * Check if Unity's location interfaces are available
+ * Get the TSML Location Factory instance
  *
- * @return bool
+ * @return \TsmlForUnity\TsmlLocationFactory|null Returns null if Unity locations are not available
  */
-function unity_locations_available(): bool
+function tsml_for_unity_location_factory(): ?\TsmlForUnity\TsmlLocationFactory
 {
-    return interface_exists('Unity\\Locations\\Interfaces\\LocationFactoryInterface')
-        && interface_exists('Unity\\Locations\\Interfaces\\LocationInterface')
-        && class_exists('Unity\\Locations\\Location');
+    return \TsmlForUnity\Plugin::getLocationFactory();
 }
 
-/**
- * Display admin notice if Unity plugin is not active
- */
-function admin_notice_missing_unity(): void
-{
-    ?>
-    <div class="notice notice-error">
-        <p>
-            <strong><?php esc_html_e('TSML for Unity', 'tsml-for-unity'); ?>:</strong>
-            <?php esc_html_e('This plugin requires the Unity plugin to be installed and activated.', 'tsml-for-unity'); ?>
-        </p>
-    </div>
-    <?php
-}
-
-/**
- * Initialize the plugin
- */
-function init(): void
-{
-    // Check for Unity plugin
-    if (!unity_is_available()) {
-        add_action('admin_notices', __NAMESPACE__ . '\\admin_notice_missing_unity');
-        return;
-    }
-
-    /**
-     * Fires when TSML for Unity is fully loaded
-     */
-    do_action('tsml_for_unity_loaded');
-}
-
-add_action('plugins_loaded', __NAMESPACE__ . '\\init', 20);
-
-/**
- * Register the TSML factories with Unity's dependency container
- * This must be hooked early, before plugins_loaded priority 10 where Unity runs
- *
- * @param mixed $container Unity's dependency container
- */
-function register_with_unity($container): void
-{
-    if (!method_exists($container, 'register')) {
-        return;
-    }
-
-    // Register meeting factory
-    $container->register(
-        'Unity\\Meetings\\Interfaces\\MeetingFactoryInterface',
-        function ($container) {
-            return new TsmlMeetingFactory();
+// Initialize the plugin
+add_action('plugins_loaded', function () {
+    try {
+        if (!class_exists('TsmlForUnity\Plugin')) {
+            throw new \Exception('TsmlForUnity\Plugin class not found. Check that Plugin.php exists in the src/ directory.');
         }
-    );
 
-    // Register group factory if Unity's group interfaces are available
-    if (unity_groups_available()) {
-        $container->register(
-            'Unity\\Groups\\Interfaces\\GroupFactoryInterface',
-            function ($container) {
-                return new TsmlGroupFactory();
-            }
-        );
+        // Check if Unity is available
+        if (!\TsmlForUnity\Plugin::unityIsAvailable()) {
+            add_action('admin_notices', function () {
+                echo '<div class="notice notice-error"><p>';
+                echo '<strong>' . esc_html__('TSML for Unity', 'tsml-for-unity') . ':</strong> ';
+                echo esc_html__('This plugin requires the Unity plugin to be installed and activated.', 'tsml-for-unity');
+                echo '</p></div>';
+            });
+            return;
+        }
+
+        /**
+         * Fires after TSML for Unity is fully loaded.
+         */
+        do_action('tsml_for_unity_loaded');
+
+    } catch (\Exception $e) {
+        error_log('TSML for Unity Plugin Initialization Error: ' . $e->getMessage());
+        error_log('TSML for Unity Plugin Stack Trace: ' . $e->getTraceAsString());
+
+        if (is_admin()) {
+            add_action('admin_notices', function () use ($e) {
+                $message = sprintf(
+                    '<strong>TSML for Unity Plugin Error:</strong> %s',
+                    esc_html($e->getMessage())
+                );
+                echo '<div class="notice notice-error is-dismissible"><p>' . $message . '</p></div>';
+            });
+        }
+
+        return;
+
+    } catch (\Throwable $e) {
+        error_log('TSML for Unity Plugin Fatal Error: ' . $e->getMessage());
+        error_log('TSML for Unity Plugin Stack Trace: ' . $e->getTraceAsString());
+
+        if (is_admin()) {
+            add_action('admin_notices', function () {
+                echo '<div class="notice notice-error is-dismissible"><p><strong>TSML for Unity Plugin Fatal Error:</strong> Plugin failed to load. Check error logs.</p></div>';
+            });
+        }
+
+        return;
     }
+}, 20);
 
-    // Register location factory if Unity's location interfaces are available
-    if (unity_locations_available()) {
-        $container->register(
-            'Unity\\Locations\\Interfaces\\LocationFactoryInterface',
-            function ($container) {
-                return new TsmlLocationFactory();
-            }
-        );
+// Register factories with Unity's container - must run before Unity initializes services
+add_action('unity_register_services', function ($container) {
+    try {
+        if (!class_exists('TsmlForUnity\Plugin')) {
+            return;
+        }
+
+        \TsmlForUnity\Plugin::registerWithUnity($container);
+
+    } catch (\Exception $e) {
+        error_log('TSML for Unity Registration Error: ' . $e->getMessage());
+    } catch (\Throwable $e) {
+        error_log('TSML for Unity Registration Fatal Error: ' . $e->getMessage());
     }
-}
+});
 
-// Hook into unity_register_services - this hook fires during Unity's plugins_loaded at priority 10
-add_action('unity_register_services', __NAMESPACE__ . '\\register_with_unity');
-
-/**
- * Get the TsmlMeetingFactory instance
- *
- * @return TsmlMeetingFactory|null Returns null if Unity is not available
- */
-function get_meeting_factory(): ?TsmlMeetingFactory
-{
-    static $factory = null;
-
-    if (!unity_is_available()) {
-        return null;
-    }
-
-    if ($factory === null) {
-        $factory = new TsmlMeetingFactory();
-    }
-
-    return $factory;
-}
-
-/**
- * Get the TsmlGroupFactory instance
- *
- * @return TsmlGroupFactory|null Returns null if Unity groups are not available
- */
-function get_group_factory(): ?TsmlGroupFactory
-{
-    static $factory = null;
-
-    if (!unity_groups_available()) {
-        return null;
-    }
-
-    if ($factory === null) {
-        $factory = new TsmlGroupFactory();
-    }
-
-    return $factory;
-}
-
-/**
- * Get the TsmlLocationFactory instance
- *
- * @return TsmlLocationFactory|null Returns null if Unity locations are not available
- */
-function get_location_factory(): ?TsmlLocationFactory
-{
-    static $factory = null;
-
-    if (!unity_locations_available()) {
-        return null;
-    }
-
-    if ($factory === null) {
-        $factory = new TsmlLocationFactory();
-    }
-
-    return $factory;
-}
-
-/**
- * Plugin activation hook
- */
-function activate(): void
-{
-    if (!unity_is_available()) {
+// Plugin activation hook
+register_activation_hook(__FILE__, function () {
+    if (!class_exists('TsmlForUnity\Plugin') || !\TsmlForUnity\Plugin::unityIsAvailable()) {
         deactivate_plugins(plugin_basename(__FILE__));
         wp_die(
             esc_html__('TSML for Unity requires the Unity plugin to be installed and activated.', 'tsml-for-unity'),
@@ -235,16 +160,9 @@ function activate(): void
             ['back_link' => true]
         );
     }
-}
+});
 
-register_activation_hook(__FILE__, __NAMESPACE__ . '\\activate');
-
-/**
- * Plugin deactivation hook
- */
-function deactivate(): void
-{
-    // Clean up if needed
-}
-
-register_deactivation_hook(__FILE__, __NAMESPACE__ . '\\deactivate');
+// Plugin deactivation hook
+register_deactivation_hook(__FILE__, function () {
+    // Cleanup code here if needed
+});
