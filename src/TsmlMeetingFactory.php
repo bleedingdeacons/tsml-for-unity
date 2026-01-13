@@ -131,7 +131,7 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
             return null;
         }
 
-        $requiredFields = ['id', 'name', 'slug', 'location'];
+        $requiredFields = ['id', 'name', 'slug'];
         foreach ($requiredFields as $field) {
             if (!isset($source[$field])) {
                 $this->logError("Missing required field: {$field}");
@@ -147,9 +147,23 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
 
             $name = $source['name'];
             $slug = $source['slug'];
-            $location = $source['location'];
 
-            if (!function_exists('get_permalink') || !function_exists('get_post_status')) {
+            // Look up location from location_id if present, otherwise use source location field
+            $location = '';
+            if (isset($source['location_id']) && !empty($source['location_id'])) {
+                $locationId = (int)$source['location_id'];
+                if ($locationId > 0) {
+                    $locationPost = get_post($locationId);
+                    if ($locationPost && !is_wp_error($locationPost)) {
+                        $location = $locationPost->post_title;
+                    }
+                }
+            }
+            if (empty($location) && isset($source['location'])) {
+                $location = $source['location'];
+            }
+
+            if (!function_exists('get_permalink') || !function_exists('get_post_status') || !function_exists('get_post') || !function_exists('is_wp_error')) {
                 throw new RuntimeException("Required WordPress functions are not available");
             }
 
