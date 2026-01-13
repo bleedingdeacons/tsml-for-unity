@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity;
 
+use Unity\Locations\Interfaces\LocationFactoryInterface;
+use Unity\Locations\Interfaces\LocationInterface;
 use Unity\Meetings\Interfaces\MeetingFactoryInterface;
 use Unity\Meetings\Interfaces\MeetingInterface;
 use Unity\Meetings\Meeting;
@@ -21,6 +23,8 @@ use RuntimeException;
 class TsmlMeetingFactory implements MeetingFactoryInterface
 {
     private const MAX_CONTACTS = 3;
+
+    private ?LocationFactoryInterface $locationFactory = null;
 
     /**
      * Days of the week mapping (TSML uses 0-6, but we use 1-7)
@@ -119,6 +123,40 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
     ];
 
     /**
+     * TsmlMeetingFactory constructor.
+     *
+     * @param LocationFactoryInterface|null $locationFactory Optional location factory for resolving locations
+     */
+    public function __construct(?LocationFactoryInterface $locationFactory = null)
+    {
+        $this->locationFactory = $locationFactory;
+    }
+
+    /**
+     * Set the location factory
+     *
+     * @param LocationFactoryInterface $locationFactory The location factory
+     * @return void
+     */
+    public function setLocationFactory(LocationFactoryInterface $locationFactory): void
+    {
+        $this->locationFactory = $locationFactory;
+    }
+
+    /**
+     * Get the location factory, creating a default one if not set
+     *
+     * @return LocationFactoryInterface|null
+     */
+    private function getLocationFactory(): ?LocationFactoryInterface
+    {
+        if ($this->locationFactory === null && Plugin::unityLocationsAvailable()) {
+            $this->locationFactory = new TsmlLocationFactory();
+        }
+        return $this->locationFactory;
+    }
+
+    /**
      * Create a Meeting object from TSML source data.
      *
      * @param array<string, mixed> $source The meeting source data.
@@ -148,36 +186,16 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
             $name = $source['name'];
             $slug = $source['slug'];
 
-            // Look up location from location_id if present, otherwise use source location field
-            $location = '';
-            $locationAddress = '';
-            $locationCity = '';
-            $locationState = '';
-            $locationPostalCode = '';
-            $locationCountry = '';
-            $locationRegion = '';
-            $locationNotes = '';
-
-            if (isset($source['location_id']) && !empty($source['location_id'])) {
-                $locationId = (int)$source['location_id'];
-                if ($locationId > 0) {
-                    $locationPost = get_post($locationId);
-                    if ($locationPost && !is_wp_error($locationPost) && $locationPost->post_type === 'tsml_location') {
-                        $location = $locationPost->post_title;
-                        $locationMeta = get_post_meta($locationId);
-                        $locationAddress = $locationMeta['address'][0] ?? '';
-                        $locationCity = $locationMeta['city'][0] ?? '';
-                        $locationState = $locationMeta['state'][0] ?? '';
-                        $locationPostalCode = $locationMeta['postal_code'][0] ?? '';
-                        $locationCountry = $locationMeta['country'][0] ?? '';
-                        $locationRegion = $locationMeta['region'][0] ?? '';
-                        $locationNotes = $locationMeta['location_notes'][0] ?? '';
-                    }
-                }
-            }
-            if (empty($location) && isset($source['location'])) {
-                $location = $source['location'];
-            }
+            // Resolve location using LocationFactory if available
+            $locationData = $this->resolveLocation($source);
+            $location = $locationData['name'];
+            $locationAddress = $locationData['address'];
+            $locationCity = $locationData['city'];
+            $locationState = $locationData['state'];
+            $locationPostalCode = $locationData['postalCode'];
+            $locationCountry = $locationData['country'];
+            $locationRegion = $locationData['region'];
+            $locationNotes = $locationData['notes'];
 
             if (!function_exists('get_permalink') || !function_exists('get_post_status') || !function_exists('get_post') || !function_exists('is_wp_error') || !function_exists('get_post_meta')) {
                 throw new RuntimeException("Required WordPress functions are not available");
@@ -258,6 +276,78 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
             ]);
             return null;
         }
+    }
+
+    /**
+     * Resolve location data from source using LocationFactory if available
+     *
+     * @param array<string, mixed> $source The meeting source data
+     * @return array<string, string> Location data array
+     */
+    private function resolveLocation(array $source): array
+    {
+        $locationData = [
+            'name' => '',
+            'address' => '',
+            'city' => '',
+            'state' => '',
+            'postalCode' => '',
+            'country' => '',
+            'region' => '',
+            'notes' => '',
+        ];
+
+        // Try to get location from location_id using LocationFactory
+        if (isset($source['location_id']) && !empty($source['location_id'])) {
+            $locationId = (int)$source['location_id'];
+            if ($locationId > 0) {
+                $factory = $this->getLocationFactory();
+                if ($factory !== null) {
+                    $location = $factory->createFromSource($locationId);
+                    if ($location !== null) {
+                        $locationData['name'] = $location->getName();
+                        $locationData['address'] = $location->getAddress();
+                        $locationData['city'] = $location->getCity();
+                        $locationData['state'] = $location->getState();
+                        $locationData['postalCode'] = $location->getPostalCode();
+                        $locationData['country'] = $location->getCountry();
+                        $locationData['region'] = $location->getRegion();
+                        $locationData['notes'] = $location->getNotes();
+                        return $locationData;
+                    }
+                }
+            }
+        }
+
+        // Fallback to source location field if no location resolved
+        if (isset($source['location'])) {
+            $locationData['name'] = (string)$source['location'];
+        }
+
+        // Also check for inline location data in source
+        if (isset($source['formatted_address'])) {
+            $locationData['address'] = (string)$source['formatted_address'];
+        }
+        if (isset($source['city'])) {
+            $locationData['city'] = (string)$source['city'];
+        }
+        if (isset($source['state'])) {
+            $locationData['state'] = (string)$source['state'];
+        }
+        if (isset($source['postal_code'])) {
+            $locationData['postalCode'] = (string)$source['postal_code'];
+        }
+        if (isset($source['country'])) {
+            $locationData['country'] = (string)$source['country'];
+        }
+        if (isset($source['region'])) {
+            $locationData['region'] = (string)$source['region'];
+        }
+        if (isset($source['location_notes'])) {
+            $locationData['notes'] = (string)$source['location_notes'];
+        }
+
+        return $locationData;
     }
 
     /**
