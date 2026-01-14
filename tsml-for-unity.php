@@ -7,8 +7,8 @@ declare(strict_types=1);
  * Plugin URI: https://github.com/bleeding-deacons/tsml-for-unity
  * Description: Integrates 12 Step Meeting List (TSML) with the Unity plugin, providing meeting, group & location support.
  * Version: 1.1.0
- * Requires at least: 6.0
- * Requires PHP: 8
+ * Requires at least: 5.0
+ * Requires PHP: 7.4
  * Author: The Bleeding Deacons
  * Author URI: thebleedingdeacons@gmail.com
  * License: MIT (Modified)
@@ -81,8 +81,8 @@ function tsml_for_unity_location_factory(): ?\TsmlForUnity\TsmlLocationFactory
     return \TsmlForUnity\Plugin::getLocationFactory();
 }
 
-// Initialize the plugin
-add_action('plugins_loaded', function () {
+// Initialize the plugin after Unity is fully loaded
+add_action('unity_loaded', function ($container) {
     try {
         if (!class_exists('TsmlForUnity\Plugin')) {
             throw new \Exception('TsmlForUnity\Plugin class not found. Check that Plugin.php exists in the src/ directory.');
@@ -90,12 +90,6 @@ add_action('plugins_loaded', function () {
 
         // Check if Unity is available
         if (!\TsmlForUnity\Plugin::unityIsAvailable()) {
-            add_action('admin_notices', function () {
-                echo '<div class="notice notice-error"><p>';
-                echo '<strong>' . esc_html__('TSML for Unity', 'tsml-for-unity') . ':</strong> ';
-                echo esc_html__('This plugin requires the Unity plugin to be installed and activated.', 'tsml-for-unity');
-                echo '</p></div>';
-            });
             return;
         }
 
@@ -131,6 +125,18 @@ add_action('plugins_loaded', function () {
         }
 
         return;
+    }
+});
+
+// Show admin notice if Unity is not available
+add_action('plugins_loaded', function () {
+    if (!class_exists('Unity\\Plugin')) {
+        add_action('admin_notices', function () {
+            echo '<div class="notice notice-error"><p>';
+            echo '<strong>' . esc_html__('TSML for Unity', 'tsml-for-unity') . ':</strong> ';
+            echo esc_html__('This plugin requires the Unity plugin to be installed and activated.', 'tsml-for-unity');
+            echo '</p></div>';
+        });
     }
 }, 20);
 

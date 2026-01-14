@@ -13,6 +13,54 @@ use Unity\Groups\Interfaces\GroupInterface;
 use WP_Mock;
 
 /**
+ * Mock Unity Contact interfaces and classes for testing
+ */
+if (!interface_exists('Unity\\Contact\\Interfaces\\ContactInterface')) {
+    eval('namespace Unity\\Contact\\Interfaces; interface ContactInterface { public function getName(): string; public function getEmail(): string; public function getPhone(): string; }');
+}
+
+if (!interface_exists('Unity\\Contact\\Interfaces\\ContactFactoryInterface')) {
+    eval('namespace Unity\\Contact\\Interfaces; interface ContactFactoryInterface { public function createFromSource(array $source): ContactInterface; public function create(string $name = "", string $email = "", string $phone = ""): ContactInterface; }');
+}
+
+if (!class_exists('Unity\\Contact\\Contact')) {
+    eval('
+    namespace Unity\\Contact;
+
+    class Contact implements Interfaces\\ContactInterface {
+        private string $name;
+        private string $email;
+        private string $phone;
+
+        public function __construct(string $name = "", string $email = "", string $phone = "") {
+            $this->name = $name;
+            $this->email = $email;
+            $this->phone = $phone;
+        }
+
+        public function getName(): string { return $this->name; }
+        public function getEmail(): string { return $this->email; }
+        public function getPhone(): string { return $this->phone; }
+    }
+    ');
+}
+
+if (!class_exists('Unity\\Contact\\ContactFactory')) {
+    eval('
+    namespace Unity\\Contact;
+
+    class ContactFactory implements Interfaces\\ContactFactoryInterface {
+        public function createFromSource(array $source): Interfaces\\ContactInterface {
+            return new Contact($source["name"] ?? "", $source["email"] ?? "", $source["phone"] ?? "");
+        }
+        public function create(string $name = "", string $email = "", string $phone = ""): Interfaces\\ContactInterface {
+            return new Contact($name, $email, $phone);
+        }
+    }
+    ');
+}
+
+/**
  * @covers \TsmlForUnity\TsmlGroupFactory
  */
 class TsmlGroupFactoryTest extends TestCase

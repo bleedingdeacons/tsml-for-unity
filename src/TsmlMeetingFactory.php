@@ -7,6 +7,7 @@ namespace TsmlForUnity;
 use Unity\Contact\ContactFactory;
 use Unity\Contact\Interfaces\ContactFactoryInterface;
 use Unity\Contact\Interfaces\ContactInterface;
+use Unity\Locations\Location;
 use Unity\Locations\Interfaces\LocationFactoryInterface;
 use Unity\Locations\Interfaces\LocationInterface;
 use Unity\Meetings\Interfaces\MeetingFactoryInterface;
@@ -219,14 +220,9 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
 
             // Resolve location using LocationFactory if available
             $locationData = $this->resolveLocation($source);
-            $location = $locationData['name'];
-            $locationAddress = $locationData['address'];
-            $locationCity = $locationData['city'];
-            $locationState = $locationData['state'];
-            $locationPostalCode = $locationData['postalCode'];
-            $locationCountry = $locationData['country'];
-            $locationRegion = $locationData['region'];
-            $locationNotes = $locationData['notes'];
+            
+            // Create Location object from location data
+            $location = $this->createLocationFromData($locationData, $source);
 
             if (!function_exists('get_permalink') || !function_exists('get_post_status') || !function_exists('get_post') || !function_exists('is_wp_error') || !function_exists('get_post_meta')) {
                 throw new RuntimeException("Required WordPress functions are not available");
@@ -279,15 +275,8 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
                 $name,
                 $slug,
                 $location,
-                $locationAddress,
-                $locationCity,
-                $locationState,
-                $locationPostalCode,
-                $locationCountry,
-                $locationRegion,
-                $locationNotes,
                 $url,
-                $day,
+                (int)$day,
                 $dayOfWeek,
                 $time,
                 $endTime,
@@ -307,6 +296,49 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
             ]);
             return null;
         }
+    }
+
+    /**
+     * Create a Location object from location data array
+     *
+     * @param array<string, string> $locationData Location data from resolveLocation
+     * @param array<string, mixed> $source Original source data for additional fields
+     * @return LocationInterface|null Location object or null if no location data
+     */
+    private function createLocationFromData(array $locationData, array $source): ?LocationInterface
+    {
+        // If no location name, return null
+        if (empty($locationData['name']) && empty($locationData['address'])) {
+            return null;
+        }
+
+        $locationId = (int)($source['location_id'] ?? 0);
+        $latitude = isset($source['latitude']) ? (float)$source['latitude'] : null;
+        $longitude = isset($source['longitude']) ? (float)$source['longitude'] : null;
+        $timezone = $source['timezone'] ?? '';
+        $link = '';
+        
+        // Get location permalink if we have a location ID
+        if ($locationId > 0 && function_exists('get_permalink')) {
+            $link = get_permalink($locationId) ?: '';
+        }
+
+        return new Location(
+            $locationId,
+            $locationData['name'],
+            $locationData['address'],
+            $locationData['city'],
+            $locationData['state'],
+            $locationData['postalCode'],
+            $locationData['country'],
+            $locationData['region'],
+            $locationData['notes'],
+            $link,
+            $latitude,
+            $longitude,
+            $timezone,
+            [] // meetingIds - not needed here as this is from meeting's perspective
+        );
     }
 
     /**
