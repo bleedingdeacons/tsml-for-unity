@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace TsmlForUnity;
 
+use Unity\Contact\ContactFactory;
+use Unity\Contact\Interfaces\ContactFactoryInterface;
+use Unity\Contact\Interfaces\ContactInterface;
+use Unity\Groups\Group;
 use Unity\Groups\Interfaces\GroupFactoryInterface;
 use Unity\Groups\Interfaces\GroupInterface;
 
@@ -15,6 +19,42 @@ use Unity\Groups\Interfaces\GroupInterface;
  */
 class TsmlGroupFactory implements GroupFactoryInterface
 {
+    private ?ContactFactoryInterface $contactFactory = null;
+
+    /**
+     * TsmlGroupFactory constructor.
+     *
+     * @param ContactFactoryInterface|null $contactFactory Optional contact factory for creating contacts
+     */
+    public function __construct(?ContactFactoryInterface $contactFactory = null)
+    {
+        $this->contactFactory = $contactFactory;
+    }
+
+    /**
+     * Set the contact factory
+     *
+     * @param ContactFactoryInterface $contactFactory The contact factory
+     * @return void
+     */
+    public function setContactFactory(ContactFactoryInterface $contactFactory): void
+    {
+        $this->contactFactory = $contactFactory;
+    }
+
+    /**
+     * Get the contact factory, creating a default one if not set
+     *
+     * @return ContactFactoryInterface
+     */
+    private function getContactFactory(): ContactFactoryInterface
+    {
+        if ($this->contactFactory === null) {
+            $this->contactFactory = new ContactFactory();
+        }
+        return $this->contactFactory;
+    }
+
     /**
      * Create a group from a WordPress post ID
      * 
@@ -39,7 +79,7 @@ class TsmlGroupFactory implements GroupFactoryInterface
         $meetingIds = $this->getMeetingIdsForGroup($sourceId);
         $link = $this->getPermalink($sourceId);
 
-        return new TsmlGroup(
+        return new Group(
             id: $sourceId,
             title: $post->post_title ?? '',
             email: $this->getMetaField($meta, TsmlGroupFields::EMAIL, ''),
@@ -118,11 +158,12 @@ class TsmlGroupFactory implements GroupFactoryInterface
      * Extract contact information from post meta
      * 
      * @param array $meta Post meta data
-     * @return array Array of contact arrays with name, email, phone keys
+     * @return ContactInterface[] Array of Contact objects
      */
     private function extractContacts(array $meta): array
     {
         $contacts = [];
+        $factory = $this->getContactFactory();
 
         for ($i = 1; $i <= TsmlGroupFields::MAX_CONTACTS; $i++) {
             $name = $this->getMetaField($meta, TsmlGroupFields::CONTACT_PREFIX . $i . '_name', '');
@@ -130,11 +171,11 @@ class TsmlGroupFactory implements GroupFactoryInterface
             $phone = $this->getMetaField($meta, TsmlGroupFields::CONTACT_PREFIX . $i . '_phone', '');
 
             if (!empty($name) || !empty($email) || !empty($phone)) {
-                $contacts[] = [
-                    'name' => (string) $name,
-                    'email' => (string) $email,
-                    'phone' => (string) $phone,
-                ];
+                $contacts[] = $factory->create(
+                    (string) $name,
+                    (string) $email,
+                    (string) $phone
+                );
             }
         }
 

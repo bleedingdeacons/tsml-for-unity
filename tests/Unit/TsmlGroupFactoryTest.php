@@ -7,6 +7,7 @@ namespace TsmlForUnity\Tests\Unit;
 use PHPUnit\Framework\TestCase;
 use TsmlForUnity\TsmlGroupFactory;
 use TsmlForUnity\TsmlGroupFields;
+use Unity\Contact\Interfaces\ContactInterface;
 use Unity\Groups\Group;
 use Unity\Groups\Interfaces\GroupInterface;
 use WP_Mock;
@@ -190,17 +191,20 @@ class TsmlGroupFactoryTest extends TestCase
         $contacts = $result->getContacts();
         $this->assertCount(3, $contacts);
         
-        $this->assertEquals('John Doe', $contacts[0]['name']);
-        $this->assertEquals('john@example.com', $contacts[0]['email']);
-        $this->assertEquals('555-1111', $contacts[0]['phone']);
+        $this->assertInstanceOf(ContactInterface::class, $contacts[0]);
+        $this->assertEquals('John Doe', $contacts[0]->getName());
+        $this->assertEquals('john@example.com', $contacts[0]->getEmail());
+        $this->assertEquals('555-1111', $contacts[0]->getPhone());
         
-        $this->assertEquals('Jane Smith', $contacts[1]['name']);
-        $this->assertEquals('jane@example.com', $contacts[1]['email']);
-        $this->assertEquals('555-2222', $contacts[1]['phone']);
+        $this->assertInstanceOf(ContactInterface::class, $contacts[1]);
+        $this->assertEquals('Jane Smith', $contacts[1]->getName());
+        $this->assertEquals('jane@example.com', $contacts[1]->getEmail());
+        $this->assertEquals('555-2222', $contacts[1]->getPhone());
         
-        $this->assertEquals('Bob Wilson', $contacts[2]['name']);
-        $this->assertEquals('bob@example.com', $contacts[2]['email']);
-        $this->assertEquals('555-3333', $contacts[2]['phone']);
+        $this->assertInstanceOf(ContactInterface::class, $contacts[2]);
+        $this->assertEquals('Bob Wilson', $contacts[2]->getName());
+        $this->assertEquals('bob@example.com', $contacts[2]->getEmail());
+        $this->assertEquals('555-3333', $contacts[2]->getPhone());
     }
 
     /**
@@ -295,14 +299,16 @@ class TsmlGroupFactoryTest extends TestCase
         $this->assertCount(2, $contacts);
         
         // First contact has name only
-        $this->assertEquals('John Doe', $contacts[0]['name']);
-        $this->assertEquals('', $contacts[0]['email']);
-        $this->assertEquals('', $contacts[0]['phone']);
+        $this->assertInstanceOf(ContactInterface::class, $contacts[0]);
+        $this->assertEquals('John Doe', $contacts[0]->getName());
+        $this->assertEquals('', $contacts[0]->getEmail());
+        $this->assertEquals('', $contacts[0]->getPhone());
         
         // Second contact has email only
-        $this->assertEquals('', $contacts[1]['name']);
-        $this->assertEquals('jane@example.com', $contacts[1]['email']);
-        $this->assertEquals('', $contacts[1]['phone']);
+        $this->assertInstanceOf(ContactInterface::class, $contacts[1]);
+        $this->assertEquals('', $contacts[1]->getName());
+        $this->assertEquals('jane@example.com', $contacts[1]->getEmail());
+        $this->assertEquals('', $contacts[1]->getPhone());
     }
 
     /**

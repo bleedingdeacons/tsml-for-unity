@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace TsmlForUnity;
 
+use Unity\Contact\ContactFactory;
+use Unity\Contact\Interfaces\ContactFactoryInterface;
+use Unity\Contact\Interfaces\ContactInterface;
 use Unity\Locations\Interfaces\LocationFactoryInterface;
 use Unity\Locations\Interfaces\LocationInterface;
 use Unity\Meetings\Interfaces\MeetingFactoryInterface;
 use Unity\Meetings\Interfaces\MeetingInterface;
 use Unity\Meetings\Meeting;
-use Unity\Meetings\Contact;
 use Exception;
 use InvalidArgumentException;
 use RuntimeException;
@@ -25,6 +27,7 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
     private const MAX_CONTACTS = 3;
 
     private ?LocationFactoryInterface $locationFactory = null;
+    private ?ContactFactoryInterface $contactFactory = null;
 
     /**
      * Days of the week mapping (TSML uses 0-6, but we use 1-7)
@@ -125,11 +128,39 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
     /**
      * TsmlMeetingFactory constructor.
      *
+     * @param ContactFactoryInterface|null $contactFactory Optional contact factory for creating contacts
      * @param LocationFactoryInterface|null $locationFactory Optional location factory for resolving locations
      */
-    public function __construct(?LocationFactoryInterface $locationFactory = null)
-    {
+    public function __construct(
+        ?ContactFactoryInterface $contactFactory = null,
+        ?LocationFactoryInterface $locationFactory = null
+    ) {
+        $this->contactFactory = $contactFactory;
         $this->locationFactory = $locationFactory;
+    }
+
+    /**
+     * Set the contact factory
+     *
+     * @param ContactFactoryInterface $contactFactory The contact factory
+     * @return void
+     */
+    public function setContactFactory(ContactFactoryInterface $contactFactory): void
+    {
+        $this->contactFactory = $contactFactory;
+    }
+
+    /**
+     * Get the contact factory, creating a default one if not set
+     *
+     * @return ContactFactoryInterface
+     */
+    private function getContactFactory(): ContactFactoryInterface
+    {
+        if ($this->contactFactory === null) {
+            $this->contactFactory = new ContactFactory();
+        }
+        return $this->contactFactory;
     }
 
     /**
@@ -374,11 +405,12 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
      * Extract contact information from post meta.
      *
      * @param array<string, array<string>> $meta Post meta data.
-     * @return array<Contact> Array of Contact objects.
+     * @return array<ContactInterface> Array of Contact objects.
      */
     private function extractContacts(array $meta): array
     {
         $contacts = [];
+        $factory = $this->getContactFactory();
 
         for ($count = 1; $count <= self::MAX_CONTACTS; $count++) {
             $name = $this->getMetaField($meta, "contact_{$count}_name", '');
@@ -386,7 +418,7 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
             $phone = $this->getMetaField($meta, "contact_{$count}_phone", '');
 
             if (!empty($name) || !empty($email) || !empty($phone)) {
-                $contacts[] = new Contact($name, $email, $phone);
+                $contacts[] = $factory->create($name, $email, $phone);
             }
         }
 

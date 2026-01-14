@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity;
 
+use Unity\Contact\ContactFactory;
+use Unity\Contact\Interfaces\ContactFactoryInterface;
+
 /**
  * Main Plugin Class
  *
@@ -14,6 +17,7 @@ class Plugin
     private static ?TsmlMeetingFactory $meetingFactory = null;
     private static ?TsmlGroupFactory $groupFactory = null;
     private static ?TsmlLocationFactory $locationFactory = null;
+    private static ?ContactFactoryInterface $contactFactory = null;
 
     /**
      * Check if Unity plugin is active and has required meeting interfaces
@@ -25,7 +29,7 @@ class Plugin
         return interface_exists('Unity\\Meetings\\Interfaces\\MeetingFactoryInterface')
             && interface_exists('Unity\\Meetings\\Interfaces\\MeetingInterface')
             && class_exists('Unity\\Meetings\\Meeting')
-            && class_exists('Unity\\Meetings\\Contact');
+            && interface_exists('Unity\\Contact\\Interfaces\\ContactInterface');
     }
 
     /**
@@ -53,6 +57,31 @@ class Plugin
     }
 
     /**
+     * Check if Unity's contact interfaces are available
+     *
+     * @return bool
+     */
+    public static function unityContactsAvailable(): bool
+    {
+        return interface_exists('Unity\\Contact\\Interfaces\\ContactFactoryInterface')
+            && interface_exists('Unity\\Contact\\Interfaces\\ContactInterface')
+            && class_exists('Unity\\Contact\\Contact');
+    }
+
+    /**
+     * Get or create the ContactFactory instance
+     *
+     * @return ContactFactoryInterface
+     */
+    private static function getContactFactory(): ContactFactoryInterface
+    {
+        if (self::$contactFactory === null) {
+            self::$contactFactory = new ContactFactory();
+        }
+        return self::$contactFactory;
+    }
+
+    /**
      * Register the TSML factories with Unity's dependency container
      *
      * @param mixed $container Unity's dependency container
@@ -60,7 +89,7 @@ class Plugin
      */
     public static function registerWithUnity($container): void
     {
-        if (!method_exists($container, 'register')) {
+        if (!method_exists($container, 'register') || !method_exists($container, 'get')) {
             return;
         }
 
@@ -68,7 +97,10 @@ class Plugin
         $container->register(
             'Unity\\Meetings\\Interfaces\\MeetingFactoryInterface',
             function ($container) {
-                return new TsmlMeetingFactory();
+                $contactFactory = $container->has('Unity\\Contact\\Interfaces\\ContactFactoryInterface')
+                    ? $container->get('Unity\\Contact\\Interfaces\\ContactFactoryInterface')
+                    : new ContactFactory();
+                return new TsmlMeetingFactory($contactFactory);
             }
         );
 
@@ -77,7 +109,10 @@ class Plugin
             $container->register(
                 'Unity\\Groups\\Interfaces\\GroupFactoryInterface',
                 function ($container) {
-                    return new TsmlGroupFactory();
+                    $contactFactory = $container->has('Unity\\Contact\\Interfaces\\ContactFactoryInterface')
+                        ? $container->get('Unity\\Contact\\Interfaces\\ContactFactoryInterface')
+                        : new ContactFactory();
+                    return new TsmlGroupFactory($contactFactory);
                 }
             );
         }
@@ -105,7 +140,7 @@ class Plugin
         }
 
         if (self::$meetingFactory === null) {
-            self::$meetingFactory = new TsmlMeetingFactory();
+            self::$meetingFactory = new TsmlMeetingFactory(self::getContactFactory());
         }
 
         return self::$meetingFactory;
@@ -123,7 +158,7 @@ class Plugin
         }
 
         if (self::$groupFactory === null) {
-            self::$groupFactory = new TsmlGroupFactory();
+            self::$groupFactory = new TsmlGroupFactory(self::getContactFactory());
         }
 
         return self::$groupFactory;
@@ -157,5 +192,6 @@ class Plugin
         self::$meetingFactory = null;
         self::$groupFactory = null;
         self::$locationFactory = null;
+        self::$contactFactory = null;
     }
 }
