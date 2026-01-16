@@ -10,25 +10,32 @@ use Unity\Contact\Interfaces\ContactInterface;
 use Unity\Groups\Group;
 use Unity\Groups\Interfaces\GroupFactoryInterface;
 use Unity\Groups\Interfaces\GroupInterface;
+use Unity\Meetings\Interfaces\MeetingRepositoryInterface;
+use Unity\Meetings\Interfaces\MeetingInterface;
 
 /**
  * Factory class for creating TsmlGroup objects from TSML data
- * 
+ *
  * This factory creates Group objects from the 12 Step Meeting List plugin's
  * tsml_group custom post type.
  */
 class TsmlGroupFactory implements GroupFactoryInterface
 {
     private ?ContactFactoryInterface $contactFactory = null;
+    private ?MeetingRepositoryInterface $meetingRepository = null;
 
     /**
      * TsmlGroupFactory constructor.
      *
      * @param ContactFactoryInterface|null $contactFactory Optional contact factory for creating contacts
+     * @param MeetingRepositoryInterface|null $meetingRepository Optional meeting repository for retrieving meetings
      */
-    public function __construct(?ContactFactoryInterface $contactFactory = null)
-    {
+    public function __construct(
+        ?ContactFactoryInterface $contactFactory = null,
+        ?MeetingRepositoryInterface $meetingRepository = null
+    ) {
         $this->contactFactory = $contactFactory;
+        $this->meetingRepository = $meetingRepository;
     }
 
     /**
@@ -40,6 +47,17 @@ class TsmlGroupFactory implements GroupFactoryInterface
     public function setContactFactory(ContactFactoryInterface $contactFactory): void
     {
         $this->contactFactory = $contactFactory;
+    }
+
+    /**
+     * Set the meeting repository
+     *
+     * @param MeetingRepositoryInterface $meetingRepository The meeting repository
+     * @return void
+     */
+    public function setMeetingRepository(MeetingRepositoryInterface $meetingRepository): void
+    {
+        $this->meetingRepository = $meetingRepository;
     }
 
     /**
@@ -56,8 +74,36 @@ class TsmlGroupFactory implements GroupFactoryInterface
     }
 
     /**
+     * Get the meeting repository, creating a default one if not set
+     *
+     * @return MeetingRepositoryInterface
+     */
+    private function getMeetingRepository(): MeetingRepositoryInterface
+    {
+        if ($this->meetingRepository === null) {
+            // Try to get repository from Unity container if available
+            if (class_exists('\Unity\Plugin') && method_exists('\Unity\Plugin', 'getContainer')) {
+                try {
+                    $container = \Unity\Plugin::getContainer();
+                    if ($container && $container->has(MeetingRepositoryInterface::class)) {
+                        $this->meetingRepository = $container->get(MeetingRepositoryInterface::class);
+                    }
+                } catch (\Exception $e) {
+                    // Fall back to creating a default repository
+                }
+            }
+
+            // If still null, create a default TsmlMeetingRepository
+            if ($this->meetingRepository === null) {
+                $this->meetingRepository = new TsmlMeetingRepository();
+            }
+        }
+        return $this->meetingRepository;
+    }
+
+    /**
      * Create a group from a WordPress post ID
-     * 
+     *
      * @param int $sourceId The WordPress post ID
      * @return GroupInterface|null The created group or null if not found/invalid
      */
@@ -76,14 +122,14 @@ class TsmlGroupFactory implements GroupFactoryInterface
 
         $meta = $this->getPostMeta($sourceId);
         $contacts = $this->extractContacts($meta);
-        $meetingIds = $this->getMeetingIdsForGroup($sourceId);
+        $meetings = $this->getMeetingsForGroup($sourceId);
         $link = $this->getPermalink($sourceId);
 
         return new Group(
             id: $sourceId,
             title: $post->post_name ?? '',
             email: $this->getMetaField($meta, TsmlGroupFields::EMAIL, ''),
-            meetingIds: $meetingIds,
+            meetings: $meetings,
             link: $link,
             groupNotes: $this->getMetaField($meta, TsmlGroupFields::GROUP_NOTES, ''),
             website: $this->getMetaField($meta, TsmlGroupFields::WEBSITE, ''),
@@ -99,7 +145,7 @@ class TsmlGroupFactory implements GroupFactoryInterface
 
     /**
      * Get post meta for a post ID
-     * 
+     *
      * @param int $postId The post ID
      * @return array Post meta data
      */
@@ -115,7 +161,7 @@ class TsmlGroupFactory implements GroupFactoryInterface
 
     /**
      * Get a meta field value with a default
-     * 
+     *
      * @param array  $meta    Meta data array
      * @param string $field   Field name
      * @param mixed  $default Default value if field not found
@@ -128,7 +174,7 @@ class TsmlGroupFactory implements GroupFactoryInterface
         }
 
         $value = $meta[$field][0] ?? $default;
-        
+
         // Handle serialized data
         if (function_exists('maybe_unserialize')) {
             $value = maybe_unserialize($value);
@@ -139,14 +185,14 @@ class TsmlGroupFactory implements GroupFactoryInterface
 
     /**
      * Get the district ID from meta
-     * 
+     *
      * @param array $meta Meta data array
      * @return int|null District ID or null
      */
     private function getDistrictId(array $meta): ?int
     {
         $districtId = $this->getMetaField($meta, TsmlGroupFields::DISTRICT_ID, null);
-        
+
         if ($districtId === null || $districtId === '') {
             return null;
         }
@@ -156,7 +202,7 @@ class TsmlGroupFactory implements GroupFactoryInterface
 
     /**
      * Extract contact information from post meta
-     * 
+     *
      * @param array $meta Post meta data
      * @return ContactInterface[] Array of Contact objects
      */
@@ -183,39 +229,32 @@ class TsmlGroupFactory implements GroupFactoryInterface
     }
 
     /**
-     * Get meeting IDs associated with this group
-     * 
-     * In TSML, meetings reference their group via the group_id post_meta field.
-     * 
+     * Get meetings associated with this group
+     *
+     * Uses the MeetingRepository to retrieve meetings by group ID.
+     *
      * @param int $groupId The group post ID
-     * @return array Array of meeting post IDs
+     * @return MeetingInterface[] Array of Meeting objects
      */
-    private function getMeetingIdsForGroup(int $groupId): array
+    private function getMeetingsForGroup(int $groupId): array
     {
-        if (!function_exists('get_posts')) {
+        try {
+            $repository = $this->getMeetingRepository();
+
+            // Use the repository's method to find meetings by group ID
+            return $repository->findByGroupId($groupId);
+        } catch (\Exception $e) {
+            // If repository is unavailable or throws an error, return empty array
+            $this->logError('Failed to retrieve meetings for group: ' . $e->getMessage(), [
+                'group_id' => $groupId
+            ]);
             return [];
         }
-
-        $meetings = get_posts([
-            'post_type' => 'tsml_meeting',
-            'posts_per_page' => -1,
-            'post_status' => 'publish',
-            'meta_query' => [
-                [
-                    'key' => 'group_id',
-                    'value' => $groupId,
-                    'compare' => '=',
-                ],
-            ],
-            'fields' => 'ids',
-        ]);
-
-        return is_array($meetings) ? $meetings : [];
     }
 
     /**
      * Get the permalink for a post
-     * 
+     *
      * @param int $postId The post ID
      * @return string The permalink or empty string
      */
@@ -231,7 +270,7 @@ class TsmlGroupFactory implements GroupFactoryInterface
 
     /**
      * Log an error message
-     * 
+     *
      * @param string $message The error message
      * @param array  $context Additional context
      */

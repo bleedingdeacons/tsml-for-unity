@@ -100,7 +100,12 @@ class Plugin
                 $contactFactory = $container->has('Unity\\Contact\\Interfaces\\ContactFactoryInterface')
                     ? $container->get('Unity\\Contact\\Interfaces\\ContactFactoryInterface')
                     : new ContactFactory();
-                return new TsmlMeetingFactory($contactFactory);
+
+                $locationRepository = $container->has('Unity\\Locations\\Interfaces\\LocationRepositoryInterface')
+                    ? $container->get('Unity\\Locations\\Interfaces\\LocationRepositoryInterface')
+                    : null;
+
+                return new TsmlMeetingFactory($contactFactory, $locationRepository);
             }
         );
 
@@ -112,7 +117,12 @@ class Plugin
                     $contactFactory = $container->has('Unity\\Contact\\Interfaces\\ContactFactoryInterface')
                         ? $container->get('Unity\\Contact\\Interfaces\\ContactFactoryInterface')
                         : new ContactFactory();
-                    return new TsmlGroupFactory($contactFactory);
+
+                    $meetingRepository = $container->has('Unity\\Meetings\\Interfaces\\MeetingRepositoryInterface')
+                        ? $container->get('Unity\\Meetings\\Interfaces\\MeetingRepositoryInterface')
+                        : null;
+
+                    return new TsmlGroupFactory($contactFactory, $meetingRepository);
                 }
             );
         }
@@ -140,7 +150,20 @@ class Plugin
         }
 
         if (self::$meetingFactory === null) {
-            self::$meetingFactory = new TsmlMeetingFactory(self::getContactFactory());
+            // Try to get LocationRepository from Unity container if available
+            $locationRepository = null;
+            if (class_exists('\\Unity\\Plugin') && method_exists('\\Unity\\Plugin', 'getContainer')) {
+                try {
+                    $container = \Unity\Plugin::getContainer();
+                    if ($container && $container->has('Unity\\Locations\\Interfaces\\LocationRepositoryInterface')) {
+                        $locationRepository = $container->get('Unity\\Locations\\Interfaces\\LocationRepositoryInterface');
+                    }
+                } catch (\Exception $e) {
+                    // LocationRepository not available, will be null
+                }
+            }
+
+            self::$meetingFactory = new TsmlMeetingFactory(self::getContactFactory(), $locationRepository);
         }
 
         return self::$meetingFactory;
@@ -158,7 +181,20 @@ class Plugin
         }
 
         if (self::$groupFactory === null) {
-            self::$groupFactory = new TsmlGroupFactory(self::getContactFactory());
+            // Try to get MeetingRepository from Unity container if available
+            $meetingRepository = null;
+            if (class_exists('\\Unity\\Plugin') && method_exists('\\Unity\\Plugin', 'getContainer')) {
+                try {
+                    $container = \Unity\Plugin::getContainer();
+                    if ($container && $container->has('Unity\\Meetings\\Interfaces\\MeetingRepositoryInterface')) {
+                        $meetingRepository = $container->get('Unity\\Meetings\\Interfaces\\MeetingRepositoryInterface');
+                    }
+                } catch (\Exception $e) {
+                    // MeetingRepository not available, will be null
+                }
+            }
+
+            self::$groupFactory = new TsmlGroupFactory(self::getContactFactory(), $meetingRepository);
         }
 
         return self::$groupFactory;

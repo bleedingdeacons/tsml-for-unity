@@ -8,7 +8,7 @@ use Unity\Contact\ContactFactory;
 use Unity\Contact\Interfaces\ContactFactoryInterface;
 use Unity\Contact\Interfaces\ContactInterface;
 use Unity\Locations\Location;
-use Unity\Locations\Interfaces\LocationFactoryInterface;
+use Unity\Locations\Interfaces\LocationRepositoryInterface;
 use Unity\Locations\Interfaces\LocationInterface;
 use Unity\Meetings\Interfaces\MeetingFactoryInterface;
 use Unity\Meetings\Interfaces\MeetingInterface;
@@ -27,7 +27,7 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
 {
     private const MAX_CONTACTS = 3;
 
-    private ?LocationFactoryInterface $locationFactory = null;
+    private ?LocationRepositoryInterface $locationRepository = null;
     private ?ContactFactoryInterface $contactFactory = null;
 
     /**
@@ -130,14 +130,14 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
      * TsmlMeetingFactory constructor.
      *
      * @param ContactFactoryInterface|null $contactFactory Optional contact factory for creating contacts
-     * @param LocationFactoryInterface|null $locationFactory Optional location factory for resolving locations
+     * @param LocationRepositoryInterface|null $locationRepository Optional location repository for retrieving locations
      */
     public function __construct(
         ?ContactFactoryInterface $contactFactory = null,
-        ?LocationFactoryInterface $locationFactory = null
+        ?LocationRepositoryInterface $locationRepository = null
     ) {
         $this->contactFactory = $contactFactory;
-        $this->locationFactory = $locationFactory;
+        $this->locationRepository = $locationRepository;
     }
 
     /**
@@ -165,27 +165,27 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
     }
 
     /**
-     * Set the location factory
+     * Set the location repository
      *
-     * @param LocationFactoryInterface $locationFactory The location factory
+     * @param LocationRepositoryInterface $locationRepository The location repository
      * @return void
      */
-    public function setLocationFactory(LocationFactoryInterface $locationFactory): void
+    public function setLocationRepository(LocationRepositoryInterface $locationRepository): void
     {
-        $this->locationFactory = $locationFactory;
+        $this->locationRepository = $locationRepository;
     }
 
     /**
-     * Get the location factory, creating a default one if not set
+     * Get the location repository, creating a default one if not set
      *
-     * @return LocationFactoryInterface|null
+     * @return LocationRepositoryInterface|null
      */
-    private function getLocationFactory(): ?LocationFactoryInterface
+    private function getLocationRepository(): ?LocationRepositoryInterface
     {
-        if ($this->locationFactory === null && Plugin::unityLocationsAvailable()) {
-            $this->locationFactory = new TsmlLocationFactory();
+        if ($this->locationRepository === null && Plugin::unityLocationsAvailable()) {
+            $this->locationRepository = new TsmlLocationRepository();
         }
-        return $this->locationFactory;
+        return $this->locationRepository;
     }
 
     /**
@@ -218,9 +218,9 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
             $name = $source['name'];
             $slug = $source['slug'];
 
-            // Resolve location using LocationFactory if available
+            // Resolve location using LocationRepository if available
             $locationData = $this->resolveLocation($source);
-            
+
             // Create Location object from location data
             $location = $this->createLocationFromData($locationData, $source);
 
@@ -317,7 +317,7 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
         $longitude = isset($source['longitude']) ? (float)$source['longitude'] : null;
         $timezone = $source['timezone'] ?? '';
         $link = '';
-        
+
         // Get location permalink if we have a location ID
         if ($locationId > 0 && function_exists('get_permalink')) {
             $link = get_permalink($locationId) ?: '';
@@ -342,7 +342,7 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
     }
 
     /**
-     * Resolve location data from source using LocationFactory if available
+     * Resolve location data from source using LocationRepository if available
      *
      * @param array<string, mixed> $source The meeting source data
      * @return array<string, string> Location data array
@@ -360,13 +360,13 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
             'notes' => '',
         ];
 
-        // Try to get location from location_id using LocationFactory
+        // Try to get location from location_id using LocationRepository
         if (isset($source['location_id']) && !empty($source['location_id'])) {
             $locationId = (int)$source['location_id'];
             if ($locationId > 0) {
-                $factory = $this->getLocationFactory();
-                if ($factory !== null) {
-                    $location = $factory->createFromSource($locationId);
+                $repository = $this->getLocationRepository();
+                if ($repository !== null) {
+                    $location = $repository->findById($locationId);
                     if ($location !== null) {
                         $locationData['name'] = $location->getName();
                         $locationData['address'] = $location->getAddress();
