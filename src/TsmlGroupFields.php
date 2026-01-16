@@ -14,7 +14,8 @@ final class TsmlGroupFields
     /**
      * The WordPress custom post type for groups (from TSML plugin)
      */
-    public const GROUP_POST_TYPE = 'tsml_group';
+//    public const GROUP_POST_TYPE = 'tsml_group';
+    public const GROUP_POST_TYPE = 'home-group';
 
     /**
      * Email field
