@@ -74,11 +74,11 @@ class TsmlGroupFactory implements GroupFactoryInterface
     }
 
     /**
-     * Get the meeting repository, creating a default one if not set
+     * Get the meeting repository from the container or injected dependency
      *
-     * @return MeetingRepositoryInterface
+     * @return MeetingRepositoryInterface|null
      */
-    private function getMeetingRepository(): MeetingRepositoryInterface
+    private function getMeetingRepository(): ?MeetingRepositoryInterface
     {
         if ($this->meetingRepository === null) {
             // Try to get repository from Unity container if available
@@ -89,15 +89,12 @@ class TsmlGroupFactory implements GroupFactoryInterface
                         $this->meetingRepository = $container->get(MeetingRepositoryInterface::class);
                     }
                 } catch (\Exception $e) {
-                    // Fall back to creating a default repository
+                    // Repository not available from container
+                    $this->logError('MeetingRepository not available from container: ' . $e->getMessage());
                 }
             }
-
-            // If still null, create a default TsmlMeetingRepository
-            if ($this->meetingRepository === null) {
-                $this->meetingRepository = new TsmlMeetingRepository();
-            }
         }
+
         return $this->meetingRepository;
     }
 
@@ -240,6 +237,14 @@ class TsmlGroupFactory implements GroupFactoryInterface
     {
         try {
             $repository = $this->getMeetingRepository();
+
+            // If repository is not available, return empty array
+            if ($repository === null) {
+                $this->logError('MeetingRepository not available for group', [
+                    'group_id' => $groupId
+                ]);
+                return [];
+            }
 
             // Use the repository's method to find meetings by group ID
             return $repository->findByGroupId($groupId);

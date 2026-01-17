@@ -21,10 +21,10 @@ use function wp_update_post;
 class TsmlPositionRepository implements PositionRepositoryInterface
 {
     private PositionFactoryInterface $factory;
-    
+
     /**
      * TsmlPositionRepository constructor
-     * 
+     *
      * @param PositionFactoryInterface $factory The position factory
      */
     public function __construct(PositionFactoryInterface $factory)
@@ -68,10 +68,28 @@ class TsmlPositionRepository implements PositionRepositoryInterface
     /**
      * {@inheritdoc}
      */
+    public function count(array $args = []): int
+    {
+        $defaultArgs = [
+            'post_type' => TsmlPositionFields::POSITION_POST_TYPE,
+            'posts_per_page' => -1,
+            'post_status' => 'publish',
+            'fields' => 'ids',
+        ];
+
+        $queryArgs = wp_parse_args($args, $defaultArgs);
+        $posts = get_posts($queryArgs);
+
+        return is_array($posts) ? count($posts) : 0;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function save(PositionInterface $position): bool
     {
         $postId = $position->getId();
-        
+
         if ($postId > 0) {
             return $this->update($position);
         }
@@ -106,14 +124,14 @@ class TsmlPositionRepository implements PositionRepositoryInterface
 
         return true;
     }
-    
+
     /**
      * {@inheritdoc}
      */
     public function update(PositionInterface $position): bool
     {
         $postId = $position->getId();
-        
+
         if ($postId <= 0) {
             return false;
         }
@@ -146,7 +164,7 @@ class TsmlPositionRepository implements PositionRepositoryInterface
 
         return true;
     }
-    
+
     /**
      * {@inheritdoc}
      */

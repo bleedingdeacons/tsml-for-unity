@@ -21,7 +21,7 @@ class TsmlMemberRepository implements MemberRepositoryInterface
 
     /**
      * TsmlMemberRepository constructor
-     * 
+     *
      * @param MemberFactoryInterface $memberFactory
      */
     public function __construct(MemberFactoryInterface $memberFactory)
@@ -31,24 +31,24 @@ class TsmlMemberRepository implements MemberRepositoryInterface
 
     /**
      * Find a member by ID
-     * 
+     *
      * @param int $id
      * @return MemberInterface|null
      */
     public function find(int $id): ?MemberInterface
     {
         $post = get_post($id);
-        
+
         if (!$post || $post->post_type !== TsmlMemberFields::MEMBER_POST_TYPE) {
             return null;
         }
 
         return $this->memberFactory->createFromSource($id);
     }
-    
+
     /**
      * Find all members with optional filtering
-     * 
+     *
      * @param array $args Optional get_posts arguments
      * @return array Array of MemberInterface objects
      */
@@ -59,11 +59,11 @@ class TsmlMemberRepository implements MemberRepositoryInterface
             'numberposts' => -1,
             'post_status' => 'publish'
         ];
-        
+
         $queryArgs = array_merge($defaultArgs, $args);
         $posts = get_posts($queryArgs);
         $members = [];
-        
+
         if (!empty($posts)) {
             foreach ($posts as $post) {
                 $member = $this->find($post->ID);
@@ -72,24 +72,45 @@ class TsmlMemberRepository implements MemberRepositoryInterface
                 }
             }
         }
-        
+
         return $members;
     }
 
     /**
+     * Get total count of members matching criteria
+     *
+     * @param array $args Query arguments
+     * @return int Total count
+     */
+    public function count(array $args = []): int
+    {
+        $defaultArgs = [
+            'post_type' => TsmlMemberFields::MEMBER_POST_TYPE,
+            'numberposts' => -1,
+            'post_status' => 'publish',
+            'fields' => 'ids'
+        ];
+
+        $queryArgs = array_merge($defaultArgs, $args);
+        $posts = get_posts($queryArgs);
+
+        return is_array($posts) ? count($posts) : 0;
+    }
+
+    /**
      * Save member data
-     * 
+     *
      * @param MemberInterface $member
      * @return bool
      */
     public function save(MemberInterface $member): bool
     {
         $id = $member->getId();
-        
+
         if (!update_field(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $member->getAnonymousName(), $id)) {
             return false;
         }
-        
+
         update_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $member->getEmail(), $id);
         update_field(TsmlMemberFields::FIELD_SHOW_ANONYMOUS_NAME, $member->showAnonymousName(), $id);
         update_field(TsmlMemberFields::FIELD_SHOW_MEMBER_PROFILE, $member->showMemberProfile(), $id);
@@ -101,13 +122,13 @@ class TsmlMemberRepository implements MemberRepositoryInterface
         update_field(TsmlMemberFields::FIELD_MEETING_PO, $member->getMeetingPO(), $id);
         update_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $member->getPersonalEmail(), $id);
         update_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $member->getMobileNumber(), $id);
-        
+
         return true;
     }
 
     /**
      * Delete a member
-     * 
+     *
      * @param int $id
      * @return bool
      */
