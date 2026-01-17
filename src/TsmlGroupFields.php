@@ -18,9 +18,19 @@ final class TsmlGroupFields
     public const GROUP_POST_TYPE = 'home-group';
 
     /**
+     * Group title field
+     */
+    public const TITLE = 'group-title';
+
+    /**
      * Email field
      */
     public const EMAIL = 'email';
+
+    /**
+     * Meeting field (for storing associated meeting IDs)
+     */
+    public const MEETING = 'meeting';
 
     /**
      * Group notes field
