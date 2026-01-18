@@ -17,6 +17,7 @@ class Plugin
     private static ?TsmlMeetingFactory $meetingFactory = null;
     private static ?TsmlGroupFactory $groupFactory = null;
     private static ?TsmlLocationFactory $locationFactory = null;
+    private static ?TsmlMemberFactory $memberFactory = null;
     private static ?ContactFactoryInterface $contactFactory = null;
 
     /**
@@ -205,6 +206,15 @@ class Plugin
 
         // Register member repository if Unity's member interfaces are available
         if (self::unityMembersAvailable()) {
+            // Register member factory
+            $container->register(
+                'Unity\\Members\\Interfaces\\MemberFactoryInterface',
+                function ($container) {
+                    return new TsmlMemberFactory();
+                }
+            );
+
+            // Register member repository
             $container->register(
                 'Unity\\Members\\Interfaces\\MemberRepositoryInterface',
                 function ($container) {
@@ -313,6 +323,24 @@ class Plugin
     }
 
     /**
+     * Get the TsmlMemberFactory instance
+     *
+     * @return TsmlMemberFactory|null Returns null if Unity members are not available
+     */
+    public static function getMemberFactory(): ?TsmlMemberFactory
+    {
+        if (!self::unityMembersAvailable()) {
+            return null;
+        }
+
+        if (self::$memberFactory === null) {
+            self::$memberFactory = new TsmlMemberFactory();
+        }
+
+        return self::$memberFactory;
+    }
+
+    /**
      * Reset factory instances (useful for testing)
      *
      * @return void
@@ -322,6 +350,7 @@ class Plugin
         self::$meetingFactory = null;
         self::$groupFactory = null;
         self::$locationFactory = null;
+        self::$memberFactory = null;
         self::$contactFactory = null;
     }
 }
