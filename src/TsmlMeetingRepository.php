@@ -109,9 +109,6 @@ class TsmlMeetingRepository implements MeetingRepositoryInterface
             'compare' => '=',
         ];
 
-        // Debug logging
-        error_log("TsmlMeetingRepository::findByDay - Day: $day, Args: " . print_r($args, true));
-
         return $this->findAll($args);
     }
 
@@ -120,20 +117,14 @@ class TsmlMeetingRepository implements MeetingRepositoryInterface
      */
     public function findOnline(array $args = []): array
     {
-        error_log("TsmlMeetingRepository::findOnline called");
-
         // Get all meetings matching the other criteria
         $allMeetings = $this->findAll($args);
-
-        error_log("TsmlMeetingRepository::findOnline - Got " . count($allMeetings) . " total meetings");
 
         // Filter to only online meetings using the Meeting's isOnline() method
         // This handles all the different ways TSML can mark a meeting as online
         $onlineMeetings = array_filter($allMeetings, function($meeting) {
             return $meeting->isOnline();
         });
-
-        error_log("TsmlMeetingRepository::findOnline - Filtered to " . count($onlineMeetings) . " online meetings");
 
         return array_values($onlineMeetings);
     }
@@ -143,19 +134,13 @@ class TsmlMeetingRepository implements MeetingRepositoryInterface
      */
     public function findInPerson(array $args = []): array
     {
-        error_log("TsmlMeetingRepository::findInPerson called");
-
         // Get all meetings matching the other criteria
         $allMeetings = $this->findAll($args);
-
-        error_log("TsmlMeetingRepository::findInPerson - Got " . count($allMeetings) . " total meetings");
 
         // Filter to only in-person meetings (NOT online)
         $inPersonMeetings = array_filter($allMeetings, function($meeting) {
             return !$meeting->isOnline();
         });
-
-        error_log("TsmlMeetingRepository::findInPerson - Filtered to " . count($inPersonMeetings) . " in-person meetings");
 
         return array_values($inPersonMeetings);
     }

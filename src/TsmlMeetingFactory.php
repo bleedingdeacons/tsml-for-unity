@@ -243,46 +243,21 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
 
             $online = $this->getMeetingField($source, 'attendance_option') === 'online';
 
-            // Get types from taxonomy (TSML stores types in tsml_type taxonomy)
+            // Get types from serialized 'types' meta field (TSML stores types as serialized array of codes)
             $types = [];
-            if (function_exists('wp_get_post_terms')) {
-                error_log("TsmlMeetingFactory - Attempting to get terms for meeting ID: {$id}");
-                $typeTerms = wp_get_post_terms($id, 'tsml_type', ['fields' => 'all']);
-                error_log("TsmlMeetingFactory - wp_get_post_terms result: " . print_r($typeTerms, true));
-
-                if (is_wp_error($typeTerms)) {
-                    error_log("TsmlMeetingFactory - Error getting terms: " . $typeTerms->get_error_message());
-                } elseif (is_array($typeTerms) && !empty($typeTerms)) {
-                    error_log("TsmlMeetingFactory - Found " . count($typeTerms) . " type terms");
-                    foreach ($typeTerms as $term) {
-                        $types[] = $term->name;
-                        error_log("TsmlMeetingFactory - Added type: {$term->name}");
-                    }
-                } else {
-                    error_log("TsmlMeetingFactory - No type terms found for meeting {$id}");
-                }
-            } else {
-                error_log("TsmlMeetingFactory - wp_get_post_terms function not available!");
-            }
-
-            // Also check serialized 'types' meta field (TSML stores types as serialized array of codes)
             if (function_exists('get_post_meta')) {
                 $typesMetaRaw = get_post_meta($id, 'types', true);
-                error_log("TsmlMeetingFactory - types meta (raw): " . print_r($typesMetaRaw, true));
 
                 if (!empty($typesMetaRaw) && is_array($typesMetaRaw)) {
-                    error_log("TsmlMeetingFactory - Found " . count($typesMetaRaw) . " type codes in meta");
                     // Check if 'ONL' (Online) code is present
                     if (in_array('ONL', $typesMetaRaw, true)) {
                         $online = true;
-                        error_log("TsmlMeetingFactory - Meeting {$id} marked as ONLINE due to 'ONL' code in types meta");
                     }
 
                     // Convert type codes to full names using the TYPES_LOOKUP map
                     foreach ($typesMetaRaw as $typeCode) {
                         if (isset(self::TYPES_LOOKUP[$typeCode])) {
                             $types[] = self::TYPES_LOOKUP[$typeCode];
-                            error_log("TsmlMeetingFactory - Converted type code '{$typeCode}' to '" . self::TYPES_LOOKUP[$typeCode] . "'");
                         }
                     }
                 }
@@ -290,7 +265,6 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
 
             // Also check if types are in the source array (for compatibility)
             if (isset($source['types']) && is_array($source['types'])) {
-                error_log("TsmlMeetingFactory - Found types in source array: " . print_r($source['types'], true));
                 $types = array_merge($types, $source['types']);
                 $types = array_unique($types);
             }
@@ -299,19 +273,12 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
                 $types = $this->formatMeetingTypes($types);
             }
 
-            // Debug logging
-            error_log("TsmlMeetingFactory - Meeting ID: {$id}, Types before check: " . print_r($types, true));
-
             // Check if 'Online' type exists (before we remove it from the array)
             $key = array_search('Online', $types);
-            error_log("TsmlMeetingFactory - Searching for 'Online' in types, key: " . var_export($key, true));
             if ($key !== false) {
                 $online = true;  // If 'Online' type exists, mark as online
-                error_log("TsmlMeetingFactory - Meeting ID: {$id} marked as ONLINE due to 'Online' type");
                 unset($types[$key]);
                 $types = array_values($types);
-            } else {
-                error_log("TsmlMeetingFactory - Meeting ID: {$id} online status: " . ($online ? 'YES' : 'NO') . " (from attendance_option)");
             }
 
             if (!function_exists('get_post_custom')) {
