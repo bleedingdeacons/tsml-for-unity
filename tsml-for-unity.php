@@ -6,9 +6,9 @@ declare(strict_types=1);
  * Plugin Name: TSML for Unity
  * Plugin URI: https://github.com/bleeding-deacons/tsml-for-unity
  * Description: Integrates 12 Step Meeting List (TSML) with the Unity plugin, providing meeting, group & location support.
- * Version: 1.2.1
- * Requires at least: 6.0
- * Requires PHP: 8.0
+ * Version: 1.1.0
+ * Requires at least: 5.0
+ * Requires PHP: 7.4
  * Author: The Bleeding Deacons
  * Author URI: thebleedingdeacons@gmail.com
  * License: MIT (Modified)
@@ -50,6 +50,30 @@ spl_autoload_register(function ($class) {
         error_log('TSML for Unity Autoloader Fatal Error: ' . $e->getMessage());
     }
 });
+
+// Register TSML taxonomies
+add_action('init', function () {
+    // Register Meeting Types taxonomy
+    register_taxonomy('tsml_type', 'tsml_meeting', [
+        'labels' => [
+            'name' => __('Meeting Types', 'tsml-for-unity'),
+            'singular_name' => __('Meeting Type', 'tsml-for-unity'),
+            'search_items' => __('Search Meeting Types', 'tsml-for-unity'),
+            'all_items' => __('All Meeting Types', 'tsml-for-unity'),
+            'edit_item' => __('Edit Meeting Type', 'tsml-for-unity'),
+            'update_item' => __('Update Meeting Type', 'tsml-for-unity'),
+            'add_new_item' => __('Add New Meeting Type', 'tsml-for-unity'),
+            'new_item_name' => __('New Meeting Type Name', 'tsml-for-unity'),
+            'menu_name' => __('Meeting Types', 'tsml-for-unity'),
+        ],
+        'hierarchical' => false,
+        'show_ui' => true,
+        'show_admin_column' => true,
+        'query_var' => true,
+        'rewrite' => ['slug' => 'meeting-type'],
+        'show_in_rest' => true,
+    ]);
+}, 0); // Priority 0 to ensure it runs early
 
 /**
  * Get the TSML Meeting Factory instance

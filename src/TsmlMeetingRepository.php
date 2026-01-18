@@ -97,11 +97,20 @@ class TsmlMeetingRepository implements MeetingRepositoryInterface
     public function findByDay(int $day, array $args = []): array
     {
         $args['meta_query'] = $args['meta_query'] ?? [];
+
+        // Set relation to AND if there are multiple meta queries
+        if (!empty($args['meta_query']) && !isset($args['meta_query']['relation'])) {
+            $args['meta_query']['relation'] = 'AND';
+        }
+
         $args['meta_query'][] = [
             'key' => 'day',
-            'value' => $day,
+            'value' => (string) $day,  // WordPress stores meta values as strings
             'compare' => '=',
         ];
+
+        // Debug logging
+        error_log("TsmlMeetingRepository::findByDay - Day: $day, Args: " . print_r($args, true));
 
         return $this->findAll($args);
     }
@@ -111,14 +120,22 @@ class TsmlMeetingRepository implements MeetingRepositoryInterface
      */
     public function findOnline(array $args = []): array
     {
-        $args['meta_query'] = $args['meta_query'] ?? [];
-        $args['meta_query'][] = [
-            'key' => 'attendance_option',
-            'value' => 'online',
-            'compare' => '=',
-        ];
+        error_log("TsmlMeetingRepository::findOnline called");
 
-        return $this->findAll($args);
+        // Get all meetings matching the other criteria
+        $allMeetings = $this->findAll($args);
+
+        error_log("TsmlMeetingRepository::findOnline - Got " . count($allMeetings) . " total meetings");
+
+        // Filter to only online meetings using the Meeting's isOnline() method
+        // This handles all the different ways TSML can mark a meeting as online
+        $onlineMeetings = array_filter($allMeetings, function($meeting) {
+            return $meeting->isOnline();
+        });
+
+        error_log("TsmlMeetingRepository::findOnline - Filtered to " . count($onlineMeetings) . " online meetings");
+
+        return array_values($onlineMeetings);
     }
 
     /**
@@ -126,14 +143,21 @@ class TsmlMeetingRepository implements MeetingRepositoryInterface
      */
     public function findInPerson(array $args = []): array
     {
-        $args['meta_query'] = $args['meta_query'] ?? [];
-        $args['meta_query'][] = [
-            'key' => 'attendance_option',
-            'value' => 'in_person',
-            'compare' => '=',
-        ];
+        error_log("TsmlMeetingRepository::findInPerson called");
 
-        return $this->findAll($args);
+        // Get all meetings matching the other criteria
+        $allMeetings = $this->findAll($args);
+
+        error_log("TsmlMeetingRepository::findInPerson - Got " . count($allMeetings) . " total meetings");
+
+        // Filter to only in-person meetings (NOT online)
+        $inPersonMeetings = array_filter($allMeetings, function($meeting) {
+            return !$meeting->isOnline();
+        });
+
+        error_log("TsmlMeetingRepository::findInPerson - Filtered to " . count($inPersonMeetings) . " in-person meetings");
+
+        return array_values($inPersonMeetings);
     }
 
     /**
