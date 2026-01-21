@@ -44,7 +44,7 @@ class TsmlMemberFactory implements MemberFactoryInterface
             $homeGroupId = (int) $homeGroupField;
         }
 
-        return new Member(
+        return new TsmlMember(
             $id,
             get_field(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $id) ?? '',
             get_the_title($id) ?? '',

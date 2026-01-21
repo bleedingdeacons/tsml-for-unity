@@ -40,7 +40,7 @@ class TsmlLocationFactory implements LocationFactoryInterface
         $region = $this->getRegion($sourceId);
         $meetingIds = $this->getMeetingIdsForLocation($sourceId);
 
-        return new Location(
+        return new TsmlLocation(
             id: $sourceId,
             name: $post->post_title ?? '',
             address: $this->getMetaField($meta, TsmlLocationFields::ADDRESS, ''),

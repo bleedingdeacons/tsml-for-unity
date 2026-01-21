@@ -293,7 +293,7 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
             $onlineLink = $this->getMetaField($meta, 'conference_url', '');
             $onlineNotes = $this->getMetaField($meta, 'conference_url_notes', '');
 
-            return new Meeting(
+            return new TsmlMeeting(
                 $id,
                 $name,
                 $slug,

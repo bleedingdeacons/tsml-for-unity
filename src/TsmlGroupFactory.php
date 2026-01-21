@@ -107,7 +107,7 @@ class TsmlGroupFactory implements GroupFactoryInterface
         $meetings = $this->getMeetingsForGroup($sourceId);
         $link = $this->getPermalink($sourceId);
 
-        return new Group(
+        return new TsmlGroup(
             id: $sourceId,
             title: $post->post_name ?? '',
             email: $this->getMetaField($meta, TsmlGroupFields::EMAIL, ''),
