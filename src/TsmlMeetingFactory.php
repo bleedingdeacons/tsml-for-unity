@@ -182,10 +182,7 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
      */
     private function getLocationRepository(): ?LocationRepositoryInterface
     {
-        if ($this->locationRepository === null && Plugin::unityLocationsAvailable()) {
-            $this->locationRepository = new TsmlLocationRepository();
-        }
-        return $this->locationRepository;
+       return $this->locationRepository;
     }
 
     /**

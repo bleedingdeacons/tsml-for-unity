@@ -80,21 +80,6 @@ class TsmlGroupFactory implements GroupFactoryInterface
      */
     private function getMeetingRepository(): ?MeetingRepositoryInterface
     {
-        if ($this->meetingRepository === null) {
-            // Try to get repository from Unity container if available
-            if (class_exists('\Unity\Plugin') && method_exists('\Unity\Plugin', 'getContainer')) {
-                try {
-                    $container = \Unity\Plugin::getContainer();
-                    if ($container && $container->has(MeetingRepositoryInterface::class)) {
-                        $this->meetingRepository = $container->get(MeetingRepositoryInterface::class);
-                    }
-                } catch (\Exception $e) {
-                    // Repository not available from container
-                    $this->logError('MeetingRepository not available from container: ' . $e->getMessage());
-                }
-            }
-        }
-
         return $this->meetingRepository;
     }
 
