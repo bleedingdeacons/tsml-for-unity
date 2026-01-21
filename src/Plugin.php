@@ -227,8 +227,17 @@ class Plugin
             );
         }
 
-        // Register position repository if Unity's position interfaces are available
+        // Register position factory and repository if Unity's position interfaces are available
         if (self::unityPositionsAvailable()) {
+            // Register position factory
+            $container->register(
+                'Unity\\Positions\\Interfaces\\PositionFactoryInterface',
+                function ($container) {
+                    return new TsmlPositionFactory();
+                }
+            );
+
+            // Register position repository
             $container->register(
                 'Unity\\Positions\\Interfaces\\PositionRepositoryInterface',
                 function ($container) {
@@ -263,7 +272,7 @@ class Plugin
                         $locationRepository = $container->get('Unity\\Locations\\Interfaces\\LocationRepositoryInterface');
                     }
                 } catch (\Exception $e) {
-                    // LocationRepository not available, will be null
+                    error_log($e->getMessage());
                 }
             }
 
@@ -294,7 +303,7 @@ class Plugin
                         $meetingRepository = $container->get('Unity\\Meetings\\Interfaces\\MeetingRepositoryInterface');
                     }
                 } catch (\Exception $e) {
-                    // MeetingRepository not available, will be null
+                    error_log($e->getMessage());
                 }
             }
 
