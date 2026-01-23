@@ -27,10 +27,8 @@ class Plugin
      */
     public static function unityIsAvailable(): bool
     {
-        return interface_exists('Unity\\Meetings\\Interfaces\\MeetingFactoryInterface')
-            && interface_exists('Unity\\Meetings\\Interfaces\\MeetingInterface')
-            && class_exists('Unity\\Meetings\\Meeting')
-            && interface_exists('Unity\\Contact\\Interfaces\\ContactInterface');
+        return class_exists('Unity\\Core\\DependencyContainer')
+            && class_exists('Unity\\Core\\UnityServiceProvider');
     }
 
     /**
@@ -94,6 +92,33 @@ class Plugin
             && interface_exists('Unity\\Positions\\Interfaces\\PositionRepositoryInterface')
             && class_exists('Unity\\Positions\\Position');
     }
+
+    /**
+     * Check if Unity's position view interfaces are available
+     *
+     * @return bool
+     */
+    public static function unityPositionViewsAvailable(): bool
+    {
+        return interface_exists('Unity\\Positions\\Interfaces\\PositionViewFactoryInterface')
+            && interface_exists('Unity\\Positions\\Interfaces\\PositionViewInterface')
+            && self::unityPositionsAvailable()
+            && self::unityMembersAvailable();
+    }
+
+    /**
+     * Check if Unity's group view interfaces are available
+     *
+     * @return bool
+     */
+    public static function unityGroupViewsAvailable(): bool
+    {
+        return interface_exists('Unity\\Groups\\Interfaces\\GroupViewFactoryInterface')
+            && interface_exists('Unity\\Groups\\Interfaces\\GroupViewInterface')
+            && class_exists('Unity\\Groups\\GroupView')
+            && self::unityGroupsAvailable();
+    }
+
 
     /**
      * Get or create the ContactFactory instance
@@ -249,6 +274,11 @@ class Plugin
                 }
             );
         }
+
+        // Note: PositionViewFactory and GroupViewFactory are not overridden here.
+        // Unity's built-in factories will be used, which will work with the TSML
+        // implementations of PositionRepository, MemberRepository, GroupRepository,
+        // and MeetingRepository that are registered above.
     }
 
     /**
