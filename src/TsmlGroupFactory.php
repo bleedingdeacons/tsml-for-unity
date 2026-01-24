@@ -109,7 +109,7 @@ class TsmlGroupFactory implements GroupFactoryInterface
 
         return new TsmlGroup(
             id: $sourceId,
-            title: $post->post_name ?? '',
+            title: $post->post_title ?? '',
             email: $this->getMetaField($meta, TsmlGroupFields::EMAIL, ''),
             meetings: $meetings,
             link: $link,
