@@ -18,6 +18,7 @@ class Plugin
     private static ?TsmlGroupFactory $groupFactory = null;
     private static ?TsmlLocationFactory $locationFactory = null;
     private static ?TsmlMemberFactory $memberFactory = null;
+    private static ?TsmlIntergroupMeetingFactory $intergroupMeetingFactory = null;
     private static ?ContactFactoryInterface $contactFactory = null;
 
     /**
@@ -91,6 +92,19 @@ class Plugin
             && interface_exists('Unity\\Positions\\Interfaces\\PositionInterface')
             && interface_exists('Unity\\Positions\\Interfaces\\PositionRepositoryInterface')
             && class_exists('Unity\\Positions\\Position');
+    }
+
+    /**
+     * Check if Unity's intergroup meeting interfaces are available
+     *
+     * @return bool
+     */
+    public static function unityIntergroupMeetingsAvailable(): bool
+    {
+        return interface_exists('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingFactoryInterface')
+            && interface_exists('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingInterface')
+            && interface_exists('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingRepositoryInterface')
+            && class_exists('Unity\\IntergroupMeetings\\IntergroupMeeting');
     }
 
     /**
@@ -275,6 +289,29 @@ class Plugin
             );
         }
 
+        // Register intergroup meeting factory and repository if Unity's intergroup meeting interfaces are available
+        if (self::unityIntergroupMeetingsAvailable()) {
+            // Register intergroup meeting factory
+            $container->register(
+                'Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingFactoryInterface',
+                function ($container) {
+                    return new TsmlIntergroupMeetingFactory();
+                }
+            );
+
+            // Register intergroup meeting repository
+            $container->register(
+                'Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingRepositoryInterface',
+                function ($container) {
+                    $intergroupMeetingFactory = $container->has('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingFactoryInterface')
+                        ? $container->get('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingFactoryInterface')
+                        : null;
+
+                    return new TsmlIntergroupMeetingRepository($intergroupMeetingFactory);
+                }
+            );
+        }
+
         // Note: PositionViewFactory and GroupViewFactory are not overridden here.
         // Unity's built-in factories will be used, which will work with the TSML
         // implementations of PositionRepository, MemberRepository, GroupRepository,
@@ -380,6 +417,24 @@ class Plugin
     }
 
     /**
+     * Get the TsmlIntergroupMeetingFactory instance
+     *
+     * @return TsmlIntergroupMeetingFactory|null Returns null if Unity intergroup meetings are not available
+     */
+    public static function getIntergroupMeetingFactory(): ?TsmlIntergroupMeetingFactory
+    {
+        if (!self::unityIntergroupMeetingsAvailable()) {
+            return null;
+        }
+
+        if (self::$intergroupMeetingFactory === null) {
+            self::$intergroupMeetingFactory = new TsmlIntergroupMeetingFactory();
+        }
+
+        return self::$intergroupMeetingFactory;
+    }
+
+    /**
      * Reset factory instances (useful for testing)
      *
      * @return void
@@ -390,6 +445,7 @@ class Plugin
         self::$groupFactory = null;
         self::$locationFactory = null;
         self::$memberFactory = null;
+        self::$intergroupMeetingFactory = null;
         self::$contactFactory = null;
     }
 }
