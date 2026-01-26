@@ -44,6 +44,23 @@ class TsmlMemberFactory implements MemberFactoryInterface
             $homeGroupId = (int) $homeGroupField;
         }
 
+        // Handle intergroup position field (ACF post object field)
+        $intergroupPositionField = get_field(TsmlMemberFields::FIELD_INTERGROUP_POSITION, $id);
+        $intergroupPositionId = 0;
+
+        if ($intergroupPositionField instanceof \WP_Post) {
+            $intergroupPositionId = $intergroupPositionField->ID;
+        } elseif (is_array($intergroupPositionField) && !empty($intergroupPositionField)) {
+            $firstItem = $intergroupPositionField[0];
+            if ($firstItem instanceof \WP_Post) {
+                $intergroupPositionId = $firstItem->ID;
+            } elseif (is_numeric($firstItem)) {
+                $intergroupPositionId = (int) $firstItem;
+            }
+        } elseif (is_numeric($intergroupPositionField)) {
+            $intergroupPositionId = (int) $intergroupPositionField;
+        }
+
         return new TsmlMember(
             $id,
             get_field(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $id) ?? '',
@@ -52,7 +69,7 @@ class TsmlMemberFactory implements MemberFactoryInterface
             (bool) (get_field(TsmlMemberFields::FIELD_SHOW_ANONYMOUS_NAME, $id) ?? false),
             (bool) (get_field(TsmlMemberFields::FIELD_SHOW_MEMBER_PROFILE, $id) ?? false),
             get_field(TsmlMemberFields::FIELD_ANONYMOUS_PROFILE, $id) ?? '',
-            (int) (get_field(TsmlMemberFields::FIELD_INTERGROUP_POSITION, $id) ?? 0),
+            $intergroupPositionId,
             get_field(TsmlMemberFields::FIELD_INTERGROUP_POSITION_ROTATION, $id) ?? '',
             $homeGroupId,
             (bool) (get_field(TsmlMemberFields::FIELD_HOMEGROUP_GSR, $id) ?? false),
