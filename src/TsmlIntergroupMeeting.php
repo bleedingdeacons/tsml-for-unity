@@ -16,7 +16,12 @@ class TsmlIntergroupMeeting implements IntergroupMeetingInterface
     /**
      * @var array<int>
      */
-    private array $attendees;
+    private array $groupAttendees;
+
+    /**
+     * @var array<int>
+     */
+    private array $officersAttending;
 
     private string $date;
 
@@ -24,16 +29,19 @@ class TsmlIntergroupMeeting implements IntergroupMeetingInterface
      * TsmlIntergroupMeeting constructor
      *
      * @param int $id Post ID
-     * @param array<int> $attendees Array of member IDs
+     * @param array<int> $groupAttendees Array of member IDs
+     * @param array<int> $officersAttending Array of officer IDs
      * @param string $date Meeting date (Y-m-d format)
      */
     public function __construct(
         int $id,
-        array $attendees = [],
+        array $groupAttendees = [],
+        array $officersAttending = [],
         string $date = ''
     ) {
         $this->id = $id;
-        $this->attendees = $attendees;
+        $this->groupAttendees = $groupAttendees;
+        $this->officersAttending = $officersAttending;
         $this->date = $date;
     }
 
@@ -52,9 +60,19 @@ class TsmlIntergroupMeeting implements IntergroupMeetingInterface
      *
      * @return array<int>
      */
-    public function getAttendees(): array
+    public function getGroupAttendees(): array
     {
-        return $this->attendees;
+        return $this->groupAttendees;
+    }
+
+    /**
+     * Get the array of officer IDs attending the meeting
+     *
+     * @return array<int>
+     */
+    public function getOfficersAttending(): array
+    {
+        return $this->officersAttending;
     }
 
     /**

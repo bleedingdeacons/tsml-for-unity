@@ -25,7 +25,10 @@ class TsmlIntergroupMeetingFactory implements IntergroupMeetingFactoryInterface
     public function createFromSource(int $id): IntergroupMeetingInterface
     {
         $attendeesField = get_field(TsmlIntergroupMeetingFields::FIELD_ATTENDEES, $id);
-        $attendees = $this->parseAttendees($attendeesField);
+        $attendees = $this->parsePostIds($attendeesField);
+
+        $officersField = get_field(TsmlIntergroupMeetingFields::FIELD_ATTENDING_OFFICERS, $id);
+        $officers = $this->parsePostIds($officersField);
 
         $dateField = get_field(TsmlIntergroupMeetingFields::FIELD_DATE, $id);
         $date = is_string($dateField) ? $dateField : '';
@@ -33,30 +36,31 @@ class TsmlIntergroupMeetingFactory implements IntergroupMeetingFactoryInterface
         return new TsmlIntergroupMeeting(
             $id,
             $attendees,
+            $officers,
             $date
         );
     }
 
     /**
-     * Parse the attendees field into an array of member IDs
+     * Parse a field into an array of post IDs
      *
-     * @param mixed $attendeesField The raw attendees field value from ACF
-     * @return array<int> Array of member IDs
+     * @param mixed $field The raw field value from ACF
+     * @return array<int> Array of post IDs
      */
-    private function parseAttendees($attendeesField): array
+    private function parsePostIds($field): array
     {
-        $attendees = [];
+        $ids = [];
 
-        if (is_array($attendeesField)) {
-            foreach ($attendeesField as $item) {
+        if (is_array($field)) {
+            foreach ($field as $item) {
                 if ($item instanceof \WP_Post) {
-                    $attendees[] = $item->ID;
+                    $ids[] = $item->ID;
                 } elseif (is_numeric($item)) {
-                    $attendees[] = (int) $item;
+                    $ids[] = (int) $item;
                 }
             }
         }
 
-        return $attendees;
+        return $ids;
     }
 }

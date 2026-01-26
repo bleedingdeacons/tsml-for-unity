@@ -129,7 +129,8 @@ class TsmlIntergroupMeetingRepository implements IntergroupMeetingRepositoryInte
     {
         $id = $intergroupMeeting->getId();
 
-        update_field(TsmlIntergroupMeetingFields::FIELD_ATTENDEES, $intergroupMeeting->getAttendees(), $id);
+        update_field(TsmlIntergroupMeetingFields::FIELD_ATTENDEES, $intergroupMeeting->getGroupAttendees(), $id);
+        update_field(TsmlIntergroupMeetingFields::FIELD_ATTENDING_OFFICERS, $intergroupMeeting->getOfficersAttending(), $id);
         update_field(TsmlIntergroupMeetingFields::FIELD_DATE, $intergroupMeeting->getDate(), $id);
 
         return true;
