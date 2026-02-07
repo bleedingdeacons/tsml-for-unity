@@ -107,10 +107,7 @@ class TsmlMemberRepository implements MemberRepositoryInterface
     {
         $id = $member->getId();
 
-        if (!update_field(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $member->getAnonymousName(), $id)) {
-            return false;
-        }
-
+        update_field(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $member->getAnonymousName(), $id);
         update_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $member->getEmail(), $id);
         update_field(TsmlMemberFields::FIELD_SHOW_ANONYMOUS_NAME, $member->showAnonymousName(), $id);
         update_field(TsmlMemberFields::FIELD_SHOW_MEMBER_PROFILE, $member->showMemberProfile(), $id);
