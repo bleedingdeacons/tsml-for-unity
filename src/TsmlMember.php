@@ -86,10 +86,10 @@ class TsmlMember implements MemberInterface
         return $this->anonymousName;
     }
 
-    public function getPrivateName(): string
-    {
-        return $this->privateName;
-    }
+//    public function getPrivateName(): string
+//    {
+//        return $this->privateName;
+//    }
 
     public function getEmail(): string
     {
