@@ -6,6 +6,9 @@ namespace TsmlForUnity;
 
 use Unity\Contact\ContactFactory;
 use Unity\Contact\Interfaces\ContactFactoryInterface;
+use Unity\Members\MemberChangeTracker;
+use Unity\Positions\Interfaces\PositionViewFactoryInterface;
+use Unity\Positions\PositionChangeTracker;
 
 /**
  * Main Plugin Class
@@ -264,6 +267,18 @@ class Plugin
                     return new TsmlMemberRepository($memberFactory);
                 }
             );
+
+            // Register MemberChangeTracker (overrides Unity's stub)
+            $container->register(
+                MemberChangeTracker::class,
+                function ($container) {
+                    $memberRepository = $container->has('Unity\\Members\\Interfaces\\MemberRepositoryInterface')
+                        ? $container->get('Unity\\Members\\Interfaces\\MemberRepositoryInterface')
+                        : null;
+
+                    return new TsmlMemberChangeTracker($memberRepository);
+                }
+            );
         }
 
         // Register position factory and repository if Unity's position interfaces are available
@@ -287,6 +302,36 @@ class Plugin
                     return new TsmlPositionRepository($positionFactory);
                 }
             );
+
+            // Register PositionChangeTracker (overrides Unity's stub)
+            $container->register(
+                PositionChangeTracker::class,
+                function ($container) {
+                    $positionRepository = $container->has('Unity\\Positions\\Interfaces\\PositionRepositoryInterface')
+                        ? $container->get('Unity\\Positions\\Interfaces\\PositionRepositoryInterface')
+                        : null;
+
+                    return new TsmlPositionChangeTracker($positionRepository);
+                }
+            );
+
+            // Register PositionViewFactory (overrides Unity's stub)
+            if (self::unityPositionViewsAvailable()) {
+                $container->register(
+                    PositionViewFactoryInterface::class,
+                    function ($container) {
+                        $positionRepository = $container->has('Unity\\Positions\\Interfaces\\PositionRepositoryInterface')
+                            ? $container->get('Unity\\Positions\\Interfaces\\PositionRepositoryInterface')
+                            : null;
+
+                        $memberRepository = $container->has('Unity\\Members\\Interfaces\\MemberRepositoryInterface')
+                            ? $container->get('Unity\\Members\\Interfaces\\MemberRepositoryInterface')
+                            : null;
+
+                        return new TsmlPositionViewFactory($positionRepository, $memberRepository);
+                    }
+                );
+            }
         }
 
         // Register intergroup meeting factory and repository if Unity's intergroup meeting interfaces are available
@@ -312,10 +357,9 @@ class Plugin
             );
         }
 
-        // Note: PositionViewFactory and GroupViewFactory are not overridden here.
-        // Unity's built-in factories will be used, which will work with the TSML
-        // implementations of PositionRepository, MemberRepository, GroupRepository,
-        // and MeetingRepository that are registered above.
+        // Note: GroupViewFactory is not overridden here.
+        // Unity's built-in factory will be used, which will work with the TSML
+        // implementations of GroupRepository and MeetingRepository registered above.
     }
 
     /**

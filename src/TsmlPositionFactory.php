@@ -7,7 +7,6 @@ namespace TsmlForUnity;
 use Unity\Positions\Interfaces\PositionFactoryInterface;
 use Unity\Positions\Interfaces\PositionInterface;
 use Unity\Positions\Position;
-use Unity\Positions\PositionFields;
 use function get_fields;
 use function get_permalink;
 use function get_post;
@@ -24,7 +23,7 @@ class TsmlPositionFactory implements PositionFactoryInterface
     {
         $post = get_post($sourceId);
 
-        if (!$post || $post->post_type !== PositionFields::POSITION_POST_TYPE) {
+        if (!$post || $post->post_type !== TsmlPositionFields::POSITION_POST_TYPE) {
             return null;
         }
 
@@ -35,24 +34,24 @@ class TsmlPositionFactory implements PositionFactoryInterface
         }
 
         $acfData = array_merge([
-            PositionFields::MINIMUM_SOBRIETY => 6,
-            PositionFields::TERM_YEARS => 1,
-            PositionFields::EMAIL_ADDRESS => '',
-            PositionFields::LONG_NAME => '',
-            PositionFields::SHORT_DESCRIPTION => '',
-            PositionFields::SUMMARY => '',
+            TsmlPositionFields::MINIMUM_SOBRIETY => 6,
+            TsmlPositionFields::TERM_YEARS => 1,
+            TsmlPositionFields::EMAIL_ADDRESS => '',
+            TsmlPositionFields::LONG_NAME => '',
+            TsmlPositionFields::SHORT_DESCRIPTION => '',
+            TsmlPositionFields::SUMMARY => '',
         ], $acfData);
 
         $link = get_permalink($sourceId) ?: '';
 
         return new Position(
             $sourceId,
-            (int) $acfData[PositionFields::MINIMUM_SOBRIETY],
-            (int) $acfData[PositionFields::TERM_YEARS],
-            (string) $acfData[PositionFields::EMAIL_ADDRESS],
-            (string) $acfData[PositionFields::LONG_NAME],
-            (string) $acfData[PositionFields::SHORT_DESCRIPTION],
-            (string) $acfData[PositionFields::SUMMARY],
+            (int) $acfData[TsmlPositionFields::MINIMUM_SOBRIETY],
+            (int) $acfData[TsmlPositionFields::TERM_YEARS],
+            (string) $acfData[TsmlPositionFields::EMAIL_ADDRESS],
+            (string) $acfData[TsmlPositionFields::LONG_NAME],
+            (string) $acfData[TsmlPositionFields::SHORT_DESCRIPTION],
+            (string) $acfData[TsmlPositionFields::SUMMARY],
             $link
         );
     }
