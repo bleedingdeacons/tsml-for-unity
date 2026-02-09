@@ -51,36 +51,6 @@ spl_autoload_register(function ($class) {
     }
 });
 
-/**
- * Get the TSML Meeting Factory instance
- *
- * @return \TsmlForUnity\TsmlMeetingFactory|null Returns null if Unity is not available
- */
-function tsml_for_unity_meeting_factory(): ?\TsmlForUnity\TsmlMeetingFactory
-{
-    return \TsmlForUnity\Plugin::getMeetingFactory();
-}
-
-/**
- * Get the TSML Group Factory instance
- *
- * @return \TsmlForUnity\TsmlGroupFactory|null Returns null if Unity groups are not available
- */
-function tsml_for_unity_group_factory(): ?\TsmlForUnity\TsmlGroupFactory
-{
-    return \TsmlForUnity\Plugin::getGroupFactory();
-}
-
-/**
- * Get the TSML Location Factory instance
- *
- * @return \TsmlForUnity\TsmlLocationFactory|null Returns null if Unity locations are not available
- */
-function tsml_for_unity_location_factory(): ?\TsmlForUnity\TsmlLocationFactory
-{
-    return \TsmlForUnity\Plugin::getLocationFactory();
-}
-
 // Initialize the plugin after Unity is fully loaded
 add_action('unity_loaded', function ($container) {
     try {

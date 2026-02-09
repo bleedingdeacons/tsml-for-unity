@@ -1,0 +1,57 @@
+<?php
+
+declare(strict_types=1);
+
+namespace TsmlForUnity\Contacts;
+
+use Unity\Contact\Interfaces\ContactInterface;
+
+/**
+ * Class TsmlContact
+ *
+ * Represents a single contact.
+ */
+class TsmlContact implements ContactInterface
+{
+    private string $name;
+    private string $email;
+    private string $phone;
+
+    /**
+     * Constructor.
+     *
+     * @param string $name The contact's name.
+     * @param string $email The contact's email address.
+     * @param string $phone The contact's phone number.
+     */
+    public function __construct(string $name = '', string $email = '', string $phone = '')
+    {
+        $this->name = $name;
+        $this->email = $email;
+        $this->phone = $phone;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getEmail(): string
+    {
+        return $this->email;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getPhone(): string
+    {
+        return $this->phone;
+    }
+}

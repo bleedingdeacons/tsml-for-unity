@@ -4,7 +4,24 @@ declare(strict_types=1);
 
 namespace TsmlForUnity;
 
-use Unity\Contact\ContactFactory;
+use TsmlForUnity\Contacts\TsmlContactFactory;
+use TsmlForUnity\Groups\TsmlGroupChangeTracker;
+use TsmlForUnity\Groups\TsmlGroupFactory;
+use TsmlForUnity\Groups\TsmlGroupRepository;
+use TsmlForUnity\Groups\TsmlGroupViewFactory;
+use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFactory;
+use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingRepository;
+use TsmlForUnity\Locations\TsmlLocationFactory;
+use TsmlForUnity\Locations\TsmlLocationRepository;
+use TsmlForUnity\Meetings\TsmlMeetingFactory;
+use TsmlForUnity\Meetings\TsmlMeetingRepository;
+use TsmlForUnity\Members\TsmlMemberFactory;
+use TsmlForUnity\Members\TsmlMemberRepository;
+use TsmlForUnity\Members\TsmlMemberChangeTracker;
+use TsmlForUnity\Positions\TsmlPositionFactory;
+use TsmlForUnity\Positions\TsmlPositionRepository;
+use TsmlForUnity\Positions\TsmlPositionChangeTracker;
+use TsmlForUnity\Positions\TsmlPositionViewFactory;
 use Unity\Contact\Interfaces\ContactFactoryInterface;
 use Unity\Groups\Interfaces\GroupChangeTrackerInterface;
 use Unity\Members\Interfaces\MemberChangeTrackerInterface;
@@ -33,7 +50,8 @@ class Plugin
     public static function unityIsAvailable(): bool
     {
         return class_exists('Unity\\Core\\DependencyContainer')
-            && class_exists('Unity\\Core\\UnityServiceProvider');
+            && class_exists('Unity\\Core\\UnityServiceProvider')
+            && class_exists('Unity\\Core\\UnityConfiguration');
     }
 
     /**
@@ -44,8 +62,7 @@ class Plugin
     public static function unityGroupsAvailable(): bool
     {
         return interface_exists('Unity\\Groups\\Interfaces\\GroupFactoryInterface')
-            && interface_exists('Unity\\Groups\\Interfaces\\GroupInterface')
-            && class_exists('Unity\\Groups\\Group');
+            && interface_exists('Unity\\Groups\\Interfaces\\GroupInterface');
     }
 
     /**
@@ -56,8 +73,7 @@ class Plugin
     public static function unityLocationsAvailable(): bool
     {
         return interface_exists('Unity\\Locations\\Interfaces\\LocationFactoryInterface')
-            && interface_exists('Unity\\Locations\\Interfaces\\LocationInterface')
-            && class_exists('Unity\\Locations\\Location');
+            && interface_exists('Unity\\Locations\\Interfaces\\LocationInterface');
     }
 
     /**
@@ -68,8 +84,7 @@ class Plugin
     public static function unityContactsAvailable(): bool
     {
         return interface_exists('Unity\\Contact\\Interfaces\\ContactFactoryInterface')
-            && interface_exists('Unity\\Contact\\Interfaces\\ContactInterface')
-            && class_exists('Unity\\Contact\\Contact');
+            && interface_exists('Unity\\Contact\\Interfaces\\ContactInterface');
     }
 
     /**
@@ -81,8 +96,7 @@ class Plugin
     {
         return interface_exists('Unity\\Members\\Interfaces\\MemberFactoryInterface')
             && interface_exists('Unity\\Members\\Interfaces\\MemberInterface')
-            && interface_exists('Unity\\Members\\Interfaces\\MemberRepositoryInterface')
-            && class_exists('Unity\\Members\\Member');
+            && interface_exists('Unity\\Members\\Interfaces\\MemberRepositoryInterface');
     }
 
     /**
@@ -94,8 +108,7 @@ class Plugin
     {
         return interface_exists('Unity\\Positions\\Interfaces\\PositionFactoryInterface')
             && interface_exists('Unity\\Positions\\Interfaces\\PositionInterface')
-            && interface_exists('Unity\\Positions\\Interfaces\\PositionRepositoryInterface')
-            && class_exists('Unity\\Positions\\Position');
+            && interface_exists('Unity\\Positions\\Interfaces\\PositionRepositoryInterface');
     }
 
     /**
@@ -107,8 +120,18 @@ class Plugin
     {
         return interface_exists('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingFactoryInterface')
             && interface_exists('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingInterface')
-            && interface_exists('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingRepositoryInterface')
-            && class_exists('Unity\\IntergroupMeetings\\IntergroupMeeting');
+            && interface_exists('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingRepositoryInterface');
+    }
+    /**
+     * Check if Unity's intergroup meeting interfaces are available
+     *
+     * @return bool
+     */
+    public static function unityMeetingsAvailable(): bool
+    {
+        return interface_exists('Unity\\Meetings\\Interfaces\\MeetingFactoryInterface')
+            && interface_exists('Unity\\Meetings\\Interfaces\\MeetingInterface')
+            && interface_exists('Unity\\Meetings\\Interfaces\\MeetingRepositoryInterface');
     }
 
     /**
@@ -133,22 +156,7 @@ class Plugin
     {
         return interface_exists('Unity\\Groups\\Interfaces\\GroupViewFactoryInterface')
             && interface_exists('Unity\\Groups\\Interfaces\\GroupViewInterface')
-            && class_exists('Unity\\Groups\\GroupView')
             && self::unityGroupsAvailable();
-    }
-
-
-    /**
-     * Get or create the ContactFactory instance
-     *
-     * @return ContactFactoryInterface
-     */
-    private static function getContactFactory(): ContactFactoryInterface
-    {
-        if (self::$contactFactory === null) {
-            self::$contactFactory = new ContactFactory();
-        }
-        return self::$contactFactory;
     }
 
     /**
@@ -163,46 +171,86 @@ class Plugin
             return;
         }
 
-        // Register meeting factory
-        $container->register(
-            'Unity\\Meetings\\Interfaces\\MeetingFactoryInterface',
-            function ($container) {
-                $contactFactory = $container->has('Unity\\Contact\\Interfaces\\ContactFactoryInterface')
-                    ? $container->get('Unity\\Contact\\Interfaces\\ContactFactoryInterface')
-                    : new ContactFactory();
+        // Register Contact Dependencies
+        if (self::unityContactsAvailable()) {
+            // Register Contact Factory
+            $container->register(
+                'Unity\\Contact\\Interfaces\\ContactFactoryInterface',
+                function ($container) {
+                    return new TsmlContactFactory();
+                }
+            );
+        }
 
-                $locationRepository = $container->has('Unity\\Locations\\Interfaces\\LocationRepositoryInterface')
-                    ? $container->get('Unity\\Locations\\Interfaces\\LocationRepositoryInterface')
-                    : null;
+        // Register Location Dependencies
+        if (self::unityLocationsAvailable()) {
 
-                return new TsmlMeetingFactory($contactFactory, $locationRepository);
-            }
-        );
+            // Register Location Factory
+            $container->register(
+                'Unity\\Locations\\Interfaces\\LocationFactoryInterface',
+                function ($container) {
+                    return new TsmlLocationFactory();
+                }
+            );
 
-        // Register meeting repository
-        $container->register(
-            'Unity\\Meetings\\Interfaces\\MeetingRepositoryInterface',
-            function ($container) {
-                $meetingFactory = $container->has('Unity\\Meetings\\Interfaces\\MeetingFactoryInterface')
-                    ? $container->get('Unity\\Meetings\\Interfaces\\MeetingFactoryInterface')
-                    : null;
+            // Register Location Repository
+            $container->register(
+                'Unity\\Locations\\Interfaces\\LocationRepositoryInterface',
+                function ($container) {
+                    $locationFactory = $container->has('Unity\\Locations\\Interfaces\\LocationFactoryInterface')
+                        ? $container->get('Unity\\Locations\\Interfaces\\LocationFactoryInterface')
+                        : null;
 
-                $cache = $container->has('Unity\\Common\\Interfaces\\CacheInterface')
-                    ? $container->get('Unity\\Common\\Interfaces\\CacheInterface')
-                    : null;
+                    return new TsmlLocationRepository($locationFactory);
+                }
+            );
+        }
 
-                return new TsmlMeetingRepository($meetingFactory, $cache);
-            }
-        );
+        // Register Meeting Dependencies
+        if (self::unityMeetingsAvailable()) {
 
-        // Register group factory if Unity's group interfaces are available
+            // Register Meeting Factory
+            $container->register(
+                'Unity\\Meetings\\Interfaces\\MeetingFactoryInterface',
+                function ($container) {
+                    $contactFactory = $container->has('Unity\\Contact\\Interfaces\\ContactFactoryInterface')
+                        ? $container->get('Unity\\Contact\\Interfaces\\ContactFactoryInterface')
+                        : null;
+                    $locationRepository = $container->has('Unity\\Locations\\Interfaces\\LocationRepositoryInterface')
+                        ? $container->get('Unity\\Locations\\Interfaces\\LocationRepositoryInterface')
+                        : null;
+
+                    return new TsmlMeetingFactory($contactFactory, $locationRepository);
+                }
+            );
+
+            // Register Meeting Repository
+            $container->register(
+                'Unity\\Meetings\\Interfaces\\MeetingRepositoryInterface',
+                function ($container) {
+                    $meetingFactory = $container->has('Unity\\Meetings\\Interfaces\\MeetingFactoryInterface')
+                        ? $container->get('Unity\\Meetings\\Interfaces\\MeetingFactoryInterface')
+                        : null;
+
+                    $cache = $container->has('Unity\\Common\\Interfaces\\CacheInterface')
+                        ? $container->get('Unity\\Common\\Interfaces\\CacheInterface')
+                        : null;
+
+                    return new TsmlMeetingRepository($meetingFactory, $cache);
+                }
+            );
+        }
+
+        // Register Group Dependencies
         if (self::unityGroupsAvailable()) {
+
+            // Register Group Factory
             $container->register(
                 'Unity\\Groups\\Interfaces\\GroupFactoryInterface',
                 function ($container) {
                     $contactFactory = $container->has('Unity\\Contact\\Interfaces\\ContactFactoryInterface')
                         ? $container->get('Unity\\Contact\\Interfaces\\ContactFactoryInterface')
-                        : new ContactFactory();
+                        : null;
 
                     $meetingRepository = $container->has('Unity\\Meetings\\Interfaces\\MeetingRepositoryInterface')
                         ? $container->get('Unity\\Meetings\\Interfaces\\MeetingRepositoryInterface')
@@ -212,7 +260,7 @@ class Plugin
                 }
             );
 
-            // Register group repository
+            // Register Group Repository
             $container->register(
                 'Unity\\Groups\\Interfaces\\GroupRepositoryInterface',
                 function ($container) {
@@ -237,29 +285,7 @@ class Plugin
             );
         }
 
-        // Register location factory if Unity's location interfaces are available
-        if (self::unityLocationsAvailable()) {
-            $container->register(
-                'Unity\\Locations\\Interfaces\\LocationFactoryInterface',
-                function ($container) {
-                    return new TsmlLocationFactory();
-                }
-            );
-
-            // Register location repository
-            $container->register(
-                'Unity\\Locations\\Interfaces\\LocationRepositoryInterface',
-                function ($container) {
-                    $locationFactory = $container->has('Unity\\Locations\\Interfaces\\LocationFactoryInterface')
-                        ? $container->get('Unity\\Locations\\Interfaces\\LocationFactoryInterface')
-                        : null;
-
-                    return new TsmlLocationRepository($locationFactory);
-                }
-            );
-        }
-
-        // Register member repository if Unity's member interfaces are available
+        // Register Member Dependencies
         if (self::unityMembersAvailable()) {
             // Register member factory
             $container->register(
@@ -269,7 +295,7 @@ class Plugin
                 }
             );
 
-            // Register member repository
+            // Register Member Repository
             $container->register(
                 'Unity\\Members\\Interfaces\\MemberRepositoryInterface',
                 function ($container) {
@@ -281,7 +307,7 @@ class Plugin
                 }
             );
 
-            // Register MemberChangeTracker (overrides Unity's stub)
+            // Register MemberChangeTracker
             $container->register(
                 MemberChangeTrackerInterface::class,
                 function ($container) {
@@ -294,9 +320,10 @@ class Plugin
             );
         }
 
-        // Register position factory and repository if Unity's position interfaces are available
+        // Register Position Dependencies
         if (self::unityPositionsAvailable()) {
-            // Register position factory
+
+            // Register Position Factory
             $container->register(
                 'Unity\\Positions\\Interfaces\\PositionFactoryInterface',
                 function ($container) {
@@ -304,7 +331,7 @@ class Plugin
                 }
             );
 
-            // Register position repository
+            // Register Position Repository
             $container->register(
                 'Unity\\Positions\\Interfaces\\PositionRepositoryInterface',
                 function ($container) {
@@ -316,7 +343,7 @@ class Plugin
                 }
             );
 
-            // Register PositionChangeTracker (overrides Unity's stub)
+            // Register Position Change Tracker
             $container->register(
                 PositionChangeTrackerInterface::class,
                 function ($container) {
@@ -328,7 +355,7 @@ class Plugin
                 }
             );
 
-            // Register PositionViewFactory (overrides Unity's stub)
+            // Register Position View Factory
             if (self::unityPositionViewsAvailable()) {
                 $container->register(
                     PositionViewFactoryInterface::class,
@@ -349,7 +376,7 @@ class Plugin
 
         // Register intergroup meeting factory and repository if Unity's intergroup meeting interfaces are available
         if (self::unityIntergroupMeetingsAvailable()) {
-            // Register intergroup meeting factory
+            // Register Intergroup Meeting Factory
             $container->register(
                 'Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingFactoryInterface',
                 function ($container) {
@@ -370,139 +397,22 @@ class Plugin
             );
         }
 
-        // Note: GroupViewFactory is not overridden here.
-        // Unity's built-in factory will be used, which will work with the TSML
-        // implementations of GroupRepository and MeetingRepository registered above.
-    }
+        // Register GroupViewFactory
+        if (self::unityGroupViewsAvailable()) {
+            $container->register(
+                'Unity\\Groups\\Interfaces\\GroupViewFactoryInterface',
+                function ($container) {
+                    $groupRepository = $container->has('Unity\\Groups\\Interfaces\\GroupRepositoryInterface')
+                        ? $container->get('Unity\\Groups\\Interfaces\\GroupRepositoryInterface')
+                        : null;
 
-    /**
-     * Get the TsmlMeetingFactory instance
-     *
-     * @return TsmlMeetingFactory|null Returns null if Unity is not available
-     */
-    public static function getMeetingFactory(): ?TsmlMeetingFactory
-    {
-        if (!self::unityIsAvailable()) {
-            return null;
-        }
+                    $meetingRepository = $container->has('Unity\\Meetings\\Interfaces\\MeetingRepositoryInterface')
+                        ? $container->get('Unity\\Meetings\\Interfaces\\MeetingRepositoryInterface')
+                        : null;
 
-        if (self::$meetingFactory === null) {
-            // Try to get LocationRepository from Unity container if available
-            $locationRepository = null;
-            if (class_exists('\\Unity\\Plugin') && method_exists('\\Unity\\Plugin', 'getContainer')) {
-                try {
-                    $container = \Unity\Plugin::getContainer();
-                    if ($container && $container->has('Unity\\Locations\\Interfaces\\LocationRepositoryInterface')) {
-                        $locationRepository = $container->get('Unity\\Locations\\Interfaces\\LocationRepositoryInterface');
-                    }
-                } catch (\Exception $e) {
-                    error_log($e->getMessage());
+                    return new TsmlGroupViewFactory($groupRepository, $meetingRepository);
                 }
-            }
-
-            self::$meetingFactory = new TsmlMeetingFactory(self::getContactFactory(), $locationRepository);
+            );
         }
-
-        return self::$meetingFactory;
-    }
-
-    /**
-     * Get the TsmlGroupFactory instance
-     *
-     * @return TsmlGroupFactory|null Returns null if Unity groups are not available
-     */
-    public static function getGroupFactory(): ?TsmlGroupFactory
-    {
-        if (!self::unityGroupsAvailable()) {
-            return null;
-        }
-
-        if (self::$groupFactory === null) {
-            // Try to get MeetingRepository from Unity container if available
-            $meetingRepository = null;
-            if (class_exists('\\Unity\\Plugin') && method_exists('\\Unity\\Plugin', 'getContainer')) {
-                try {
-                    $container = \Unity\Plugin::getContainer();
-                    if ($container && $container->has('Unity\\Meetings\\Interfaces\\MeetingRepositoryInterface')) {
-                        $meetingRepository = $container->get('Unity\\Meetings\\Interfaces\\MeetingRepositoryInterface');
-                    }
-                } catch (\Exception $e) {
-                    error_log($e->getMessage());
-                }
-            }
-
-            self::$groupFactory = new TsmlGroupFactory(self::getContactFactory(), $meetingRepository);
-        }
-
-        return self::$groupFactory;
-    }
-
-    /**
-     * Get the TsmlLocationFactory instance
-     *
-     * @return TsmlLocationFactory|null Returns null if Unity locations are not available
-     */
-    public static function getLocationFactory(): ?TsmlLocationFactory
-    {
-        if (!self::unityLocationsAvailable()) {
-            return null;
-        }
-
-        if (self::$locationFactory === null) {
-            self::$locationFactory = new TsmlLocationFactory();
-        }
-
-        return self::$locationFactory;
-    }
-
-    /**
-     * Get the TsmlMemberFactory instance
-     *
-     * @return TsmlMemberFactory|null Returns null if Unity members are not available
-     */
-    public static function getMemberFactory(): ?TsmlMemberFactory
-    {
-        if (!self::unityMembersAvailable()) {
-            return null;
-        }
-
-        if (self::$memberFactory === null) {
-            self::$memberFactory = new TsmlMemberFactory();
-        }
-
-        return self::$memberFactory;
-    }
-
-    /**
-     * Get the TsmlIntergroupMeetingFactory instance
-     *
-     * @return TsmlIntergroupMeetingFactory|null Returns null if Unity intergroup meetings are not available
-     */
-    public static function getIntergroupMeetingFactory(): ?TsmlIntergroupMeetingFactory
-    {
-        if (!self::unityIntergroupMeetingsAvailable()) {
-            return null;
-        }
-
-        if (self::$intergroupMeetingFactory === null) {
-            self::$intergroupMeetingFactory = new TsmlIntergroupMeetingFactory();
-        }
-
-        return self::$intergroupMeetingFactory;
-    }
-
-    /**
-     * Reset factory instances (useful for testing)
-     *
-     * @return void
-     */
-    public static function reset(): void
-    {
-        self::$meetingFactory = null;
-        self::$groupFactory = null;
-        self::$locationFactory = null;
-        self::$memberFactory = null;
-        self::$intergroupMeetingFactory = null;
-        self::$contactFactory = null;
     }
 }

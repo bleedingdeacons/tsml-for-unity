@@ -13,21 +13,21 @@ use Unity\Groups\Interfaces\GroupInterface;
 use WP_Mock;
 
 /**
- * Mock Unity Contact interfaces and classes for testing
+ * Mock Unity TsmlContact interfaces and classes for testing
  */
 if (!interface_exists('Unity\\Contact\\Interfaces\\ContactInterface')) {
-    eval('namespace Unity\\Contact\\Interfaces; interface ContactInterface { public function getName(): string; public function getEmail(): string; public function getPhone(): string; }');
+    eval('namespace Unity\\TsmlContact\\Interfaces; interface ContactInterface { public function getName(): string; public function getEmail(): string; public function getPhone(): string; }');
 }
 
 if (!interface_exists('Unity\\Contact\\Interfaces\\ContactFactoryInterface')) {
-    eval('namespace Unity\\Contact\\Interfaces; interface ContactFactoryInterface { public function createFromSource(array $source): ContactInterface; public function create(string $name = "", string $email = "", string $phone = ""): ContactInterface; }');
+    eval('namespace Unity\\TsmlContact\\Interfaces; interface ContactFactoryInterface { public function createFromSource(array $source): ContactInterface; public function create(string $name = "", string $email = "", string $phone = ""): ContactInterface; }');
 }
 
-if (!class_exists('Unity\\Contact\\Contact')) {
+if (!class_exists('Unity\\TsmlContact\\TsmlContact')) {
     eval('
-    namespace Unity\\Contact;
+    namespace Unity\\TsmlContact;
 
-    class Contact implements Interfaces\\ContactInterface {
+    class TsmlContact implements Interfaces\\ContactInterface {
         private string $name;
         private string $email;
         private string $phone;
@@ -45,16 +45,16 @@ if (!class_exists('Unity\\Contact\\Contact')) {
     ');
 }
 
-if (!class_exists('Unity\\Contact\\ContactFactory')) {
+if (!class_exists('Unity\\TsmlContact\\TsmlContactFactory')) {
     eval('
-    namespace Unity\\Contact;
+    namespace Unity\\TsmlContact;
 
-    class ContactFactory implements Interfaces\\ContactFactoryInterface {
+    class TsmlContactFactory implements Interfaces\\ContactFactoryInterface {
         public function createFromSource(array $source): Interfaces\\ContactInterface {
-            return new Contact($source["name"] ?? "", $source["email"] ?? "", $source["phone"] ?? "");
+            return new TsmlContact($source["name"] ?? "", $source["email"] ?? "", $source["phone"] ?? "");
         }
         public function create(string $name = "", string $email = "", string $phone = ""): Interfaces\\ContactInterface {
-            return new Contact($name, $email, $phone);
+            return new TsmlContact($name, $email, $phone);
         }
     }
     ');
@@ -193,7 +193,7 @@ class TsmlGroupFactoryTest extends TestCase
         $post = $this->createMockPost([
             'ID' => $postId,
             'post_type' => TsmlGroupFields::POST_TYPE,
-            'post_title' => 'Multi-Contact Group',
+            'post_title' => 'Multi-TsmlContact Group',
         ]);
 
         $meta = [
@@ -307,7 +307,7 @@ class TsmlGroupFactoryTest extends TestCase
         $post = $this->createMockPost([
             'ID' => $postId,
             'post_type' => TsmlGroupFields::POST_TYPE,
-            'post_title' => 'Partial Contact Group',
+            'post_title' => 'Partial TsmlContact Group',
         ]);
 
         $meta = [
