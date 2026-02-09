@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Positions;
 
-use Unity\Positions\Interfaces\PositionViewInterface;
+use Unity\Positions\Interfaces\PositionView;
 
 /**
  * PositionViewCollection
@@ -18,7 +18,7 @@ class TsmlPositionViewCollection
     /**
      * Constructor
      * 
-     * @param array $views Array of PositionViewInterface objects
+     * @param array $views Array of PositionView objects
      */
     public function __construct(array $views = [])
     {
@@ -32,7 +32,7 @@ class TsmlPositionViewCollection
      */
     public function getFilledPositions(): TsmlPositionViewCollection
     {
-        return $this->filter(function (PositionViewInterface $view) {
+        return $this->filter(function (PositionView $view) {
             return !$view->isVacant();
         });
     }
@@ -44,7 +44,7 @@ class TsmlPositionViewCollection
      */
     public function getVacantPositions(): TsmlPositionViewCollection
     {
-        return $this->filter(function (PositionViewInterface $view) {
+        return $this->filter(function (PositionView $view) {
             return $view->isVacant();
         });
     }
@@ -57,7 +57,7 @@ class TsmlPositionViewCollection
      */
     public function getPositionsRotatingSoon(int $days = 30): TsmlPositionViewCollection
     {
-        return $this->filter(function (PositionViewInterface $view) use ($days) {
+        return $this->filter(function (PositionView $view) use ($days) {
             $daysUntil = $view->getDaysUntilRotation();
             return $daysUntil !== null && $daysUntil <= $days && $daysUntil > 0;
         });
@@ -70,7 +70,7 @@ class TsmlPositionViewCollection
      */
     public function getOverduePositions(): TsmlPositionViewCollection
     {
-        return $this->filter(function (PositionViewInterface $view) {
+        return $this->filter(function (PositionView $view) {
             $daysUntil = $view->getDaysUntilRotation();
             return $daysUntil !== null && $daysUntil === 0;
         });
@@ -86,7 +86,7 @@ class TsmlPositionViewCollection
     {
         $views = $this->views;
 
-        usort($views, function (PositionViewInterface $a, PositionViewInterface $b) use ($ascending) {
+        usort($views, function (PositionView $a, PositionView $b) use ($ascending) {
             $daysA = $a->getDaysUntilRotation();
             $daysB = $b->getDaysUntilRotation();
 
@@ -118,7 +118,7 @@ class TsmlPositionViewCollection
     {
         $views = $this->views;
 
-        usort($views, function (PositionViewInterface $a, PositionViewInterface $b) use ($ascending) {
+        usort($views, function (PositionView $a, PositionView $b) use ($ascending) {
             $nameA = $a->getPosition()->getLongName();
             $nameB = $b->getPosition()->getLongName();
 
@@ -139,7 +139,7 @@ class TsmlPositionViewCollection
     {
         $views = $this->views;
 
-        usort($views, function (PositionViewInterface $a, PositionViewInterface $b) use ($ascending) {
+        usort($views, function (PositionView $a, PositionView $b) use ($ascending) {
             $titleA = $a->getTitle() ?? '';
             $titleB = $b->getTitle() ?? '';
 
@@ -160,7 +160,7 @@ class TsmlPositionViewCollection
     {
         $views = $this->views;
 
-        usort($views, function (PositionViewInterface $a, PositionViewInterface $b) use ($ascending) {
+        usort($views, function (PositionView $a, PositionView $b) use ($ascending) {
             $emailA = $a->getPositionEmail() ?? '';
             $emailB = $b->getPositionEmail() ?? '';
 
@@ -185,7 +185,7 @@ class TsmlPositionViewCollection
     /**
      * Get all position views in the collection
      * 
-     * @return array Array of PositionViewInterface objects
+     * @return array Array of PositionView objects
      */
     public function getAll(): array
     {

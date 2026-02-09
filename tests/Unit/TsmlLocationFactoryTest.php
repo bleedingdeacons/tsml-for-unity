@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 use TsmlForUnity\TsmlLocationFactory;
 use TsmlForUnity\TsmlLocationFields;
 use Unity\Locations\Location;
-use Unity\Locations\Interfaces\LocationInterface;
+use Unity\Locations\Interfaces\Location;
 use WP_Mock;
 
 /**
@@ -123,7 +123,7 @@ class TsmlLocationFactoryTest extends TestCase
         $result = $this->factory->createFromSource($postId);
 
         $this->assertInstanceOf(Location::class, $result);
-        $this->assertInstanceOf(LocationInterface::class, $result);
+        $this->assertInstanceOf(Location::class, $result);
         $this->assertEquals($postId, $result->getId());
         $this->assertEquals('Community Center', $result->getName());
         $this->assertEquals('123 Main Street', $result->getAddress());

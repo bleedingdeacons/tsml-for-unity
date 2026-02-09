@@ -7,16 +7,16 @@ namespace TsmlForUnity\Tests\Unit;
 use PHPUnit\Framework\TestCase;
 use TsmlForUnity\TsmlMemberFactory;
 use TsmlForUnity\TsmlMemberFields;
-use Unity\Members\Interfaces\MemberInterface;
+use Unity\Members\Interfaces\Member;
 use Unity\Members\Member;
 use WP_Mock;
 
 /**
  * Mock Unity Member interfaces and classes for testing
  */
-if (!interface_exists('Unity\\Members\\Interfaces\\MemberInterface')) {
+if (!interface_exists('Unity\\Members\\Interfaces\\Member')) {
     eval('namespace Unity\\Members\\Interfaces; 
-    interface MemberInterface { 
+    interface Member { 
         public function getId(): int;
         public function getAnonymousName(): string;
         public function getPrivateName(): string;
@@ -34,10 +34,10 @@ if (!interface_exists('Unity\\Members\\Interfaces\\MemberInterface')) {
     }');
 }
 
-if (!interface_exists('Unity\\Members\\Interfaces\\MemberFactoryInterface')) {
+if (!interface_exists('Unity\\Members\\Interfaces\\MemberFactory')) {
     eval('namespace Unity\\Members\\Interfaces; 
-    interface MemberFactoryInterface { 
-        public function createFromSource(int $id): MemberInterface; 
+    interface MemberFactory { 
+        public function createFromSource(int $id): Member; 
     }');
 }
 
@@ -45,7 +45,7 @@ if (!class_exists('Unity\\Members\\Member')) {
     eval('
     namespace Unity\\Members;
 
-    class Member implements Interfaces\\MemberInterface {
+    class Member implements Interfaces\\Member {
         private int $id;
         private string $anonymousName;
         private string $privateName;
@@ -189,7 +189,7 @@ class TsmlMemberFactoryTest extends TestCase
 
         $member = $this->factory->createFromSource($postId);
 
-        $this->assertInstanceOf(MemberInterface::class, $member);
+        $this->assertInstanceOf(Member::class, $member);
         $this->assertSame($postId, $member->getId());
         $this->assertSame('John D.', $member->getAnonymousName());
         $this->assertSame('John Doe', $member->getPrivateName());
@@ -351,7 +351,7 @@ class TsmlMemberFactoryTest extends TestCase
 
         $member = $this->factory->createFromSource($postId);
 
-        $this->assertInstanceOf(MemberInterface::class, $member);
+        $this->assertInstanceOf(Member::class, $member);
         $this->assertSame($postId, $member->getId());
         $this->assertSame('', $member->getAnonymousName());
         $this->assertSame('', $member->getPrivateName());

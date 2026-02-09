@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Members;
 
-use Unity\Members\Interfaces\MemberFactoryInterface;
-use Unity\Members\Interfaces\MemberInterface;
-use Unity\Members\Member;
+use Unity\Members\Interfaces\MemberFactory;
+use Unity\Members\Interfaces\Member;
 use function get_field;
 use function get_the_title;
 
@@ -16,15 +15,15 @@ use function get_the_title;
  * Factory class for creating Member objects from TSML data.
  * This implementation uses TsmlMemberFields constants for field names.
  */
-class TsmlMemberFactory implements MemberFactoryInterface
+class TsmlMemberFactory implements MemberFactory
 {
     /**
      * Create a new Member instance from a WordPress post ID
      *
      * @param int $id WordPress post ID
-     * @return MemberInterface
+     * @return Member
      */
-    public function createFromSource(int $id): MemberInterface
+    public function createFromSource(int $id): Member
     {
         $homeGroupField = get_field(TsmlMemberFields::FIELD_HOME_GROUP, $id);
         $homeGroupId = 0;

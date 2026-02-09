@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace TsmlForUnity\Contacts;
+namespace TsmlForUnity\Interfaces\Contact;
 
-use Unity\Contact\Interfaces\ContactInterface;
+use Unity\Contacts\Interfaces\Contact;
 
 /**
  * Class TsmlContact
  *
  * Represents a single contact.
  */
-class TsmlContact implements ContactInterface
+class TsmlContact implements Contact
 {
     private string $name;
     private string $email;

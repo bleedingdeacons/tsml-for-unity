@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace TsmlForUnity\Positions;
 
 use TsmlForUnity\Members\TsmlMemberFields;
-use Unity\Members\Interfaces\MemberInterface;
-use Unity\Members\Interfaces\MemberRepositoryInterface;
-use Unity\Positions\Interfaces\PositionRepositoryInterface;
-use Unity\Positions\Interfaces\PositionViewFactoryInterface;
-use Unity\Positions\Interfaces\PositionViewInterface;
+use Unity\Members\Interfaces\Member;
+use Unity\Members\Interfaces\MemberRepository;
+use Unity\Positions\Interfaces\PositionRepository;
+use Unity\Positions\Interfaces\PositionViewFactory;
+use Unity\Positions\Interfaces\PositionView;
 use DateTime;
 use Exception;
 
@@ -18,20 +18,20 @@ use Exception;
  *
  * Creates PositionView objects by combining position and member data.
  */
-class TsmlPositionViewFactory implements PositionViewFactoryInterface
+class TsmlPositionViewFactory implements PositionViewFactory
 {
-    private PositionRepositoryInterface $positionRepository;
-    private MemberRepositoryInterface $memberRepository;
+    private PositionRepository $positionRepository;
+    private MemberRepository $memberRepository;
 
     /**
      * Constructor
      *
-     * @param PositionRepositoryInterface $positionRepository Position repository
-     * @param MemberRepositoryInterface $memberRepository Member repository
+     * @param PositionRepository $positionRepository Position repository
+     * @param MemberRepository $memberRepository Member repository
      */
     public function __construct(
-        PositionRepositoryInterface $positionRepository,
-        MemberRepositoryInterface $memberRepository
+        PositionRepository $positionRepository,
+        MemberRepository $memberRepository
     ) {
         $this->positionRepository = $positionRepository;
         $this->memberRepository = $memberRepository;
@@ -40,7 +40,7 @@ class TsmlPositionViewFactory implements PositionViewFactoryInterface
     /**
      * {@inheritdoc}
      */
-    public function createFrom(int $positionId): ?PositionViewInterface
+    public function createFrom(int $positionId): ?PositionView
     {
         $position = $this->positionRepository->findById($positionId);
 
@@ -90,7 +90,7 @@ class TsmlPositionViewFactory implements PositionViewFactoryInterface
             }
         }
 
-        usort($views, function(PositionViewInterface $a, PositionViewInterface $b) {
+        usort($views, function(PositionView $a, PositionView $b) {
             $titleA = $a->getTitle() ?? '';
             $titleB = $b->getTitle() ?? '';
 
@@ -103,10 +103,10 @@ class TsmlPositionViewFactory implements PositionViewFactoryInterface
     /**
      * Find the member with the latest rotation date from a list of members
      *
-     * @param array $members Array of MemberInterface objects
-     * @return MemberInterface The member with the latest rotation date
+     * @param array $members Array of Member objects
+     * @return Member The member with the latest rotation date
      */
-    private function findMemberWithLatestRotationDate(array $members): MemberInterface
+    private function findMemberWithLatestRotationDate(array $members): Member
     {
         $latestMember = $members[0];
         $latestDate = null;

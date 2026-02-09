@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Positions;
 
-use Unity\Members\Interfaces\MemberInterface;
-use Unity\Positions\Interfaces\PositionInterface;
-use Unity\Positions\Interfaces\PositionViewInterface;
+use Unity\Members\Interfaces\Member;
+use Unity\Positions\Interfaces\Position;
+use Unity\Positions\Interfaces\PositionView;
 use DateTime;
 use Exception;
 
@@ -15,10 +15,10 @@ use Exception;
  * 
  * Combines position and member data
  */
-class TsmlPositionView implements PositionViewInterface
+class TsmlPositionView implements PositionView
 {
-    private PositionInterface $position;
-    private ?MemberInterface $member;
+    private Position $position;
+    private ?Member $member;
     private ?DateTime $rotationDate;
     private ?string $privateEmail;
     private ?string $privateContact;
@@ -27,12 +27,12 @@ class TsmlPositionView implements PositionViewInterface
     /**
      * Constructor
      * 
-     * @param PositionInterface $position The position
-     * @param MemberInterface|null $member The member assigned to the position (if any)
+     * @param Position $position The position
+     * @param Member|null $member The member assigned to the position (if any)
      */
     public function __construct(
-        PositionInterface $position,
-        ?MemberInterface $member = null,
+        Position $position,
+        ?Member $member = null,
     ) {
         $this->position = $position;
         $this->member = $member;
@@ -93,7 +93,7 @@ class TsmlPositionView implements PositionViewInterface
     /**
      * {@inheritdoc}
      */
-    public function getPosition(): PositionInterface
+    public function getPosition(): Position
     {
         return $this->position;
     }
@@ -101,7 +101,7 @@ class TsmlPositionView implements PositionViewInterface
     /**
      * {@inheritdoc}
      */
-    public function getMember(): ?MemberInterface
+    public function getMember(): ?Member
     {
         return $this->member;
     }

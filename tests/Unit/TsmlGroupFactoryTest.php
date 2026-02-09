@@ -9,7 +9,7 @@ use TsmlForUnity\TsmlGroupFactory;
 use TsmlForUnity\TsmlGroupFields;
 use Unity\Contact\Interfaces\ContactInterface;
 use Unity\Groups\Group;
-use Unity\Groups\Interfaces\GroupInterface;
+use Unity\Groups\Interfaces\Group;
 use WP_Mock;
 
 /**
@@ -169,7 +169,7 @@ class TsmlGroupFactoryTest extends TestCase
         $result = $this->factory->createFromSource($postId);
 
         $this->assertInstanceOf(Group::class, $result);
-        $this->assertInstanceOf(GroupInterface::class, $result);
+        $this->assertInstanceOf(Group::class, $result);
         $this->assertEquals($postId, $result->getId());
         $this->assertEquals('Test Group', $result->getTitle());
         $this->assertEquals('group@example.com', $result->getEmail());

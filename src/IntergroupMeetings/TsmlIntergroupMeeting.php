@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\IntergroupMeetings;
 
-use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingInterface;
+use Unity\IntergroupMeetings\Interfaces\IntergroupMeeting;
 
 /**
  * TSML Intergroup Meeting Class
  */
-class TsmlIntergroupMeeting implements IntergroupMeetingInterface
+class TsmlIntergroupMeeting implements IntergroupMeeting
 {
     private int $id;
 

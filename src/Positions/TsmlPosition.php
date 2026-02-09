@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Positions;
 
-use Unity\Positions\Interfaces\PositionInterface;
+use Unity\Positions\Interfaces\Position;
 
 /**
  * Concrete Position class
  */
-class TsmlPosition implements PositionInterface
+class TsmlPosition implements Position
 {
     private int $id;
     private int $minimumSobriety;

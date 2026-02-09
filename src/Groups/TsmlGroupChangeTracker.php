@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace TsmlForUnity\Groups;
 
 use Unity\Core\Interfaces\ConfigurationInterface;
-use Unity\Groups\Interfaces\GroupChangeTrackerInterface;
-use Unity\Groups\Interfaces\GroupInterface;
-use Unity\Groups\Interfaces\GroupRepositoryInterface;
+use Unity\Groups\Interfaces\GroupChangeTracker;
+use Unity\Groups\Interfaces\Group;
+use Unity\Groups\Interfaces\GroupRepository;
 use Exception;
 use function add_action;
 use function do_action;
@@ -22,17 +22,17 @@ use const WP_DEBUG;
  * Tracks changes to groups via ACF and fires the group_changed hook
  * when actual changes are detected.
  */
-class TsmlGroupChangeTracker implements GroupChangeTrackerInterface
+class TsmlGroupChangeTracker implements GroupChangeTracker
 {
-    private static ?GroupInterface $originalGroup = null;
-    private GroupRepositoryInterface $repository;
+    private static ?Group $originalGroup = null;
+    private GroupRepository $repository;
 
     /**
      * Constructor
      *
-     * @param GroupRepositoryInterface $repository Repository for accessing groups
+     * @param GroupRepository $repository Repository for accessing groups
      */
-    public function __construct(GroupRepositoryInterface $repository)
+    public function __construct(GroupRepository $repository)
     {
         $this->repository = $repository;
 
@@ -123,11 +123,11 @@ class TsmlGroupChangeTracker implements GroupChangeTrackerInterface
     /**
      * Check if a group has changed by comparing its properties
      *
-     * @param GroupInterface $originalGroup The original group before changes
-     * @param GroupInterface $updatedGroup The updated group after changes
+     * @param Group $originalGroup The original group before changes
+     * @param Group $updatedGroup The updated group after changes
      * @return bool True if the group has changed, false otherwise
      */
-    private function hasGroupChanged(GroupInterface $originalGroup, GroupInterface $updatedGroup): bool
+    private function hasGroupChanged(Group $originalGroup, Group $updatedGroup): bool
     {
         if ($originalGroup->getTitle() !== $updatedGroup->getTitle()) {
             return true;
@@ -185,10 +185,10 @@ class TsmlGroupChangeTracker implements GroupChangeTrackerInterface
     /**
      * Extract meeting IDs from a group's meetings
      *
-     * @param GroupInterface $group The group to extract meeting IDs from
+     * @param Group $group The group to extract meeting IDs from
      * @return int[] Array of meeting IDs
      */
-    private function getMeetingIds(GroupInterface $group): array
+    private function getMeetingIds(Group $group): array
     {
         $ids = [];
         foreach ($group->getMeetings() as $meeting) {

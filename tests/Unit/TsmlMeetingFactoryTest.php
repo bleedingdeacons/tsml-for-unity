@@ -58,19 +58,19 @@ if (!class_exists('Unity\\TsmlContact\\TsmlContactFactory')) {
 }
 
 // Define mock Unity Meeting interfaces if they don't exist
-if (!interface_exists('Unity\\Meetings\\Interfaces\\MeetingFactoryInterface')) {
-    eval('namespace Unity\\Meetings\\Interfaces; interface MeetingFactoryInterface { public function createFromSource(array $source); }');
+if (!interface_exists('Unity\\Meetings\\Interfaces\\MeetingFactory')) {
+    eval('namespace Unity\\Meetings\\Interfaces; interface MeetingFactory { public function createFromSource(array $source); }');
 }
 
-if (!interface_exists('Unity\\Meetings\\Interfaces\\MeetingInterface')) {
-    eval('namespace Unity\\Meetings\\Interfaces; interface MeetingInterface {}');
+if (!interface_exists('Unity\\Meetings\\Interfaces\\Meeting')) {
+    eval('namespace Unity\\Meetings\\Interfaces; interface Meeting {}');
 }
 
 if (!class_exists('Unity\\Meetings\\Meeting')) {
     eval('
     namespace Unity\\Meetings;
 
-    class Meeting implements Interfaces\\MeetingInterface {
+    class Meeting implements Interfaces\\Meeting {
         private int $id;
         private string $name;
         private string $slug;

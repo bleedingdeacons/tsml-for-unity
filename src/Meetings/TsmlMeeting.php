@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Meetings;
 
-use Unity\Meetings\Interfaces\MeetingInterface;
-use Unity\Locations\Interfaces\LocationInterface;
+use Unity\Meetings\Interfaces\Meeting;
+use Unity\Locations\Interfaces\Location;
 
 /**
  * Class Meeting
  *
- * Implementation of MeetingInterface.
+ * Implementation of Meeting.
  */
-class TsmlMeeting implements MeetingInterface
+class TsmlMeeting implements Meeting
 {
     private int $id;
     private string $name;
     private string $slug;
-    private ?LocationInterface $location;
+    private ?Location $location;
     private string $url;
     private int $day;
     private string $dayOfWeek;
@@ -37,7 +37,7 @@ class TsmlMeeting implements MeetingInterface
      * @param int $id Meeting ID
      * @param string $name Meeting name
      * @param string $slug Meeting slug
-     * @param LocationInterface|null $location Meeting location
+     * @param Location|null $location Meeting location
      * @param string $url Meeting URL
      * @param int $day Meeting day
      * @param string $dayOfWeek Day of the week
@@ -55,7 +55,7 @@ class TsmlMeeting implements MeetingInterface
         int $id,
         string $name,
         string $slug,
-        ?LocationInterface $location,
+        ?Location $location,
         string $url,
         int $day,
         string $dayOfWeek,
@@ -114,7 +114,7 @@ class TsmlMeeting implements MeetingInterface
     /**
      * {@inheritdoc}
      */
-    public function getLocation(): ?LocationInterface
+    public function getLocation(): ?Location
     {
         return $this->location;
     }

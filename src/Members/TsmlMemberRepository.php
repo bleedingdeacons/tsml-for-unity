@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Members;
 
-use Unity\Members\Interfaces\MemberFactoryInterface;
-use Unity\Members\Interfaces\MemberInterface;
-use Unity\Members\Interfaces\MemberRepositoryInterface;
+use Unity\Members\Interfaces\MemberFactory;
+use Unity\Members\Interfaces\Member;
+use Unity\Members\Interfaces\MemberRepository;
 use function get_post;
 use function get_posts;
 use function update_field;
@@ -15,16 +15,16 @@ use function wp_delete_post;
 /**
  * TSML Member Repository
  */
-class TsmlMemberRepository implements MemberRepositoryInterface
+class TsmlMemberRepository implements MemberRepository
 {
-    private MemberFactoryInterface $memberFactory;
+    private MemberFactory $memberFactory;
 
     /**
      * TsmlMemberRepository constructor
      *
-     * @param MemberFactoryInterface $memberFactory
+     * @param MemberFactory $memberFactory
      */
-    public function __construct(MemberFactoryInterface $memberFactory)
+    public function __construct(MemberFactory $memberFactory)
     {
         $this->memberFactory = $memberFactory;
     }
@@ -33,9 +33,9 @@ class TsmlMemberRepository implements MemberRepositoryInterface
      * Find a member by ID
      *
      * @param int $id
-     * @return MemberInterface|null
+     * @return Member|null
      */
-    public function find(int $id): ?MemberInterface
+    public function find(int $id): ?Member
     {
         $post = get_post($id);
 
@@ -50,7 +50,7 @@ class TsmlMemberRepository implements MemberRepositoryInterface
      * Find all members with optional filtering
      *
      * @param array $args Optional get_posts arguments
-     * @return array Array of MemberInterface objects
+     * @return array Array of Member objects
      */
     public function findAll(array $args = []): array
     {
@@ -100,10 +100,10 @@ class TsmlMemberRepository implements MemberRepositoryInterface
     /**
      * Save member data
      *
-     * @param MemberInterface $member
+     * @param Member $member
      * @return bool
      */
-    public function save(MemberInterface $member): bool
+    public function save(Member $member): bool
     {
         $id = $member->getId();
 

@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Groups;
 
-use Unity\Groups\Interfaces\GroupInterface;
+use Unity\Groups\Interfaces\Group;
 use Unity\Contact\Interfaces\ContactInterface;
-use Unity\Meetings\Interfaces\MeetingInterface;
+use Unity\Meetings\Interfaces\Meeting;
 
 /**
  * Class Group
  *
- * Implementation of GroupInterface.
+ * Implementation of Group.
  */
-class TsmlGroup implements GroupInterface
+class TsmlGroup implements Group
 {
     private int $id;
     private string $title;
@@ -36,7 +36,7 @@ class TsmlGroup implements GroupInterface
      * @param int $id Group ID
      * @param string $title Group title
      * @param string $email Group email address
-     * @param MeetingInterface[] $meetings Array of Meeting objects
+     * @param Meeting[] $meetings Array of Meeting objects
      * @param string $link Group link/URL
      * @param string $groupNotes Group notes/description
      * @param string $website Group website URL

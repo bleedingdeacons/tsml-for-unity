@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Locations;
 
-use Unity\Locations\Interfaces\LocationFactoryInterface;
-use Unity\Locations\Interfaces\LocationInterface;
-use Unity\Locations\Interfaces\LocationRepositoryInterface;
+use Unity\Locations\Interfaces\LocationFactory;
+use Unity\Locations\Interfaces\Location;
+use Unity\Locations\Interfaces\LocationRepository;
 use Exception;
 use function get_posts;
 use function wp_parse_args;
@@ -18,9 +18,9 @@ use function wp_parse_args;
  * Save/update/delete operations are not implemented as locations are
  * typically managed by the TSML plugin.
  */
-class TsmlLocationRepository implements LocationRepositoryInterface
+class TsmlLocationRepository implements LocationRepository
 {
-    private LocationFactoryInterface $factory;
+    private LocationFactory $factory;
 
     /**
      * The location post type - uses TSML's location post type
@@ -30,9 +30,9 @@ class TsmlLocationRepository implements LocationRepositoryInterface
     /**
      * TsmlLocationRepository constructor
      *
-     * @param LocationFactoryInterface $factory The location factory
+     * @param LocationFactory $factory The location factory
      */
-    public function __construct(LocationFactoryInterface $factory)
+    public function __construct(LocationFactory $factory)
     {
         $this->factory = $factory;
     }
@@ -40,7 +40,7 @@ class TsmlLocationRepository implements LocationRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function findById(int $id): ?LocationInterface
+    public function findById(int $id): ?Location
     {
         return $this->factory->createFromSource($id);
     }
@@ -107,7 +107,7 @@ class TsmlLocationRepository implements LocationRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function save(LocationInterface $location): bool
+    public function save(Location $location): bool
     {
         throw new Exception('Save is not implemented - locations are managed by the TSML plugin');
     }
@@ -115,7 +115,7 @@ class TsmlLocationRepository implements LocationRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function update(LocationInterface $location): bool
+    public function update(Location $location): bool
     {
         throw new Exception('Update is not implemented - locations are managed by the TSML plugin');
     }

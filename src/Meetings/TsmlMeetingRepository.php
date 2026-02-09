@@ -6,33 +6,33 @@ namespace TsmlForUnity\Meetings;
 
 use TsmlForUnity\Meetings\TsmlMeetingFields;
 
-use Unity\Core\Interfaces\CacheInterface;
-use Unity\Meetings\Interfaces\MeetingFactoryInterface;
-use Unity\Meetings\Interfaces\MeetingInterface;
-use Unity\Meetings\Interfaces\MeetingRepositoryInterface;
+use Unity\Core\Interfaces\Cache;
+use Unity\Meetings\Interfaces\MeetingFactory;
+use Unity\Meetings\Interfaces\Meeting;
+use Unity\Meetings\Interfaces\MeetingRepository;
 
 /**
  * TSML Meeting Repository
  *
  * Repository for retrieving Meeting objects from WordPress.
  */
-class TsmlMeetingRepository implements MeetingRepositoryInterface
+class TsmlMeetingRepository implements MeetingRepository
 {
     private const CACHE_GROUP = 'unity_meetings';
     private const CACHE_TTL = 3600; // 1 hour
 
-    private MeetingFactoryInterface $factory;
-    private ?CacheInterface $cache;
+    private MeetingFactory $factory;
+    private ?Cache $cache;
 
     /**
      * TsmlMeetingRepository constructor.
      *
-     * @param MeetingFactoryInterface $factory Meeting factory
-     * @param CacheInterface|null $cache Optional cache implementation
+     * @param MeetingFactory $factory Meeting factory
+     * @param Cache|null $cache Optional cache implementation
      */
     public function __construct(
-        MeetingFactoryInterface $factory,
-        ?CacheInterface $cache = null
+        MeetingFactory $factory,
+        ?Cache $cache = null
     ) {
         $this->factory = $factory;
         $this->cache = $cache;
@@ -41,7 +41,7 @@ class TsmlMeetingRepository implements MeetingRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function find(int $id): ?MeetingInterface
+    public function find(int $id): ?Meeting
     {
         if ($id <= 0) {
             return null;
@@ -213,9 +213,9 @@ class TsmlMeetingRepository implements MeetingRepositoryInterface
      * Create a Meeting object from a WordPress post.
      *
      * @param \WP_Post $post WordPress post object
-     * @return MeetingInterface|null Meeting object or null if creation fails
+     * @return Meeting|null Meeting object or null if creation fails
      */
-    private function createMeetingFromPost(\WP_Post $post): ?MeetingInterface
+    private function createMeetingFromPost(\WP_Post $post): ?Meeting
     {
         $meta = get_post_meta($post->ID);
 
@@ -240,7 +240,7 @@ class TsmlMeetingRepository implements MeetingRepositoryInterface
      * Create Meeting objects from an array of WordPress posts.
      *
      * @param \WP_Post[] $posts Array of WordPress post objects
-     * @return MeetingInterface[] Array of Meeting objects
+     * @return Meeting[] Array of Meeting objects
      */
     private function createMeetingsFromPosts(array $posts): array
     {

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Members;
 
-use Unity\Members\Interfaces\MemberInterface;
+use Unity\Members\Interfaces\Member;
 
 /**
  * Member Class
  */
-class TsmlMember implements MemberInterface
+class TsmlMember implements Member
 {
     private int $id;
     private string $anonymousName;

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Groups;
 
-use Unity\Groups\Interfaces\GroupFactoryInterface;
-use Unity\Groups\Interfaces\GroupInterface;
-use Unity\Groups\Interfaces\GroupRepositoryInterface;
+use Unity\Groups\Interfaces\GroupFactory;
+use Unity\Groups\Interfaces\Group;
+use Unity\Groups\Interfaces\GroupRepository;
 use Exception;
 use function get_posts;
 use function is_wp_error;
@@ -18,16 +18,16 @@ use function wp_update_post;
 /**
  * TSML Group Repository class
  */
-class TsmlGroupRepository implements GroupRepositoryInterface
+class TsmlGroupRepository implements GroupRepository
 {
-    private GroupFactoryInterface $factory;
+    private GroupFactory $factory;
     
     /**
      * TsmlGroupRepository constructor
      * 
-     * @param GroupFactoryInterface $factory The group factory
+     * @param GroupFactory $factory The group factory
      */
-    public function __construct(GroupFactoryInterface $factory)
+    public function __construct(GroupFactory $factory)
     {
         $this->factory = $factory;
     }
@@ -35,7 +35,7 @@ class TsmlGroupRepository implements GroupRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function findById(int $id): ?GroupInterface
+    public function findById(int $id): ?Group
     {
         return $this->factory->createFromSource($id);
     }
@@ -68,7 +68,7 @@ class TsmlGroupRepository implements GroupRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function save(GroupInterface $group): bool
+    public function save(Group $group): bool
     {
         $postId = $group->getId();
         
@@ -107,7 +107,7 @@ class TsmlGroupRepository implements GroupRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function update(GroupInterface $group): bool
+    public function update(Group $group): bool
     {
         $postId = $group->getId();
         

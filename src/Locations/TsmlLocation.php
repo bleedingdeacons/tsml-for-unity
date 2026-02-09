@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Locations;
 
-use Unity\Locations\Interfaces\LocationInterface;
+use Unity\Locations\Interfaces\Location;
 
 /**
  * Locations entity class
  *
- * Implements LocationInterface with all fields needed for location management
+ * Implements Location with all fields needed for location management
  * including address information and geographic coordinates.
  */
-class TsmlLocation implements LocationInterface
+class TsmlLocation implements Location
 {
     private int $id;
     private string $name;

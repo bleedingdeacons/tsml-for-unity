@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\IntergroupMeetings;
 
-use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingFactoryInterface;
-use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingInterface;
-use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingRepositoryInterface;
+use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingFactory;
+use Unity\IntergroupMeetings\Interfaces\IntergroupMeeting;
+use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingRepository;
 use function get_post;
 use function get_posts;
 use function update_field;
@@ -15,16 +15,16 @@ use function wp_delete_post;
 /**
  * TSML Intergroup Meeting Repository
  */
-class TsmlIntergroupMeetingRepository implements IntergroupMeetingRepositoryInterface
+class TsmlIntergroupMeetingRepository implements IntergroupMeetingRepository
 {
-    private IntergroupMeetingFactoryInterface $intergroupMeetingFactory;
+    private IntergroupMeetingFactory $intergroupMeetingFactory;
 
     /**
      * TsmlIntergroupMeetingRepository constructor
      *
-     * @param IntergroupMeetingFactoryInterface $intergroupMeetingFactory
+     * @param IntergroupMeetingFactory $intergroupMeetingFactory
      */
-    public function __construct(IntergroupMeetingFactoryInterface $intergroupMeetingFactory)
+    public function __construct(IntergroupMeetingFactory $intergroupMeetingFactory)
     {
         $this->intergroupMeetingFactory = $intergroupMeetingFactory;
     }
@@ -33,9 +33,9 @@ class TsmlIntergroupMeetingRepository implements IntergroupMeetingRepositoryInte
      * Find an intergroup meeting by ID
      *
      * @param int $id
-     * @return IntergroupMeetingInterface|null
+     * @return IntergroupMeeting|null
      */
-    public function find(int $id): ?IntergroupMeetingInterface
+    public function find(int $id): ?IntergroupMeeting
     {
         $post = get_post($id);
 
@@ -50,7 +50,7 @@ class TsmlIntergroupMeetingRepository implements IntergroupMeetingRepositoryInte
      * Find all intergroup meetings with optional filtering
      *
      * @param array $args Optional get_posts arguments
-     * @return array<IntergroupMeetingInterface>
+     * @return array<IntergroupMeeting>
      */
     public function findAll(array $args = []): array
     {
@@ -122,10 +122,10 @@ class TsmlIntergroupMeetingRepository implements IntergroupMeetingRepositoryInte
     /**
      * Save intergroup meeting data
      *
-     * @param IntergroupMeetingInterface $intergroupMeeting
+     * @param IntergroupMeeting $intergroupMeeting
      * @return bool
      */
-    public function save(IntergroupMeetingInterface $intergroupMeeting): bool
+    public function save(IntergroupMeeting $intergroupMeeting): bool
     {
         $id = $intergroupMeeting->getId();
 

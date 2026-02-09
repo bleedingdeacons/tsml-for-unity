@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Groups;
 
-use Unity\Groups\Interfaces\GroupViewInterface;
+use Unity\Groups\Interfaces\GroupView;
 
 /**
  * Concrete TSML Group View class
  */
-class TsmlGroupView implements GroupViewInterface
+class TsmlGroupView implements GroupView
 {
     private int $id;
     private string $title;

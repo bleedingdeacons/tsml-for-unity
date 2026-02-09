@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\IntergroupMeetings;
 
-use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingFactoryInterface;
-use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingInterface;
+use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingFactory;
+use Unity\IntergroupMeetings\Interfaces\IntergroupMeeting;
 use function get_field;
 
 /**
@@ -14,15 +14,15 @@ use function get_field;
  * Factory class for creating IntergroupMeeting objects from TSML data.
  * This implementation uses TsmlIntergroupMeetingFields constants for field names.
  */
-class TsmlIntergroupMeetingFactory implements IntergroupMeetingFactoryInterface
+class TsmlIntergroupMeetingFactory implements IntergroupMeetingFactory
 {
     /**
      * Create a new IntergroupMeeting instance from a WordPress post ID
      *
      * @param int $id WordPress post ID
-     * @return IntergroupMeetingInterface
+     * @return IntergroupMeeting
      */
-    public function createFromSource(int $id): IntergroupMeetingInterface
+    public function createFromSource(int $id): IntergroupMeeting
     {
         $attendeesField = get_field(TsmlIntergroupMeetingFields::FIELD_ATTENDEES, $id);
         $attendees = $this->parsePostIds($attendeesField);

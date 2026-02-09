@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Members;
 
-use Unity\Members\Interfaces\MemberChangeTrackerInterface;
-use Unity\Members\Interfaces\MemberInterface;
-use Unity\Members\Interfaces\MemberRepositoryInterface;
+use Unity\Members\Interfaces\MemberChangeTracker;
+use Unity\Members\Interfaces\Member;
+use Unity\Members\Interfaces\MemberRepository;
 use Exception;
 use function add_action;
 use function do_action;
@@ -21,17 +21,17 @@ use const WP_DEBUG;
  * Tracks changes to members via ACF and fires the member_changed hook
  * when actual changes are detected.
  */
-class TsmlMemberChangeTracker implements MemberChangeTrackerInterface
+class TsmlMemberChangeTracker implements MemberChangeTracker
 {
-    private static ?MemberInterface $originalMember = null;
-    private MemberRepositoryInterface $repository;
+    private static ?Member $originalMember = null;
+    private MemberRepository $repository;
 
     /**
      * Constructor
      *
-     * @param MemberRepositoryInterface $repository Repository for accessing members
+     * @param MemberRepository $repository Repository for accessing members
      */
-    public function __construct(MemberRepositoryInterface $repository)
+    public function __construct(MemberRepository $repository)
     {
         $this->repository = $repository;
 
@@ -123,11 +123,11 @@ class TsmlMemberChangeTracker implements MemberChangeTrackerInterface
     /**
      * Check if a member has changed by comparing its properties
      *
-     * @param MemberInterface $originalMember The original member before changes
-     * @param MemberInterface $updatedMember The updated member after changes
+     * @param Member $originalMember The original member before changes
+     * @param Member $updatedMember The updated member after changes
      * @return bool True if the member has changed, false otherwise
      */
-    private function hasMemberChanged(MemberInterface $originalMember, MemberInterface $updatedMember): bool
+    private function hasMemberChanged(Member $originalMember, Member $updatedMember): bool
     {
         if ($originalMember->getAnonymousName() !== $updatedMember->getAnonymousName()) {
             return true;

@@ -7,25 +7,25 @@ namespace TsmlForUnity\Meetings;
 use Exception;
 use InvalidArgumentException;
 use RuntimeException;
-use Unity\Contact\Interfaces\ContactFactoryInterface;
-use Unity\Contact\Interfaces\ContactInterface;
-use Unity\Locations\Interfaces\LocationInterface;
-use Unity\Locations\Interfaces\LocationRepositoryInterface;
-use Unity\Meetings\Interfaces\MeetingFactoryInterface;
-use Unity\Meetings\Interfaces\MeetingInterface;
+use Unity\Contacts\Interfaces\ContactFactory;
+use Unity\Contacts\Interfaces\Contact;
+use Unity\Locations\Interfaces\Location;
+use Unity\Locations\Interfaces\LocationRepository;
+use Unity\Meetings\Interfaces\MeetingFactory;
+use Unity\Meetings\Interfaces\Meeting;
 
 /**
  * Class TsmlMeetingFactory
  *
- * Implementation of Unity's MeetingFactoryInterface that creates Meeting objects
+ * Implementation of Unity's MeetingFactory that creates Meeting objects
  * from TSML (12 Step Meeting List) data format.
  */
-class TsmlMeetingFactory implements MeetingFactoryInterface
+class TsmlMeetingFactory implements MeetingFactory
 {
     private const MAX_CONTACTS = 3;
 
-    private ?LocationRepositoryInterface $locationRepository = null;
-    private ?ContactFactoryInterface $contactFactory = null;
+    private ?LocationRepository $locationRepository = null;
+    private ?ContactFactory $contactFactory = null;
 
     /**
      * Days of the week mapping (TSML uses 0-6, but we use 1-7)
@@ -126,12 +126,12 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
     /**
      * TsmlMeetingFactory constructor.
      *
-     * @param ContactFactoryInterface|null $contactFactory Optional contact factory for creating contacts
-     * @param LocationRepositoryInterface|null $locationRepository Optional location repository for retrieving locations
+     * @param ContactFactory|null $contactFactory Optional contact factory for creating contacts
+     * @param LocationRepository|null $locationRepository Optional location repository for retrieving locations
      */
     public function __construct(
-        ?ContactFactoryInterface $contactFactory = null,
-        ?LocationRepositoryInterface $locationRepository = null
+        ?ContactFactory $contactFactory = null,
+        ?LocationRepository $locationRepository = null
     ) {
         $this->contactFactory = $contactFactory;
         $this->locationRepository = $locationRepository;
@@ -140,10 +140,10 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
     /**
      * Set the contact factory
      *
-     * @param ContactFactoryInterface $contactFactory The contact factory
+     * @param ContactFactory $contactFactory The contact factory
      * @return void
      */
-    public function setContactFactory(ContactFactoryInterface $contactFactory): void
+    public function setContactFactory(ContactFactory $contactFactory): void
     {
         $this->contactFactory = $contactFactory;
     }
@@ -151,9 +151,9 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
     /**
      * Get the contact factory, creating a default one if not set
      *
-     * @return ContactFactoryInterface
+     * @return ContactFactory
      */
-    private function getContactFactory(): ContactFactoryInterface
+    private function getContactFactory(): ContactFactory
     {
         if ($this->contactFactory === null) {
             $this->contactFactory = new TsmlContactFactory();
@@ -164,10 +164,10 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
     /**
      * Set the location repository
      *
-     * @param LocationRepositoryInterface $locationRepository The location repository
+     * @param LocationRepository $locationRepository The location repository
      * @return void
      */
-    public function setLocationRepository(LocationRepositoryInterface $locationRepository): void
+    public function setLocationRepository(LocationRepository $locationRepository): void
     {
         $this->locationRepository = $locationRepository;
     }
@@ -175,9 +175,9 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
     /**
      * Get the location repository, creating a default one if not set
      *
-     * @return LocationRepositoryInterface|null
+     * @return LocationRepository|null
      */
-    private function getLocationRepository(): ?LocationRepositoryInterface
+    private function getLocationRepository(): ?LocationRepository
     {
        return $this->locationRepository;
     }
@@ -186,10 +186,10 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
      * Create a Meeting object from TSML source data.
      *
      * @param array<string, mixed> $source The meeting source data.
-     * @return MeetingInterface|null Meeting object or null if creation fails.
+     * @return Meeting|null Meeting object or null if creation fails.
      * @throws InvalidArgumentException If source data is invalid.
      */
-    public function createFromSource(array $source): ?MeetingInterface
+    public function createFromSource(array $source): ?Meeting
     {
         if (empty($source) || !is_array($source)) {
             return null;
@@ -323,9 +323,9 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
      *
      * @param array<string, string> $locationData Location data from resolveLocation
      * @param array<string, mixed> $source Original source data for additional fields
-     * @return LocationInterface|null Location object or null if no location data
+     * @return Location|null Location object or null if no location data
      */
-    private function createLocationFromData(array $locationData, array $source): ?LocationInterface
+    private function createLocationFromData(array $locationData, array $source): ?Location
     {
         // If no location name, return null
         if (empty($locationData['name']) && empty($locationData['address'])) {
@@ -457,7 +457,7 @@ class TsmlMeetingFactory implements MeetingFactoryInterface
      * Extract contact information from post meta.
      *
      * @param array<string, array<string>> $meta Post meta data.
-     * @return array<ContactInterface> Array of TsmlContact objects.
+     * @return array<Contact> Array of TsmlContact objects.
      */
     private function extractContacts(array $meta): array
     {

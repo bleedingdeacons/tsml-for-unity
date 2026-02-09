@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Groups;
 
-use Unity\Contact\Interfaces\ContactFactoryInterface;
-use Unity\Contact\Interfaces\ContactInterface;
-use Unity\Groups\Interfaces\GroupFactoryInterface;
-use Unity\Groups\Interfaces\GroupInterface;
-use Unity\Meetings\Interfaces\MeetingInterface;
-use Unity\Meetings\Interfaces\MeetingRepositoryInterface;
+use Unity\Contacts\Interfaces\ContactFactory;
+use Unity\Contacts\Interfaces\Contact;
+use Unity\Groups\Interfaces\GroupFactory;
+use Unity\Groups\Interfaces\Group;
+use Unity\Meetings\Interfaces\Meeting;
+use Unity\Meetings\Interfaces\MeetingRepository;
 
 /**
  * Factory class for creating TsmlGroup objects from TSML data
@@ -17,20 +17,20 @@ use Unity\Meetings\Interfaces\MeetingRepositoryInterface;
  * This factory creates Group objects from the 12 Step Meeting List plugin's
  * tsml_group custom post type.
  */
-class TsmlGroupFactory implements GroupFactoryInterface
+class TsmlGroupFactory implements GroupFactory
 {
-    private ?ContactFactoryInterface $contactFactory = null;
-    private ?MeetingRepositoryInterface $meetingRepository = null;
+    private ?ContactFactory $contactFactory = null;
+    private ?MeetingRepository $meetingRepository = null;
 
     /**
      * TsmlGroupFactory constructor.
      *
-     * @param ContactFactoryInterface|null $contactFactory Optional contact factory for creating contacts
-     * @param MeetingRepositoryInterface|null $meetingRepository Optional meeting repository for retrieving meetings
+     * @param ContactFactory|null $contactFactory Optional contact factory for creating contacts
+     * @param MeetingRepository|null $meetingRepository Optional meeting repository for retrieving meetings
      */
     public function __construct(
-        ?ContactFactoryInterface $contactFactory = null,
-        ?MeetingRepositoryInterface $meetingRepository = null
+        ?ContactFactory $contactFactory = null,
+        ?MeetingRepository $meetingRepository = null
     ) {
         $this->contactFactory = $contactFactory;
         $this->meetingRepository = $meetingRepository;
@@ -39,10 +39,10 @@ class TsmlGroupFactory implements GroupFactoryInterface
     /**
      * Set the contact factory
      *
-     * @param ContactFactoryInterface $contactFactory The contact factory
+     * @param ContactFactory $contactFactory The contact factory
      * @return void
      */
-    public function setContactFactory(ContactFactoryInterface $contactFactory): void
+    public function setContactFactory(ContactFactory $contactFactory): void
     {
         $this->contactFactory = $contactFactory;
     }
@@ -50,10 +50,10 @@ class TsmlGroupFactory implements GroupFactoryInterface
     /**
      * Set the meeting repository
      *
-     * @param MeetingRepositoryInterface $meetingRepository The meeting repository
+     * @param MeetingRepository $meetingRepository The meeting repository
      * @return void
      */
-    public function setMeetingRepository(MeetingRepositoryInterface $meetingRepository): void
+    public function setMeetingRepository(MeetingRepository $meetingRepository): void
     {
         $this->meetingRepository = $meetingRepository;
     }
@@ -61,9 +61,9 @@ class TsmlGroupFactory implements GroupFactoryInterface
     /**
      * Get the contact factory, creating a default one if not set
      *
-     * @return ContactFactoryInterface
+     * @return ContactFactory
      */
-    private function getContactFactory(): ContactFactoryInterface
+    private function getContactFactory(): ContactFactory
     {
         if ($this->contactFactory === null) {
             $this->contactFactory = new TsmlContactFactory();
@@ -74,9 +74,9 @@ class TsmlGroupFactory implements GroupFactoryInterface
     /**
      * Get the meeting repository from the container or injected dependency
      *
-     * @return MeetingRepositoryInterface|null
+     * @return MeetingRepository|null
      */
-    private function getMeetingRepository(): ?MeetingRepositoryInterface
+    private function getMeetingRepository(): ?MeetingRepository
     {
         return $this->meetingRepository;
     }
@@ -85,9 +85,9 @@ class TsmlGroupFactory implements GroupFactoryInterface
      * Create a group from a WordPress post ID
      *
      * @param int $sourceId The WordPress post ID
-     * @return GroupInterface|null The created group or null if not found/invalid
+     * @return Group|null The created group or null if not found/invalid
      */
-    public function createFromSource(int $sourceId): ?GroupInterface
+    public function createFromSource(int $sourceId): ?Group
     {
         if (!function_exists('get_post')) {
             $this->logError('Required WordPress function get_post is not available');
@@ -184,7 +184,7 @@ class TsmlGroupFactory implements GroupFactoryInterface
      * Extract contact information from post meta
      *
      * @param array $meta Post meta data
-     * @return ContactInterface[] Array of TsmlContact objects
+     * @return Contact[] Array of TsmlContact objects
      */
     private function extractContacts(array $meta): array
     {
@@ -214,7 +214,7 @@ class TsmlGroupFactory implements GroupFactoryInterface
      * Uses the MeetingRepository to retrieve meetings by group ID.
      *
      * @param int $groupId The group post ID
-     * @return MeetingInterface[] Array of Meeting objects
+     * @return Meeting[] Array of Meeting objects
      */
     private function getMeetingsForGroup(int $groupId): array
     {

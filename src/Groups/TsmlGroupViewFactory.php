@@ -4,31 +4,31 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Groups;
 
-use Unity\Groups\Interfaces\GroupInterface;
-use Unity\Groups\Interfaces\GroupRepositoryInterface;
-use Unity\Groups\Interfaces\GroupViewFactoryInterface;
-use Unity\Meetings\Interfaces\MeetingRepositoryInterface;
-use Unity\Groups\Interfaces\GroupViewInterface;
+use Unity\Groups\Interfaces\Group;
+use Unity\Groups\Interfaces\GroupRepository;
+use Unity\Groups\Interfaces\GroupViewFactory;
+use Unity\Meetings\Interfaces\MeetingRepository;
+use Unity\Groups\Interfaces\GroupView;
 
 use function get_post;
 
 /**
  * Concrete TSML Group View Factory class
  */
-class TsmlGroupViewFactory implements GroupViewFactoryInterface
+class TsmlGroupViewFactory implements GroupViewFactory
 {
-    private GroupRepositoryInterface $groupRepository;
-    private MeetingRepositoryInterface $meetingRepository;
+    private GroupRepository $groupRepository;
+    private MeetingRepository $meetingRepository;
 
     /**
      * TsmlGroupViewFactory constructor
      * 
-     * @param GroupRepositoryInterface $groupRepository The group repository
-     * @param MeetingRepositoryInterface $meetingRepository The meeting repository
+     * @param GroupRepository $groupRepository The group repository
+     * @param MeetingRepository $meetingRepository The meeting repository
      */
     public function __construct(
-        GroupRepositoryInterface $groupRepository,
-        MeetingRepositoryInterface $meetingRepository
+        GroupRepository $groupRepository,
+        MeetingRepository $meetingRepository
     ) {
         $this->groupRepository = $groupRepository;
         $this->meetingRepository = $meetingRepository;
@@ -37,7 +37,7 @@ class TsmlGroupViewFactory implements GroupViewFactoryInterface
     /**
      * {@inheritdoc}
      */
-    public function createFrom(int $sourceId): ? GroupViewInterface
+    public function createFrom(int $sourceId): ? GroupView
     {
         $group = $this->groupRepository->findById($sourceId);
         if (!$group) {
@@ -58,10 +58,10 @@ class TsmlGroupViewFactory implements GroupViewFactoryInterface
     /**
      * Get meeting objects for a group
      * 
-     * @param GroupInterface $group The group entity
+     * @param Group $group The group entity
      * @return array Array of Meeting objects
      */
-    private function getMeetingsForGroup(GroupInterface $group): array
+    private function getMeetingsForGroup(Group $group): array
     {
         $meetingIds = $group->getMeetingIds();
         $meetings = [];

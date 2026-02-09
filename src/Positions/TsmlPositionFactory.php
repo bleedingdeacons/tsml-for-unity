@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Positions;
 
-use Unity\Positions\Interfaces\PositionFactoryInterface;
-use Unity\Positions\Interfaces\PositionInterface;
+use Unity\Positions\Interfaces\PositionFactory;
+use Unity\Positions\Interfaces\Position;
 
 use function get_fields;
 use function get_permalink;
@@ -14,12 +14,12 @@ use function get_post;
 /**
  * Concrete Position Factory class
  */
-class TsmlPositionFactory implements PositionFactoryInterface
+class TsmlPositionFactory implements PositionFactory
 {
     /**
      * {@inheritdoc}
      */
-    public function createFromSource(int $sourceId): ?PositionInterface
+    public function createFromSource(int $sourceId): ?Position
     {
         $post = get_post($sourceId);
 

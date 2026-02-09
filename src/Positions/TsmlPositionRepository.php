@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Positions;
 
-use Unity\Positions\Interfaces\PositionFactoryInterface;
-use Unity\Positions\Interfaces\PositionInterface;
-use Unity\Positions\Interfaces\PositionRepositoryInterface;
+use Unity\Positions\Interfaces\PositionFactory;
+use Unity\Positions\Interfaces\Position;
+use Unity\Positions\Interfaces\PositionRepository;
 use Exception;
 use function get_posts;
 use function is_wp_error;
@@ -18,16 +18,16 @@ use function wp_update_post;
 /**
  * TSML Position Repository
  */
-class TsmlPositionRepository implements PositionRepositoryInterface
+class TsmlPositionRepository implements PositionRepository
 {
-    private PositionFactoryInterface $factory;
+    private PositionFactory $factory;
 
     /**
      * TsmlPositionRepository constructor
      *
-     * @param PositionFactoryInterface $factory The position factory
+     * @param PositionFactory $factory The position factory
      */
-    public function __construct(PositionFactoryInterface $factory)
+    public function __construct(PositionFactory $factory)
     {
         $this->factory = $factory;
     }
@@ -35,7 +35,7 @@ class TsmlPositionRepository implements PositionRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function findById(int $id): ?PositionInterface
+    public function findById(int $id): ?Position
     {
         return $this->factory->createFromSource($id);
     }
@@ -86,7 +86,7 @@ class TsmlPositionRepository implements PositionRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function save(PositionInterface $position): bool
+    public function save(Position $position): bool
     {
         $postId = $position->getId();
 
@@ -128,7 +128,7 @@ class TsmlPositionRepository implements PositionRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function update(PositionInterface $position): bool
+    public function update(Position $position): bool
     {
         $postId = $position->getId();
 

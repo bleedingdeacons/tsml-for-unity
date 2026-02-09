@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Positions;
 
-use Unity\Positions\Interfaces\PositionChangeTrackerInterface;
-use Unity\Positions\Interfaces\PositionInterface;
-use Unity\Positions\Interfaces\PositionRepositoryInterface;
+use Unity\Positions\Interfaces\PositionChangeTracker;
+use Unity\Positions\Interfaces\Position;
+use Unity\Positions\Interfaces\PositionRepository;
 use Exception;
 use function add_action;
 use function do_action;
@@ -21,17 +21,17 @@ use const WP_DEBUG;
  * Tracks changes to positions via ACF and fires the position_changed hook
  * when actual changes are detected.
  */
-class TsmlPositionChangeTracker implements PositionChangeTrackerInterface
+class TsmlPositionChangeTracker implements PositionChangeTracker
 {
-    private static ?PositionInterface $originalPosition = null;
-    private PositionRepositoryInterface $repository;
+    private static ?Position $originalPosition = null;
+    private PositionRepository $repository;
 
     /**
      * Constructor
      *
-     * @param PositionRepositoryInterface $repository Repository for accessing positions
+     * @param PositionRepository $repository Repository for accessing positions
      */
-    public function __construct(PositionRepositoryInterface $repository)
+    public function __construct(PositionRepository $repository)
     {
         $this->repository = $repository;
 
@@ -122,11 +122,11 @@ class TsmlPositionChangeTracker implements PositionChangeTrackerInterface
     /**
      * Check if a position has changed by comparing its properties
      *
-     * @param PositionInterface $originalPosition The original position before changes
-     * @param PositionInterface $updatedPosition The updated position after changes
+     * @param Position $originalPosition The original position before changes
+     * @param Position $updatedPosition The updated position after changes
      * @return bool True if the position has changed, false otherwise
      */
-    private function hasPositionChanged(PositionInterface $originalPosition, PositionInterface $updatedPosition): bool
+    private function hasPositionChanged(Position $originalPosition, Position $updatedPosition): bool
     {
         if ($originalPosition->getLongName() !== $updatedPosition->getLongName()) {
             return true;

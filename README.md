@@ -4,7 +4,7 @@ A WordPress plugin that integrates [12 Step Meeting List (TSML)](https://github.
 
 ## Description
 
-TSML for Unity provides a `TsmlMeetingFactory` class that implements Unity's `MeetingFactoryInterface`. This allows Unity to create `Meeting` objects from TSML meeting data format.
+TSML for Unity provides a `TsmlMeetingFactory` class that implements Unity's `MeetingFactory`. This allows Unity to create `Meeting` objects from TSML meeting data format.
 
 ## Requirements
 
@@ -112,8 +112,8 @@ None currently.
 When Unity's dependency container is initialized, TSML for Unity automatically registers itself:
 
 ```php
-// Unity will use TsmlMeetingFactory when resolving MeetingFactoryInterface
-$factory = $container->get('Unity\Meetings\Interfaces\MeetingFactoryInterface');
+// Unity will use TsmlMeetingFactory when resolving MeetingFactory
+$factory = $container->get('Unity\Meetings\Interfaces\MeetingFactory');
 ```
 
 ## Supported Meeting Types

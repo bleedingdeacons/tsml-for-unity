@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Locations;
 
-use Unity\Locations\Interfaces\LocationFactoryInterface;
-use Unity\Locations\Interfaces\LocationInterface;
+use Unity\Locations\Interfaces\LocationFactory;
+use Unity\Locations\Interfaces\Location;
 
 /**
  * Factory class for creating Location objects from TSML data
@@ -13,15 +13,15 @@ use Unity\Locations\Interfaces\LocationInterface;
  * This factory creates Location objects from the 12 Step Meeting List plugin's
  * tsml_location custom post type.
  */
-class TsmlLocationFactory implements LocationFactoryInterface
+class TsmlLocationFactory implements LocationFactory
 {
     /**
      * Create a location from a WordPress post ID
      *
      * @param int $sourceId The WordPress post ID
-     * @return LocationInterface|null The created location or null if not found/invalid
+     * @return Location|null The created location or null if not found/invalid
      */
-    public function createFromSource(int $sourceId): ?LocationInterface
+    public function createFromSource(int $sourceId): ?Location
     {
         if (!function_exists('get_post')) {
             $this->logError('Required WordPress function get_post is not available');
