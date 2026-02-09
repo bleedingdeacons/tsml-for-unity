@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity;
 
+use Unity\Core\Interfaces\ConfigurationInterface;
+use Unity\Groups\Interfaces\GroupChangeTrackerInterface;
 use Unity\Groups\Interfaces\GroupInterface;
 use Unity\Groups\Interfaces\GroupRepositoryInterface;
 use Exception;
@@ -20,7 +22,7 @@ use const WP_DEBUG;
  * Tracks changes to groups via ACF and fires the group_changed hook
  * when actual changes are detected.
  */
-class TsmlGroupChangeTracker
+class TsmlGroupChangeTracker implements GroupChangeTrackerInterface
 {
     private static ?GroupInterface $originalGroup = null;
     private GroupRepositoryInterface $repository;

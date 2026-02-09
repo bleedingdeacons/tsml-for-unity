@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace TsmlForUnity;
 
+use Unity\Members\Interfaces\MemberChangeTrackerInterface;
 use Unity\Members\Interfaces\MemberInterface;
 use Unity\Members\Interfaces\MemberRepositoryInterface;
 use Exception;
@@ -20,7 +21,7 @@ use const WP_DEBUG;
  * Tracks changes to members via ACF and fires the member_changed hook
  * when actual changes are detected.
  */
-class TsmlMemberChangeTracker
+class TsmlMemberChangeTracker implements MemberChangeTrackerInterface
 {
     private static ?MemberInterface $originalMember = null;
     private MemberRepositoryInterface $repository;

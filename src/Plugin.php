@@ -6,10 +6,10 @@ namespace TsmlForUnity;
 
 use Unity\Contact\ContactFactory;
 use Unity\Contact\Interfaces\ContactFactoryInterface;
-use Unity\Groups\GroupChangeTracker;
-use Unity\Members\MemberChangeTracker;
+use Unity\Groups\Interfaces\GroupChangeTrackerInterface;
+use Unity\Members\Interfaces\MemberChangeTrackerInterface;
+use Unity\Positions\Interfaces\PositionChangeTrackerInterface;
 use Unity\Positions\Interfaces\PositionViewFactoryInterface;
-use Unity\Positions\PositionChangeTracker;
 
 /**
  * Main Plugin Class
@@ -226,7 +226,7 @@ class Plugin
 
             // Register GroupChangeTracker (overrides Unity's stub)
             $container->register(
-                GroupChangeTracker::class,
+                GroupChangeTrackerInterface::class,
                 function ($container) {
                     $groupRepository = $container->has('Unity\\Groups\\Interfaces\\GroupRepositoryInterface')
                         ? $container->get('Unity\\Groups\\Interfaces\\GroupRepositoryInterface')
@@ -283,7 +283,7 @@ class Plugin
 
             // Register MemberChangeTracker (overrides Unity's stub)
             $container->register(
-                MemberChangeTracker::class,
+                MemberChangeTrackerInterface::class,
                 function ($container) {
                     $memberRepository = $container->has('Unity\\Members\\Interfaces\\MemberRepositoryInterface')
                         ? $container->get('Unity\\Members\\Interfaces\\MemberRepositoryInterface')
@@ -318,7 +318,7 @@ class Plugin
 
             // Register PositionChangeTracker (overrides Unity's stub)
             $container->register(
-                PositionChangeTracker::class,
+                PositionChangeTrackerInterface::class,
                 function ($container) {
                     $positionRepository = $container->has('Unity\\Positions\\Interfaces\\PositionRepositoryInterface')
                         ? $container->get('Unity\\Positions\\Interfaces\\PositionRepositoryInterface')

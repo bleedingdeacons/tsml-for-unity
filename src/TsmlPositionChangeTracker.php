@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace TsmlForUnity;
 
+use Unity\Positions\Interfaces\PositionChangeTrackerInterface;
 use Unity\Positions\Interfaces\PositionInterface;
 use Unity\Positions\Interfaces\PositionRepositoryInterface;
 use Exception;
@@ -20,7 +21,7 @@ use const WP_DEBUG;
  * Tracks changes to positions via ACF and fires the position_changed hook
  * when actual changes are detected.
  */
-class TsmlPositionChangeTracker
+class TsmlPositionChangeTracker implements PositionChangeTrackerInterface
 {
     private static ?PositionInterface $originalPosition = null;
     private PositionRepositoryInterface $repository;
