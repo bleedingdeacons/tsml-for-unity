@@ -75,7 +75,7 @@ class TsmlLocationFactoryTest extends TestCase
         $postId = 100;
         $post = $this->createMockPost([
             'ID' => $postId,
-            'post_type' => TsmlLocationFields::LOCATION_POST_TYPE,
+            'post_type' => TsmlLocationFields::POST_TYPE,
             'post_title' => 'Community Center',
         ]);
 
@@ -148,7 +148,7 @@ class TsmlLocationFactoryTest extends TestCase
         $postId = 200;
         $post = $this->createMockPost([
             'ID' => $postId,
-            'post_type' => TsmlLocationFields::LOCATION_POST_TYPE,
+            'post_type' => TsmlLocationFields::POST_TYPE,
             'post_title' => 'Minimal Location',
         ]);
 
@@ -201,7 +201,7 @@ class TsmlLocationFactoryTest extends TestCase
         $postId = 300;
         $post = $this->createMockPost([
             'ID' => $postId,
-            'post_type' => TsmlLocationFields::LOCATION_POST_TYPE,
+            'post_type' => TsmlLocationFields::POST_TYPE,
             'post_title' => 'No Coordinates Location',
         ]);
 
@@ -255,7 +255,7 @@ class TsmlLocationFactoryTest extends TestCase
         $postId = 400;
         $post = $this->createMockPost([
             'ID' => $postId,
-            'post_type' => TsmlLocationFields::LOCATION_POST_TYPE,
+            'post_type' => TsmlLocationFields::POST_TYPE,
             'post_title' => 'Multi-Region Location',
         ]);
 
@@ -297,7 +297,7 @@ class TsmlLocationFactoryTest extends TestCase
         $postId = 500;
         $post = $this->createMockPost([
             'ID' => $postId,
-            'post_type' => TsmlLocationFields::LOCATION_POST_TYPE,
+            'post_type' => TsmlLocationFields::POST_TYPE,
             'post_title' => 'Test Location',
         ]);
 
@@ -338,7 +338,7 @@ class TsmlLocationFactoryTest extends TestCase
         $postId = 600;
         $post = $this->createMockPost([
             'ID' => $postId,
-            'post_type' => TsmlLocationFields::LOCATION_POST_TYPE,
+            'post_type' => TsmlLocationFields::POST_TYPE,
             'post_title' => 'Coordinates Test',
         ]);
 
@@ -391,7 +391,7 @@ class TsmlLocationFactoryTest extends TestCase
         $postId = 700;
         $post = $this->createMockPost([
             'ID' => $postId,
-            'post_type' => TsmlLocationFields::LOCATION_POST_TYPE,
+            'post_type' => TsmlLocationFields::POST_TYPE,
             'post_title' => 'Invalid Coordinates Test',
         ]);
 

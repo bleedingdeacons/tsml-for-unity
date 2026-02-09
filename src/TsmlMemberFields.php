@@ -11,7 +11,7 @@ namespace TsmlForUnity;
  */
 final class TsmlMemberFields
 {
-    public const MEMBER_POST_TYPE = 'intergroup-member';
+    public const POST_TYPE = 'intergroup-member';
     
     public const FIELD_ANONYMOUS_NAME = 'about-layout-group_anonymous-name';
     public const FIELD_MOBILE_PHONE = 'about-layout-group_mobile-phone';

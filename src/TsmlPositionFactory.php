@@ -23,7 +23,7 @@ class TsmlPositionFactory implements PositionFactoryInterface
     {
         $post = get_post($sourceId);
 
-        if (!$post || $post->post_type !== TsmlPositionFields::POSITION_POST_TYPE) {
+        if (!$post || $post->post_type !== TsmlPositionFields::POST_TYPE) {
             return null;
         }
 

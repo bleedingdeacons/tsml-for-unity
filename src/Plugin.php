@@ -6,6 +6,7 @@ namespace TsmlForUnity;
 
 use Unity\Contact\ContactFactory;
 use Unity\Contact\Interfaces\ContactFactoryInterface;
+use Unity\Groups\GroupChangeTracker;
 use Unity\Members\MemberChangeTracker;
 use Unity\Positions\Interfaces\PositionViewFactoryInterface;
 use Unity\Positions\PositionChangeTracker;
@@ -220,6 +221,18 @@ class Plugin
                         : null;
 
                     return new TsmlGroupRepository($groupFactory);
+                }
+            );
+
+            // Register GroupChangeTracker (overrides Unity's stub)
+            $container->register(
+                GroupChangeTracker::class,
+                function ($container) {
+                    $groupRepository = $container->has('Unity\\Groups\\Interfaces\\GroupRepositoryInterface')
+                        ? $container->get('Unity\\Groups\\Interfaces\\GroupRepositoryInterface')
+                        : null;
+
+                    return new TsmlGroupChangeTracker($groupRepository);
                 }
             );
         }

@@ -46,7 +46,7 @@ class TsmlPositionChangeTracker
      */
     public function captureOriginalPosition(int $postId): void
     {
-        if (get_post_type($postId) !== TsmlPositionFields::POSITION_POST_TYPE) {
+        if (get_post_type($postId) !== TsmlPositionFields::POST_TYPE) {
             return;
         }
 
@@ -71,7 +71,7 @@ class TsmlPositionChangeTracker
      */
     public function checkForChanges(int $postId): void
     {
-        if (get_post_type($postId) !== TsmlPositionFields::POSITION_POST_TYPE) {
+        if (get_post_type($postId) !== TsmlPositionFields::POST_TYPE) {
             return;
         }
 

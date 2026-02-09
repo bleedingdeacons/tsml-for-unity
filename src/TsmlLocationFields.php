@@ -14,7 +14,7 @@ final class TsmlLocationFields
     /**
      * The WordPress custom post type for locations (from TSML plugin)
      */
-    public const LOCATION_POST_TYPE = 'tsml_location';
+    public const POST_TYPE = 'tsml_location';
 
     /**
      * Formatted address field

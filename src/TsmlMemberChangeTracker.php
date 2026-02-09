@@ -46,7 +46,7 @@ class TsmlMemberChangeTracker
      */
     public function captureOriginalMember(int $postId): void
     {
-        if (get_post_type($postId) !== TsmlMemberFields::MEMBER_POST_TYPE) {
+        if (get_post_type($postId) !== TsmlMemberFields::POST_TYPE) {
             return;
         }
 
@@ -71,7 +71,7 @@ class TsmlMemberChangeTracker
      */
     public function checkForChanges(int $postId): void
     {
-        if (get_post_type($postId) !== TsmlMemberFields::MEMBER_POST_TYPE) {
+        if (get_post_type($postId) !== TsmlMemberFields::POST_TYPE) {
             return;
         }
 

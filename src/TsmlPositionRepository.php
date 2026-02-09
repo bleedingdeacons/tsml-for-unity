@@ -46,7 +46,7 @@ class TsmlPositionRepository implements PositionRepositoryInterface
     public function findAll(array $args = []): array
     {
         $defaultArgs = [
-            'post_type' => TsmlPositionFields::POSITION_POST_TYPE,
+            'post_type' => TsmlPositionFields::POST_TYPE,
             'posts_per_page' => -1,
             'post_status' => 'publish',
         ];
@@ -71,7 +71,7 @@ class TsmlPositionRepository implements PositionRepositoryInterface
     public function count(array $args = []): int
     {
         $defaultArgs = [
-            'post_type' => TsmlPositionFields::POSITION_POST_TYPE,
+            'post_type' => TsmlPositionFields::POST_TYPE,
             'posts_per_page' => -1,
             'post_status' => 'publish',
             'fields' => 'ids',
@@ -99,7 +99,7 @@ class TsmlPositionRepository implements PositionRepositoryInterface
         }
 
         $postData = [
-            'post_type' => TsmlPositionFields::POSITION_POST_TYPE,
+            'post_type' => TsmlPositionFields::POST_TYPE,
             'post_status' => 'publish',
             'post_title' => $position->getLongName(),
             'post_content' => '',
@@ -143,7 +143,7 @@ class TsmlPositionRepository implements PositionRepositoryInterface
         $postData = [
             'ID' => $postId,
             'post_title' => $position->getLongName(),
-            'post_type' => TsmlPositionFields::POSITION_POST_TYPE,
+            'post_type' => TsmlPositionFields::POST_TYPE,
             'post_status' => 'publish',
         ];
 

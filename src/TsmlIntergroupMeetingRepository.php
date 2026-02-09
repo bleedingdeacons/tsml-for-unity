@@ -39,7 +39,7 @@ class TsmlIntergroupMeetingRepository implements IntergroupMeetingRepositoryInte
     {
         $post = get_post($id);
 
-        if (!$post || $post->post_type !== TsmlIntergroupMeetingFields::INTERGROUP_MEETING_POST_TYPE) {
+        if (!$post || $post->post_type !== TsmlIntergroupMeetingFields::POST_TYPE) {
             return null;
         }
 
@@ -99,7 +99,7 @@ class TsmlIntergroupMeetingRepository implements IntergroupMeetingRepositoryInte
     private function buildQueryArgs(array $args): array
     {
         $defaultArgs = [
-            'post_type' => TsmlIntergroupMeetingFields::INTERGROUP_MEETING_POST_TYPE,
+            'post_type' => TsmlIntergroupMeetingFields::POST_TYPE,
             'post_status' => 'publish',
             'numberposts' => -1,
         ];

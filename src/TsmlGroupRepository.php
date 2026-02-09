@@ -46,7 +46,7 @@ class TsmlGroupRepository implements GroupRepositoryInterface
     public function findAll(array $args = []): array
     {
         $defaultArgs = [
-            'post_type' => TsmlGroupFields::GROUP_POST_TYPE,
+            'post_type' => TsmlGroupFields::POST_TYPE,
             'posts_per_page' => -1,
             'post_status' => 'publish',
         ];
@@ -81,7 +81,7 @@ class TsmlGroupRepository implements GroupRepositoryInterface
         }
 
         $postData = [
-            'post_type' => TsmlGroupFields::GROUP_POST_TYPE,
+            'post_type' => TsmlGroupFields::POST_TYPE,
             'post_status' => 'publish',
             'post_title' => $group->getTitle(),
             'post_content' => '',
@@ -122,7 +122,7 @@ class TsmlGroupRepository implements GroupRepositoryInterface
         $postData = [
             'ID' => $postId,
             'post_title' => $group->getTitle(),
-            'post_type' => TsmlGroupFields::GROUP_POST_TYPE,
+            'post_type' => TsmlGroupFields::POST_TYPE,
             'post_status' => 'publish',
         ];
 

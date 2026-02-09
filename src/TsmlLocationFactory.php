@@ -31,7 +31,7 @@ class TsmlLocationFactory implements LocationFactoryInterface
 
         $post = get_post($sourceId);
 
-        if (!$post || $post->post_type !== TsmlLocationFields::LOCATION_POST_TYPE) {
+        if (!$post || $post->post_type !== TsmlLocationFields::POST_TYPE) {
             return null;
         }
 

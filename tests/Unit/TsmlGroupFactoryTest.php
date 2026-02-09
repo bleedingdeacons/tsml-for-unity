@@ -124,7 +124,7 @@ class TsmlGroupFactoryTest extends TestCase
         $postId = 100;
         $post = $this->createMockPost([
             'ID' => $postId,
-            'post_type' => TsmlGroupFields::GROUP_POST_TYPE,
+            'post_type' => TsmlGroupFields::POST_TYPE,
             'post_title' => 'Test Group',
         ]);
 
@@ -192,7 +192,7 @@ class TsmlGroupFactoryTest extends TestCase
         $postId = 200;
         $post = $this->createMockPost([
             'ID' => $postId,
-            'post_type' => TsmlGroupFields::GROUP_POST_TYPE,
+            'post_type' => TsmlGroupFields::POST_TYPE,
             'post_title' => 'Multi-Contact Group',
         ]);
 
@@ -263,7 +263,7 @@ class TsmlGroupFactoryTest extends TestCase
         $postId = 300;
         $post = $this->createMockPost([
             'ID' => $postId,
-            'post_type' => TsmlGroupFields::GROUP_POST_TYPE,
+            'post_type' => TsmlGroupFields::POST_TYPE,
             'post_title' => 'Minimal Group',
         ]);
 
@@ -306,7 +306,7 @@ class TsmlGroupFactoryTest extends TestCase
         $postId = 400;
         $post = $this->createMockPost([
             'ID' => $postId,
-            'post_type' => TsmlGroupFields::GROUP_POST_TYPE,
+            'post_type' => TsmlGroupFields::POST_TYPE,
             'post_title' => 'Partial Contact Group',
         ]);
 
@@ -367,7 +367,7 @@ class TsmlGroupFactoryTest extends TestCase
         $postId = 500;
         $post = $this->createMockPost([
             'ID' => $postId,
-            'post_type' => TsmlGroupFields::GROUP_POST_TYPE,
+            'post_type' => TsmlGroupFields::POST_TYPE,
             'post_title' => 'Test',
         ]);
 

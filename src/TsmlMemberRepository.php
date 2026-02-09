@@ -39,7 +39,7 @@ class TsmlMemberRepository implements MemberRepositoryInterface
     {
         $post = get_post($id);
 
-        if (!$post || $post->post_type !== TsmlMemberFields::MEMBER_POST_TYPE) {
+        if (!$post || $post->post_type !== TsmlMemberFields::POST_TYPE) {
             return null;
         }
 
@@ -55,7 +55,7 @@ class TsmlMemberRepository implements MemberRepositoryInterface
     public function findAll(array $args = []): array
     {
         $defaultArgs = [
-            'post_type' => TsmlMemberFields::MEMBER_POST_TYPE,
+            'post_type' => TsmlMemberFields::POST_TYPE,
             'numberposts' => -1,
             'post_status' => 'publish'
         ];
@@ -85,7 +85,7 @@ class TsmlMemberRepository implements MemberRepositoryInterface
     public function count(array $args = []): int
     {
         $defaultArgs = [
-            'post_type' => TsmlMemberFields::MEMBER_POST_TYPE,
+            'post_type' => TsmlMemberFields::POST_TYPE,
             'numberposts' => -1,
             'post_status' => 'publish',
             'fields' => 'ids'

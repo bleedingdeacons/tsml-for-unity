@@ -15,7 +15,8 @@ final class TsmlPositionFields
     public const LONG_NAME = 'position-long-name';
     public const SHORT_DESCRIPTION = 'position-short-description';
     public const SUMMARY = 'position-summary';
-    public const POSITION_POST_TYPE = 'intergroup-position';
+    
+    public const POST_TYPE = 'intergroup-position';
 
     private function __construct()
     {

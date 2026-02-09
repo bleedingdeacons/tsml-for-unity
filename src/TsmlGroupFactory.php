@@ -98,7 +98,7 @@ class TsmlGroupFactory implements GroupFactoryInterface
 
         $post = get_post($sourceId);
 
-        if (!$post || $post->post_type !== TsmlGroupFields::GROUP_POST_TYPE) {
+        if (!$post || $post->post_type !== TsmlGroupFields::POST_TYPE) {
             return null;
         }
 

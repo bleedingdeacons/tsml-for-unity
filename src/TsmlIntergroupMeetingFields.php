@@ -11,7 +11,7 @@ namespace TsmlForUnity;
  */
 final class TsmlIntergroupMeetingFields
 {
-    public const INTERGROUP_MEETING_POST_TYPE = 'intergroup-meeting';
+    public const POST_TYPE = 'intergroup-meeting';
 
     public const FIELD_ATTENDEES = 'attending_groups';
     public const FIELD_ATTENDING_OFFICERS = 'attending_officers';
