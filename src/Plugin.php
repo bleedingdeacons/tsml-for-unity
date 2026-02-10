@@ -7,6 +7,7 @@ namespace TsmlForUnity;
 use TsmlForUnity\Contacts\TsmlContactFactory;
 use TsmlForUnity\Groups\TsmlGroupChangeTracker;
 use TsmlForUnity\Groups\TsmlGroupFactory;
+use TsmlForUnity\Groups\TsmlGroupFields;
 use TsmlForUnity\Groups\TsmlGroupRepository;
 use TsmlForUnity\Groups\TsmlGroupViewFactory;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFactory;
@@ -16,15 +17,21 @@ use TsmlForUnity\Locations\TsmlLocationRepository;
 use TsmlForUnity\Meetings\TsmlMeetingFactory;
 use TsmlForUnity\Meetings\TsmlMeetingRepository;
 use TsmlForUnity\Members\TsmlMemberFactory;
+use TsmlForUnity\Members\TsmlMemberFields;
 use TsmlForUnity\Members\TsmlMemberRepository;
 use TsmlForUnity\Members\TsmlMemberChangeTracker;
+use TsmlForUnity\Positions\TsmlPosition;
 use TsmlForUnity\Positions\TsmlPositionFactory;
+use TsmlForUnity\Positions\TsmlPositionFields;
 use TsmlForUnity\Positions\TsmlPositionRepository;
 use TsmlForUnity\Positions\TsmlPositionChangeTracker;
 use TsmlForUnity\Positions\TsmlPositionViewFactory;
 use Unity\Contacts\Interfaces\ContactFactory;
+use Unity\Groups\Interfaces\Group;
 use Unity\Groups\Interfaces\GroupChangeTracker;
+use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberChangeTracker;
+use Unity\Positions\Interfaces\Position;
 use Unity\Positions\Interfaces\PositionChangeTracker;
 use Unity\Positions\Interfaces\PositionViewFactory;
 
@@ -171,6 +178,9 @@ class Plugin
             return;
         }
 
+        // Configuration
+        $config = $container->get('Unity\\Core\\Interfaces\\Configuration');
+
         // Register Contact Dependencies
         if (self::unityContactsAvailable()) {
             // Register Contact Factory
@@ -283,6 +293,10 @@ class Plugin
                     return new TsmlGroupChangeTracker($groupRepository);
                 }
             );
+
+            // Store the POST_TYPE for Group
+            $config->setConfig(Group::class, ['POST_TYPE' => TsmlGroupFields::POST_TYPE]);
+
         }
 
         // Register Member Dependencies
@@ -318,6 +332,10 @@ class Plugin
                     return new TsmlMemberChangeTracker($memberRepository);
                 }
             );
+
+            // Store the POST_TYPE for Member
+            $config->setConfig(Member::class, ['POST_TYPE' => TsmlMemberFields::POST_TYPE]);
+
         }
 
         // Register Position Dependencies
@@ -372,6 +390,10 @@ class Plugin
                     }
                 );
             }
+
+            // Store the POST_TYPE for Position
+            $config->setConfig(Position::class,['POST_TYPE' => TsmlPositionFields::POST_TYPE]);
+
         }
 
         // Register intergroup meeting factory and repository if Unity's intergroup meeting interfaces are available
