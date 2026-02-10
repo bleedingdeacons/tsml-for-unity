@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TsmlForUnity\Interfaces\Contact;
+namespace TsmlForUnity\Contacts;
 
 use Unity\Contacts\Interfaces\Contact;
 

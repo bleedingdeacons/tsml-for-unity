@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use RuntimeException;
 use Unity\Contacts\Interfaces\ContactFactory;
 use Unity\Contacts\Interfaces\Contact;
+use TsmlForUnity\Contacts\TsmlContactFactory;
 use Unity\Locations\Interfaces\Location;
 use Unity\Locations\Interfaces\LocationRepository;
 use Unity\Meetings\Interfaces\MeetingFactory;
@@ -179,7 +180,7 @@ class TsmlMeetingFactory implements MeetingFactory
      */
     private function getLocationRepository(): ?LocationRepository
     {
-       return $this->locationRepository;
+        return $this->locationRepository;
     }
 
     /**

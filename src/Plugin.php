@@ -223,8 +223,8 @@ class Plugin
             $container->register(
                 'Unity\\Meetings\\Interfaces\\MeetingFactory',
                 function ($container) {
-                    $contactFactory = $container->has('Unity\\Contact\\Interfaces\\ContactFactory')
-                        ? $container->get('Unity\\Contact\\Interfaces\\ContactFactory')
+                    $contactFactory = $container->has('Unity\\Contacts\\Interfaces\\ContactFactory')
+                        ? $container->get('Unity\\Contacts\\Interfaces\\ContactFactory')
                         : null;
                     $locationRepository = $container->has('Unity\\Locations\\Interfaces\\LocationRepository')
                         ? $container->get('Unity\\Locations\\Interfaces\\LocationRepository')
