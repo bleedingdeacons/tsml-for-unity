@@ -52,7 +52,7 @@ spl_autoload_register(function ($class) {
 });
 
 // Initialize the plugin after Unity is fully loaded
-add_action('unity_loaded', function ($container) {
+add_action('unity/loaded', function ($container) {
     try {
         if (!class_exists('TsmlForUnity\Plugin')) {
             throw new \Exception('TsmlForUnity\Plugin class not found. Check that Plugin.php exists in the src/ directory.');
@@ -66,7 +66,7 @@ add_action('unity_loaded', function ($container) {
         /**
          * Fires after TSML for Unity is fully loaded.
          */
-        do_action('tsml_for_unity_loaded');
+        do_action('tsml_for_unity/loaded');
 
     } catch (\Exception $e) {
         error_log('TSML for Unity Plugin Initialization Error: ' . $e->getMessage());
@@ -111,7 +111,7 @@ add_action('plugins_loaded', function () {
 }, 20);
 
 // Register factories with Unity's container - must run before Unity initializes services
-add_action('unity_register_services', function ($container) {
+add_action('unity/register_services', function ($container) {
     try {
         if (!class_exists('TsmlForUnity\Plugin')) {
             return;

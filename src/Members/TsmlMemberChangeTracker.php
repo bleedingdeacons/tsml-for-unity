@@ -18,7 +18,7 @@ use const WP_DEBUG;
 /**
  * Class TsmlMemberChangeTracker
  *
- * Tracks changes to members via ACF and fires the member_changed hook
+ * Tracks changes to members via ACF and fires the amber/member_changing hook
  * when actual changes are detected.
  */
 class TsmlMemberChangeTracker implements MemberChangeTracker
@@ -58,7 +58,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
                 error_log('Original member captured for post ID: ' . $postId);
             }
 
-            do_action('member_before_save', $postId, self::$originalMember);
+            do_action('amber/member_before_save', $postId, self::$originalMember);
         } catch (Exception $e) {
             error_log('Error capturing original member: ' . $e->getMessage());
         }
@@ -93,7 +93,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
 
             if ($this->hasMemberChanged(self::$originalMember, $updatedMember)) {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('Changes detected in member ID: ' . $postId . ', firing member_changed hook');
+                    error_log('Changes detected in member ID: ' . $postId . ', firing amber/member_changing hook');
                 }
 
                 $post = get_post($postId);
@@ -104,7 +104,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
                     ]);
                 }
 
-                do_action('member_changed', $updatedMember, self::$originalMember);
+                do_action('amber/member_changing', $updatedMember, self::$originalMember);
 
             } else {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
@@ -112,7 +112,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
                 }
             }
 
-            do_action('member_after_save', $postId, $updatedMember, self::$originalMember);
+            do_action('unity/member_changed', $postId, $updatedMember, self::$originalMember);
 
             self::$originalMember = null;
         } catch (Exception $e) {

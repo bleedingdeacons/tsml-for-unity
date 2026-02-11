@@ -101,7 +101,7 @@ $dayName = $factory->getDayName(1); // "Monday"
 
 ### Actions
 
-- `tsml_for_unity_loaded` - Fires when the plugin is fully loaded and Unity is available
+- `tsml_for_unity/loaded` - Fires when the plugin is fully loaded and Unity is available
 
 ### Filters
 

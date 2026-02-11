@@ -19,7 +19,7 @@ use const WP_DEBUG;
 /**
  * Class TsmlGroupChangeTracker
  *
- * Tracks changes to groups via ACF and fires the group_changed hook
+ * Tracks changes to groups via ACF and fires the unity/group_changing hook
  * when actual changes are detected.
  */
 class TsmlGroupChangeTracker implements GroupChangeTracker
@@ -94,7 +94,7 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
 
             if ($this->hasGroupChanged(self::$originalGroup, $updatedGroup)) {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('Changes detected in group ID: ' . $postId . ', firing group_changed hook');
+                    error_log('Changes detected in group ID: ' . $postId . ', firing unity/group_changing hook');
                 }
 
                 $post = get_post($postId);
@@ -105,14 +105,14 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
                     ]);
                 }
 
-                do_action('group_changed', $updatedGroup, self::$originalGroup);
+                do_action('unity/group_changing', $updatedGroup, self::$originalGroup);
             } else {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
                     error_log('No changes detected in group ID: ' . $postId);
                 }
             }
 
-            do_action('group_after_save', $postId, $updatedGroup, self::$originalGroup);
+            do_action('unity/group_changed', $postId, $updatedGroup, self::$originalGroup);
 
             self::$originalGroup = null;
         } catch (Exception $e) {
