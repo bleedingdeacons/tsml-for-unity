@@ -12,6 +12,7 @@ use Unity\Contacts\Interfaces\Contact;
 use TsmlForUnity\Contacts\TsmlContactFactory;
 use Unity\Locations\Interfaces\Location;
 use Unity\Locations\Interfaces\LocationRepository;
+use TsmlForUnity\Locations\TsmlLocation;
 use Unity\Meetings\Interfaces\MeetingFactory;
 use Unity\Meetings\Interfaces\Meeting;
 
@@ -344,7 +345,7 @@ class TsmlMeetingFactory implements MeetingFactory
             $link = get_permalink($locationId) ?: '';
         }
 
-        return new Location(
+        return new TsmlLocation(
             $locationId,
             $locationData['name'],
             $locationData['address'],

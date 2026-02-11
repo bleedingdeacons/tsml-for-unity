@@ -223,6 +223,7 @@ class TsmlMeetingRepository implements MeetingRepository
             'id' => $post->ID,
             'name' => $post->post_title,
             'slug' => $post->post_name,
+            'location_id' => $post->post_parent,
             'meta' => $meta,
         ];
 
