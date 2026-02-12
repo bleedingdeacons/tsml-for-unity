@@ -63,7 +63,6 @@ class TsmlMemberFactory implements MemberFactory
         return new TsmlMember(
             $id,
             get_field(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $id) ?? '',
-            get_the_title($id) ?? '',
             get_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $id) ?? '',
             (bool) (get_field(TsmlMemberFields::FIELD_SHOW_ANONYMOUS_NAME, $id) ?? false),
             (bool) (get_field(TsmlMemberFields::FIELD_SHOW_MEMBER_PROFILE, $id) ?? false),
@@ -76,5 +75,10 @@ class TsmlMemberFactory implements MemberFactory
             get_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $id) ?? '',
             get_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $id) ?? ''
         );
+    }
+
+    public function createFrom(int $id): Member
+    {
+        // TODO: Implement createFrom() method.
     }
 }

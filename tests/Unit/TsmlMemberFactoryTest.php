@@ -18,8 +18,7 @@ if (!interface_exists('Unity\\Members\\Interfaces\\Member')) {
     eval('namespace Unity\\Members\\Interfaces; 
     interface Member { 
         public function getId(): int;
-        public function getAnonymousName(): string;
-        public function getPrivateName(): string;
+        public function getAnonymousName(): string;        
         public function getEmail(): string;
         public function showAnonymousName(): bool;
         public function showMemberProfile(): bool;
@@ -47,8 +46,7 @@ if (!class_exists('Unity\\Members\\Member')) {
 
     class Member implements Interfaces\\Member {
         private int $id;
-        private string $anonymousName;
-        private string $privateName;
+        private string $anonymousName;        
         private string $email;
         private bool $showAnonymousName;
         private bool $showMemberProfile;
@@ -63,8 +61,7 @@ if (!class_exists('Unity\\Members\\Member')) {
 
         public function __construct(
             int $id,
-            string $anonymousName = "",
-            string $privateName = "",
+            string $anonymousName = "",            
             string $email = "",
             bool $showAnonymousName = false,
             bool $showMemberProfile = false,
@@ -94,8 +91,7 @@ if (!class_exists('Unity\\Members\\Member')) {
         }
 
         public function getId(): int { return $this->id; }
-        public function getAnonymousName(): string { return $this->anonymousName; }
-        public function getPrivateName(): string { return $this->privateName; }
+        public function getAnonymousName(): string { return $this->anonymousName; }        
         public function getEmail(): string { return $this->email; }
         public function showAnonymousName(): bool { return $this->showAnonymousName; }
         public function showMemberProfile(): bool { return $this->showMemberProfile; }
@@ -192,7 +188,6 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertInstanceOf(Member::class, $member);
         $this->assertSame($postId, $member->getId());
         $this->assertSame('John D.', $member->getAnonymousName());
-        $this->assertSame('John Doe', $member->getPrivateName());
         $this->assertSame('john@example.com', $member->getEmail());
         $this->assertTrue($member->showAnonymousName());
         $this->assertFalse($member->showMemberProfile());
@@ -354,7 +349,6 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertInstanceOf(Member::class, $member);
         $this->assertSame($postId, $member->getId());
         $this->assertSame('', $member->getAnonymousName());
-        $this->assertSame('', $member->getPrivateName());
         $this->assertSame('', $member->getEmail());
         $this->assertFalse($member->showAnonymousName());
         $this->assertFalse($member->showMemberProfile());

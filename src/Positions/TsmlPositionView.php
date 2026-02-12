@@ -85,14 +85,6 @@ class TsmlPositionView implements PositionView
     /**
      * {@inheritdoc}
      */
-    public function getPrivateDisplayName(): string
-    {
-        return $this->member ? $this->member->getPrivateName() : '';
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function getPosition(): Position
     {
         return $this->position;

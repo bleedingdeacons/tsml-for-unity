@@ -133,10 +133,6 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
             return true;
         }
 
-//        if ($originalMember->getPrivateName() !== $updatedMember->getPrivateName()) {
-//            return true;
-//        }
-
         if ($originalMember->getEmail() !== $updatedMember->getEmail()) {
             return true;
         }
