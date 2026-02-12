@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace TsmlForUnity;
 
+use ReflectionClass;
 use TsmlForUnity\Contacts\TsmlContactFactory;
 use TsmlForUnity\Groups\TsmlGroupChangeTracker;
 use TsmlForUnity\Groups\TsmlGroupFactory;
@@ -15,6 +16,7 @@ use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingRepository;
 use TsmlForUnity\Locations\TsmlLocationFactory;
 use TsmlForUnity\Locations\TsmlLocationRepository;
 use TsmlForUnity\Meetings\TsmlMeetingFactory;
+use TsmlForUnity\Meetings\TsmlMeetingFields;
 use TsmlForUnity\Meetings\TsmlMeetingRepository;
 use TsmlForUnity\Members\TsmlMemberFactory;
 use TsmlForUnity\Members\TsmlMemberFields;
@@ -29,6 +31,7 @@ use TsmlForUnity\Positions\TsmlPositionViewFactory;
 use Unity\Contacts\Interfaces\ContactFactory;
 use Unity\Groups\Interfaces\Group;
 use Unity\Groups\Interfaces\GroupChangeTracker;
+use Unity\Meetings\Interfaces\Meeting;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberChangeTracker;
 use Unity\Positions\Interfaces\Position;
@@ -153,7 +156,7 @@ class Plugin
             && self::unityPositionsAvailable()
             && self::unityMembersAvailable();
     }
-
+    
     /**
      * Check if Unity's group view interfaces are available
      *
@@ -167,10 +170,22 @@ class Plugin
     }
 
     /**
+     * @param $class
+     * @return array
+     * @throws \ReflectionException
+     */
+    private static function extractConstants($class): array
+    {
+        return (new ReflectionClass($class))->getConstants();
+    }
+
+
+    /**
      * Register the TSML factories with Unity's dependency container
      *
      * @param mixed $container Unity's dependency container
      * @return void
+     * @throws \ReflectionException
      */
     public static function registerWithUnity($container): void
     {
@@ -249,6 +264,10 @@ class Plugin
                     return new TsmlMeetingRepository($meetingFactory, $cache);
                 }
             );
+
+            // Store the Position Fields
+            $config->setConfig(Meeting::class, self::extractConstants(TsmlMeetingFields::class));
+
         }
 
         // Register Group Dependencies
@@ -333,8 +352,8 @@ class Plugin
                 }
             );
 
-            // Store the POST_TYPE for Member
-            $config->setConfig(Member::class, ['POST_TYPE' => TsmlMemberFields::POST_TYPE]);
+            // Store the Member Fields
+            $config->setConfig(Member::class, self::extractConstants(TsmlMemberFields::class));
 
         }
 
@@ -391,8 +410,8 @@ class Plugin
                 );
             }
 
-            // Store the POST_TYPE for Position
-            $config->setConfig(Position::class,['POST_TYPE' => TsmlPositionFields::POST_TYPE]);
+            // Store the Position Fields
+            $config->setConfig(Position::class, self::extractConstants(TsmlPositionFields::class));
 
         }
 
