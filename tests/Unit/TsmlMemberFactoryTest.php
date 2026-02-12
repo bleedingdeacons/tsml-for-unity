@@ -19,7 +19,6 @@ if (!interface_exists('Unity\\Members\\Interfaces\\Member')) {
     interface Member { 
         public function getId(): int;
         public function getAnonymousName(): string;        
-        public function getEmail(): string;
         public function showAnonymousName(): bool;
         public function showMemberProfile(): bool;
         public function getAnonymousProfile(): string;
@@ -36,7 +35,21 @@ if (!interface_exists('Unity\\Members\\Interfaces\\Member')) {
 if (!interface_exists('Unity\\Members\\Interfaces\\MemberFactory')) {
     eval('namespace Unity\\Members\\Interfaces; 
     interface MemberFactory { 
-        public function createFromSource(int $id): Member; 
+        public function createFromSource(int $id): Member;
+        public function createNew(
+            int $id,
+            string $anonymousName = \'\',
+            bool $showAnonymousName = false,
+            bool $showMemberProfile = false,
+            string $anonymousProfile = \'\',
+            int $intergroupPosition = 0,
+            string $intergroupPositionRotation = \'\',
+            int $homeGroup = 0,
+            bool $isGSR = false,
+            mixed $meetingPO = null,
+            string $personalEmail = \'\',
+            string $mobileNumber = \'\'
+        ): Member;
     }');
 }
 
@@ -47,7 +60,6 @@ if (!class_exists('Unity\\Members\\Member')) {
     class Member implements Interfaces\\Member {
         private int $id;
         private string $anonymousName;        
-        private string $email;
         private bool $showAnonymousName;
         private bool $showMemberProfile;
         private string $anonymousProfile;
@@ -62,7 +74,6 @@ if (!class_exists('Unity\\Members\\Member')) {
         public function __construct(
             int $id,
             string $anonymousName = "",            
-            string $email = "",
             bool $showAnonymousName = false,
             bool $showMemberProfile = false,
             string $anonymousProfile = "",
@@ -76,8 +87,6 @@ if (!class_exists('Unity\\Members\\Member')) {
         ) {
             $this->id = $id;
             $this->anonymousName = $anonymousName;
-            $this->privateName = $privateName;
-            $this->email = $email;
             $this->showAnonymousName = $showAnonymousName;
             $this->showMemberProfile = $showMemberProfile;
             $this->anonymousProfile = $anonymousProfile;
@@ -92,7 +101,6 @@ if (!class_exists('Unity\\Members\\Member')) {
 
         public function getId(): int { return $this->id; }
         public function getAnonymousName(): string { return $this->anonymousName; }        
-        public function getEmail(): string { return $this->email; }
         public function showAnonymousName(): bool { return $this->showAnonymousName; }
         public function showMemberProfile(): bool { return $this->showMemberProfile; }
         public function getAnonymousProfile(): string { return $this->anonymousProfile; }
@@ -188,7 +196,6 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertInstanceOf(Member::class, $member);
         $this->assertSame($postId, $member->getId());
         $this->assertSame('John D.', $member->getAnonymousName());
-        $this->assertSame('john@example.com', $member->getEmail());
         $this->assertTrue($member->showAnonymousName());
         $this->assertFalse($member->showMemberProfile());
         $this->assertSame('Anonymous profile text', $member->getAnonymousProfile());
@@ -349,7 +356,6 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertInstanceOf(Member::class, $member);
         $this->assertSame($postId, $member->getId());
         $this->assertSame('', $member->getAnonymousName());
-        $this->assertSame('', $member->getEmail());
         $this->assertFalse($member->showAnonymousName());
         $this->assertFalse($member->showMemberProfile());
         $this->assertSame('', $member->getAnonymousProfile());

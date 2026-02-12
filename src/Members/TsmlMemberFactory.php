@@ -63,7 +63,6 @@ class TsmlMemberFactory implements MemberFactory
         return new TsmlMember(
             $id,
             get_field(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $id) ?? '',
-            get_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $id) ?? '',
             (bool) (get_field(TsmlMemberFields::FIELD_SHOW_ANONYMOUS_NAME, $id) ?? false),
             (bool) (get_field(TsmlMemberFields::FIELD_SHOW_MEMBER_PROFILE, $id) ?? false),
             get_field(TsmlMemberFields::FIELD_ANONYMOUS_PROFILE, $id) ?? '',
@@ -77,8 +76,55 @@ class TsmlMemberFactory implements MemberFactory
         );
     }
 
-    public function createFrom(int $id): Member
-    {
-        // TODO: Implement createFrom() method.
+    /**
+     * Create a new Member from raw field values
+     *
+     * Builds a TsmlMember directly from supplied data without reading
+     * ACF fields from the database. Used by Reconcile and other importers
+     * that already have the member data in hand.
+     *
+     * @param int    $id                          WordPress post ID
+     * @param string $anonymousName               Anonymous name
+     * @param bool   $showAnonymousName           Show anonymous name flag
+     * @param bool   $showMemberProfile            Show profile flag
+     * @param string $anonymousProfile             Profile text
+     * @param int    $intergroupPosition           Position post ID
+     * @param string $intergroupPositionRotation   Rotation date
+     * @param int    $homeGroup                    Home group post ID
+     * @param bool   $isGSR                        GSR flag
+     * @param mixed  $meetingPO                    Meeting PO reference
+     * @param string $personalEmail                Personal email
+     * @param string $mobileNumber                 Mobile number
+     * @return Member
+     */
+    public function createNew(
+        int $id,
+        string $anonymousName = '',
+        bool $showAnonymousName = false,
+        bool $showMemberProfile = false,
+        string $anonymousProfile = '',
+        int $intergroupPosition = 0,
+        string $intergroupPositionRotation = '',
+        int $homeGroup = 0,
+        bool $isGSR = false,
+        mixed $meetingPO = null,
+        string $personalEmail = '',
+        string $mobileNumber = ''
+    ): Member {
+        return new TsmlMember(
+            $id,
+            $anonymousName,
+            $showAnonymousName,
+            $showMemberProfile,
+            $anonymousProfile,
+            $intergroupPosition,
+            $intergroupPositionRotation,
+            $homeGroup,
+            $isGSR,
+            $meetingPO,
+            $personalEmail,
+            $mobileNumber
+        );
     }
+
 }

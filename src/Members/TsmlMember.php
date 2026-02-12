@@ -13,7 +13,6 @@ class TsmlMember implements Member
 {
     private int $id;
     private string $anonymousName;
-    private string $email;
     private bool $showAnonymousName;
     private bool $showMemberProfile;
     private string $anonymousProfile;
@@ -30,7 +29,6 @@ class TsmlMember implements Member
      *
      * @param int $id Post ID
      * @param string $anonymousName Anonymous name
-     * @param string $email Email address
      * @param bool $showAnonymousName Show anonymous name flag
      * @param bool $showMemberProfile Show member profile flag
      * @param string $anonymousProfile Anonymous profile text
@@ -45,7 +43,6 @@ class TsmlMember implements Member
     public function __construct(
         int $id,
         string $anonymousName = '',
-        string $email = '',
         bool $showAnonymousName = false,
         bool $showMemberProfile = false,
         string $anonymousProfile = '',
@@ -59,7 +56,6 @@ class TsmlMember implements Member
     ) {
         $this->id = $id;
         $this->anonymousName = $anonymousName;
-        $this->email = $email;
         $this->showAnonymousName = $showAnonymousName;
         $this->showMemberProfile = $showMemberProfile;
         $this->anonymousProfile = $anonymousProfile;
@@ -80,12 +76,6 @@ class TsmlMember implements Member
     public function getAnonymousName(): string
     {
         return $this->anonymousName;
-    }
-
-    public function getEmail(): string
-    {
-        return $this->email;
-        // TODO Remove email is under personal email.
     }
 
     public function showAnonymousName(): bool
