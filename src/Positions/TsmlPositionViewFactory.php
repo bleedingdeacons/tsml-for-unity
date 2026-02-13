@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Positions;
 
-use TsmlForUnity\Members\TsmlMemberFields;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberRepository;
 use Unity\Positions\Interfaces\PositionRepository;
@@ -48,26 +47,21 @@ class TsmlPositionViewFactory implements PositionViewFactory
             return null;
         }
 
-        $value = serialize([strval($positionId)]);
+        $allMembers = $this->memberRepository->findAll();
+        $matchingMembers = array_filter($allMembers, function (Member $member) use ($positionId) {
+            return $member->getIntergroupPosition() === $positionId;
+        });
 
-        $members = $this->memberRepository->findAll([
-            'meta_query' => [
-                [
-                    'key' => TsmlMemberFields::FIELD_INTERGROUP_POSITION,
-                    'value' => $value,
-                    'compare' => '='
-                ]
-            ]
-        ]);
-
-        if (empty($members)) {
+        if (empty($matchingMembers)) {
             return new TsmlPositionView($position, null);
         }
 
-        if (count($members) > 1) {
-            $latestMember = $this->findMemberWithLatestRotationDate($members);
+        $matchingMembers = array_values($matchingMembers);
+
+        if (count($matchingMembers) > 1) {
+            $latestMember = $this->findMemberWithLatestRotationDate($matchingMembers);
         } else {
-            $latestMember = $members[0];
+            $latestMember = $matchingMembers[0];
         }
 
         return new TsmlPositionView($position, $latestMember);
@@ -79,15 +73,25 @@ class TsmlPositionViewFactory implements PositionViewFactory
     public function createAll(array $args = []): array
     {
         $positions = $this->positionRepository->findAll($args);
+        $allMembers = $this->memberRepository->findAll();
         $views = [];
 
         foreach ($positions as $position) {
             $positionId = $position->getId();
-            $view = $this->createFrom($positionId);
 
-            if ($view !== null) {
-                $views[] = $view;
+            $matchingMembers = array_values(array_filter($allMembers, function (Member $member) use ($positionId) {
+                return $member->getIntergroupPosition() === $positionId;
+            }));
+
+            if (empty($matchingMembers)) {
+                $member = null;
+            } elseif (count($matchingMembers) > 1) {
+                $member = $this->findMemberWithLatestRotationDate($matchingMembers);
+            } else {
+                $member = $matchingMembers[0];
             }
+
+            $views[] = new TsmlPositionView($position, $member);
         }
 
         usort($views, function(PositionView $a, PositionView $b) {
