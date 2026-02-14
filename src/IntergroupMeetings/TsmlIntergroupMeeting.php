@@ -84,4 +84,50 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
     {
         return $this->date;
     }
+
+    /**
+     * Add a member ID to the group attendees list
+     *
+     * @param int $memberId
+     * @return bool True if the member was added, false if already present
+     */
+    public function addGroupAttendee(int $memberId): bool
+    {
+        if (in_array($memberId, $this->groupAttendees, true)) {
+            return false;
+        }
+
+        $this->groupAttendees[] = $memberId;
+        return true;
+    }
+
+    /**
+     * Remove a member ID from the group attendees list
+     *
+     * @param int $memberId
+     * @return bool True if the member was removed, false if not present
+     */
+    public function removeGroupAttendee(int $memberId): bool
+    {
+        $key = array_search($memberId, $this->groupAttendees, true);
+
+        if ($key === false) {
+            return false;
+        }
+
+        unset($this->groupAttendees[$key]);
+        $this->groupAttendees = array_values($this->groupAttendees);
+        return true;
+    }
+
+    /**
+     * Check if a member ID is in the group attendees list
+     *
+     * @param int $memberId
+     * @return bool
+     */
+    public function hasGroupAttendee(int $memberId): bool
+    {
+        return in_array($memberId, $this->groupAttendees, true);
+    }
 }
