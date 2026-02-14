@@ -179,7 +179,36 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
             return true;
         }
 
+        if ($this->haveContactsChanged($originalGroup->getContacts(), $updatedGroup->getContacts())) {
+            return true;
+        }
+
         return false;
+    }
+
+    /**
+     * Check if contacts have changed by comparing arrays of Contact objects
+     *
+     * @param array $originalContacts Original contacts
+     * @param array $updatedContacts Updated contacts
+     * @return bool True if contacts have changed
+     */
+    private function haveContactsChanged(array $originalContacts, array $updatedContacts): bool
+    {
+        if (count($originalContacts) !== count($updatedContacts)) {
+            return true;
+        }
+
+        $normalize = function (array $contacts): array {
+            $keys = [];
+            foreach ($contacts as $contact) {
+                $keys[] = $contact->getName() . '|' . $contact->getEmail() . '|' . $contact->getPhone();
+            }
+            sort($keys);
+            return $keys;
+        };
+
+        return $normalize($originalContacts) !== $normalize($updatedContacts);
     }
 
     /**

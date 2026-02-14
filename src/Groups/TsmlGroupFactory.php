@@ -101,8 +101,8 @@ class TsmlGroupFactory implements GroupFactory
         }
 
         $meta = $this->getPostMeta($sourceId);
-        $contacts = $this->extractContacts($meta);
         $meetings = $this->getMeetingsForGroup($sourceId);
+        $contacts = $this->collectContacts($meta, $meetings);
         $link = $this->getPermalink($sourceId);
 
         return new TsmlGroup(
@@ -181,14 +181,21 @@ class TsmlGroupFactory implements GroupFactory
     }
 
     /**
-     * Extract contact information from post meta
+     * Collect unique contacts from both group meta and meetings
      *
-     * @param array $meta Post meta data
-     * @return Contact[] Array of TsmlContact objects
+     * Reads contacts stored on the group post meta and collects contacts
+     * from all meetings in the group, deduplicating by name+email+phone.
+     *
+     * @param array $meta Group post meta data
+     * @param Meeting[] $meetings Array of Meeting objects
+     * @return Contact[] Array of unique Contact objects
      */
-    private function extractContacts(array $meta): array
+    private function collectContacts(array $meta, array $meetings): array
     {
         $contacts = [];
+        $seen = [];
+
+        // First, collect contacts from the group's own meta fields
         $factory = $this->getContactFactory();
 
         for ($i = 1; $i <= TsmlGroupFields::MAX_CONTACTS; $i++) {
@@ -197,11 +204,28 @@ class TsmlGroupFactory implements GroupFactory
             $phone = $this->getMetaField($meta, TsmlGroupFields::CONTACT_PREFIX . $i . '_phone', '');
 
             if (!empty($name) || !empty($email) || !empty($phone)) {
-                $contacts[] = $factory->create(
-                    (string) $name,
-                    (string) $email,
-                    (string) $phone
-                );
+                $key = ((string) $name) . '|' . ((string) $email) . '|' . ((string) $phone);
+
+                if (!isset($seen[$key])) {
+                    $seen[$key] = true;
+                    $contacts[] = $factory->create(
+                        (string) $name,
+                        (string) $email,
+                        (string) $phone
+                    );
+                }
+            }
+        }
+
+        // Then, collect contacts from meetings (deduplicating against group contacts)
+        foreach ($meetings as $meeting) {
+            foreach ($meeting->getContacts() as $contact) {
+                $key = $contact->getName() . '|' . $contact->getEmail() . '|' . $contact->getPhone();
+
+                if (!isset($seen[$key])) {
+                    $seen[$key] = true;
+                    $contacts[] = $contact;
+                }
             }
         }
 
