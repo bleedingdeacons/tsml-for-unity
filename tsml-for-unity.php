@@ -98,6 +98,13 @@ add_action('unity/loaded', function ($container) {
     }
 });
 
+// Check for database table upgrades on every load
+add_action('plugins_loaded', function () {
+    if (class_exists('TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingAttendanceTable')) {
+        \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingAttendanceTable::maybeUpgrade();
+    }
+}, 10);
+
 // Show admin notice if Unity is not available
 add_action('plugins_loaded', function () {
     if (!class_exists('Unity\\Plugin')) {
@@ -136,6 +143,9 @@ register_activation_hook(__FILE__, function () {
             ['back_link' => true]
         );
     }
+
+    // Create the intergroup meeting attendance custom table
+    \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingAttendanceTable::createTable();
 });
 
 // Plugin deactivation hook
