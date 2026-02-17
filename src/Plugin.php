@@ -14,6 +14,7 @@ use TsmlForUnity\Groups\TsmlGroupViewFactory;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingAttendanceFactory;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingAttendanceRepository;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFactory;
+use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFields;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingRepository;
 use TsmlForUnity\Locations\TsmlLocationFactory;
 use TsmlForUnity\Locations\TsmlLocationRepository;
@@ -34,6 +35,7 @@ use TsmlForUnity\Positions\TsmlPositionViewFactory;
 use Unity\Contacts\Interfaces\ContactFactory;
 use Unity\Groups\Interfaces\Group;
 use Unity\Groups\Interfaces\GroupChangeTracker;
+use Unity\IntergroupMeetings\Interfaces\IntergroupMeeting;
 use Unity\Meetings\Interfaces\Meeting;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberChangeTracker;
@@ -328,8 +330,8 @@ class Plugin
                 }
             );
 
-            // Store the POST_TYPE for Group
-            $config->setConfig(Group::class, ['POST_TYPE' => TsmlGroupFields::POST_TYPE]);
+            // Store the Group Fields
+            $config->setConfig(Group::class, self::extractConstants(TsmlGroupFields::class));
 
         }
 
@@ -451,6 +453,10 @@ class Plugin
                     return new TsmlIntergroupMeetingRepository($intergroupMeetingFactory);
                 }
             );
+
+            // Store the Group Fields
+            $config->setConfig(IntergroupMeeting::class, self::extractConstants(TsmlIntergroupMeetingFields::class));
+
         }
 
         // Register Intergroup Meeting Attendance Dependencies
