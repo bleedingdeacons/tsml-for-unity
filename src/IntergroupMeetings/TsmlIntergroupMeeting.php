@@ -130,4 +130,50 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
     {
         return in_array($memberId, $this->groupAttendees, true);
     }
+
+    /**
+     * Add an officer ID to the officers attending list
+     *
+     * @param int $officerId
+     * @return bool True if the officer was added, false if already present
+     */
+    public function addOfficerAttendee(int $officerId): bool
+    {
+        if (in_array($officerId, $this->officersAttending, true)) {
+            return false;
+        }
+
+        $this->officersAttending[] = $officerId;
+        return true;
+    }
+
+    /**
+     * Remove an officer ID from the officers attending list
+     *
+     * @param int $officerId
+     * @return bool True if the officer was removed, false if not present
+     */
+    public function removeOfficerAttendee(int $officerId): bool
+    {
+        $key = array_search($officerId, $this->officersAttending, true);
+
+        if ($key === false) {
+            return false;
+        }
+
+        unset($this->officersAttending[$key]);
+        $this->officersAttending = array_values($this->officersAttending);
+        return true;
+    }
+
+    /**
+     * Check if an officer ID is in the officers attending list
+     *
+     * @param int $officerId
+     * @return bool
+     */
+    public function hasOfficerAttendee(int $officerId): bool
+    {
+        return in_array($officerId, $this->officersAttending, true);
+    }
 }
