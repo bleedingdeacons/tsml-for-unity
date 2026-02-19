@@ -14,17 +14,17 @@ class TsmlIntergroupMeetingGroupAttendanceTable
     /**
      * Database table version for schema upgrades
      */
-    public const DB_VERSION = '1.1';
+    public const DB_VERSION = '1.0';
 
     /**
      * Option key storing the current installed table version
      */
-    public const DB_VERSION_OPTION = 'unity_ig_attendance_db_version';
+    public const DB_VERSION_OPTION = 'unity_ig_group_attendance_db_version';
 
     /**
      * Table name suffix (appended to $wpdb->prefix)
      */
-    public const TABLE_NAME = 'unity_ig_meeting_attendance';
+    public const TABLE_NAME = 'unity_ig_group_attendance_register';
 
     /**
      * Get the full table name including the WordPress prefix
