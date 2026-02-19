@@ -17,7 +17,7 @@ class TsmlGroupView implements GroupView
     private array $meetings;
     private string $link;
     private array $contacts;
-
+    private array $members;
     /**
      * TsmlGroupView constructor
      * 
@@ -34,7 +34,8 @@ class TsmlGroupView implements GroupView
         string $email = '',
         array $meetings = [],
         string $link = '',
-        array $contacts = []
+        array $contacts = [],
+        array $members = [],
     ) {
         $this->id = $id;
         $this->title = $title;
@@ -42,6 +43,7 @@ class TsmlGroupView implements GroupView
         $this->meetings = $meetings;
         $this->link = $link;
         $this->contacts = $contacts;
+        $this->members = $members;
     }
 
     /**
@@ -90,5 +92,13 @@ class TsmlGroupView implements GroupView
     public function getContacts(): array
     {
         return $this->contacts;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getMembers(): array
+    {
+        return $this->members;
     }
 }

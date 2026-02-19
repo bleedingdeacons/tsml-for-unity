@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Groups;
 
+use TsmlForUnity\Meetings\TsmlMeetingFields;
+use TsmlForUnity\Meetings\TsmlMeetingViewFactory;
+use TsmlForUnity\Members\TsmlMemberFields;
 use Unity\Groups\Interfaces\Group;
 use Unity\Groups\Interfaces\GroupRepository;
 use Unity\Groups\Interfaces\GroupViewFactory;
 use Unity\Meetings\Interfaces\MeetingRepository;
 use Unity\Groups\Interfaces\GroupView;
 
+use Unity\Members\Interfaces\MemberRepository;
 use function get_post;
 
 /**
@@ -19,6 +23,7 @@ class TsmlGroupViewFactory implements GroupViewFactory
 {
     private GroupRepository $groupRepository;
     private MeetingRepository $meetingRepository;
+    private MemberRepository $memberRepository;
 
     /**
      * TsmlGroupViewFactory constructor
@@ -28,10 +33,12 @@ class TsmlGroupViewFactory implements GroupViewFactory
      */
     public function __construct(
         GroupRepository $groupRepository,
-        MeetingRepository $meetingRepository
+        MeetingRepository $meetingRepository,
+        MemberRepository $memberRepository
     ) {
         $this->groupRepository = $groupRepository;
         $this->meetingRepository = $meetingRepository;
+        $this->memberRepository = $memberRepository;
     }
 
     /**
@@ -40,19 +47,30 @@ class TsmlGroupViewFactory implements GroupViewFactory
     public function createFrom(int $sourceId): ? GroupView
     {
         $group = $this->groupRepository->findById($sourceId);
+
         if (!$group) {
             return null;
         }
 
-        $meetings = $this->getMeetingsForGroup($group);
+        $args = [
+            'meta_query' => [
+                [
+                    'key'   => TsmlMemberFields::FIELD_HOME_GROUP,
+                    'value' => $group->getId()
+                ]
+            ]
+        ];
+
+        $members = $this->memberRepository->findAll($args);
 
         return new TsmlGroupView(
             $group->getId(),
             $group->getTitle(),
             $group->getEmail(),
-            $meetings,
+            $group->getMeetings(),
             $group->getLink(),
-            $group->getContacts()
+            $group->getContacts(),
+            $members
         );
     }
 

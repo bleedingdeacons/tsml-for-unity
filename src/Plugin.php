@@ -495,7 +495,11 @@ class Plugin
                         ? $container->get('Unity\\Meetings\\Interfaces\\MeetingRepository')
                         : null;
 
-                    return new TsmlGroupViewFactory($groupRepository, $meetingRepository);
+                    $memberRepository = $container->has('Unity\\Members\\Interfaces\\MemberRepository')
+                        ? $container->get('Unity\\Members\\Interfaces\\MemberRepository')
+                        : null;
+
+                    return new TsmlGroupViewFactory($groupRepository, $meetingRepository, $memberRepository);
                 }
             );
         }
