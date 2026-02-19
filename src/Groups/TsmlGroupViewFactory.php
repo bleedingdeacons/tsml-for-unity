@@ -52,16 +52,27 @@ class TsmlGroupViewFactory implements GroupViewFactory
             return null;
         }
 
-        $args = [
-            'meta_query' => [
-                [
-                    'key'   => TsmlMemberFields::FIELD_HOME_GROUP,
-                    'value' => $group->getId()
-                ]
-            ]
-        ];
+//        $args = [
+//            'meta_query' => [
+//                [
+//                    'key'   => TsmlMemberFields::FIELD_HOME_GROUP,
+//                    'value' => $group->getId()
+//                ]
+//            ]
+//        ];
+//        $members = $this->memberRepository->findAll($args);
 
-        $members = $this->memberRepository->findAll($args);
+        $all = $this->memberRepository->findAll();
+
+        $members = [];
+
+        foreach ($all as $member) {
+
+            if ($member->getHomeGroup() === $group->getId()) {
+                $members[] = $member;
+            }
+
+        }
 
         return new TsmlGroupView(
             $group->getId(),
