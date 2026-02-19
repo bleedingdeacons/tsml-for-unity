@@ -11,8 +11,8 @@ use TsmlForUnity\Groups\TsmlGroupFactory;
 use TsmlForUnity\Groups\TsmlGroupFields;
 use TsmlForUnity\Groups\TsmlGroupRepository;
 use TsmlForUnity\Groups\TsmlGroupViewFactory;
-use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingAttendanceFactory;
-use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingAttendanceRepository;
+use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceFactory;
+use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceRepository;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFactory;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFields;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingRepository;
@@ -143,11 +143,11 @@ class Plugin
      *
      * @return bool
      */
-    public static function unityIntergroupMeetingAttendanceAvailable(): bool
+    public static function unityIntergroupMeetingGroupAttendanceAvailable(): bool
     {
-        return interface_exists('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingAttendanceFactory')
-            && interface_exists('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingAttendance')
-            && interface_exists('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingAttendanceRepository');
+        return interface_exists('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingGroupAttendanceFactory')
+            && interface_exists('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingGroupAttendance')
+            && interface_exists('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingGroupAttendanceRepository');
     }
     /**
      * Check if Unity's intergroup meeting interfaces are available
@@ -460,24 +460,24 @@ class Plugin
         }
 
         // Register Intergroup Meeting Attendance Dependencies
-        if (self::unityIntergroupMeetingAttendanceAvailable()) {
+        if (self::unityIntergroupMeetingGroupAttendanceAvailable()) {
             // Register Intergroup Meeting Attendance Factory
             $container->register(
-                'Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingAttendanceFactory',
+                'Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingGroupAttendanceFactory',
                 function ($container) {
-                    return new TsmlIntergroupMeetingAttendanceFactory();
+                    return new TsmlIntergroupMeetingGroupAttendanceFactory();
                 }
             );
 
             // Register Intergroup Meeting Attendance Repository
             $container->register(
-                'Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingAttendanceRepository',
+                'Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingGroupAttendanceRepository',
                 function ($container) {
-                    $attendanceFactory = $container->has('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingAttendanceFactory')
-                        ? $container->get('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingAttendanceFactory')
+                    $attendanceFactory = $container->has('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingGroupAttendanceFactory')
+                        ? $container->get('Unity\\IntergroupMeetings\\Interfaces\\IntergroupMeetingGroupAttendanceFactory')
                         : null;
 
-                    return new TsmlIntergroupMeetingAttendanceRepository($attendanceFactory);
+                    return new TsmlIntergroupMeetingGroupAttendanceRepository($attendanceFactory);
                 }
             );
         }

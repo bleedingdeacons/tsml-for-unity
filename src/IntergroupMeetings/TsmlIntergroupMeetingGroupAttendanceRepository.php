@@ -4,25 +4,25 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\IntergroupMeetings;
 
-use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingAttendance;
-use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingAttendanceFactory;
-use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingAttendanceRepository;
+use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingGroupAttendance;
+use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingGroupAttendanceFactory;
+use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingGroupAttendanceRepository;
 
 /**
  * TSML Intergroup Meeting Attendance Repository
  *
  * Implements persistence against a custom WordPress database table.
  */
-class TsmlIntergroupMeetingAttendanceRepository implements IntergroupMeetingAttendanceRepository
+class TsmlIntergroupMeetingGroupAttendanceRepository implements IntergroupMeetingGroupAttendanceRepository
 {
-    private TsmlIntergroupMeetingAttendanceFactory $factory;
+    private TsmlIntergroupMeetingGroupAttendanceFactory $factory;
 
     /**
-     * TsmlIntergroupMeetingAttendanceRepository constructor
+     * TsmlIntergroupMeetingGroupAttendanceRepository constructor
      *
-     * @param TsmlIntergroupMeetingAttendanceFactory $factory
+     * @param TsmlIntergroupMeetingGroupAttendanceFactory $factory
      */
-    public function __construct(TsmlIntergroupMeetingAttendanceFactory $factory)
+    public function __construct(TsmlIntergroupMeetingGroupAttendanceFactory $factory)
     {
         $this->factory = $factory;
     }
@@ -31,13 +31,13 @@ class TsmlIntergroupMeetingAttendanceRepository implements IntergroupMeetingAtte
      * Find an attendance record by ID
      *
      * @param int $id
-     * @return IntergroupMeetingAttendance|null
+     * @return IntergroupMeetingGroupAttendance|null
      */
-    public function find(int $id): ?IntergroupMeetingAttendance
+    public function find(int $id): ?IntergroupMeetingGroupAttendance
     {
         global $wpdb;
 
-        $table = TsmlIntergroupMeetingAttendanceTable::getTableName();
+        $table = TsmlIntergroupMeetingGroupAttendanceTable::getTableName();
 
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $row = $wpdb->get_row(
@@ -66,13 +66,13 @@ class TsmlIntergroupMeetingAttendanceRepository implements IntergroupMeetingAtte
      *  - order                 (string) ASC or DESC (default 'ASC')
      *
      * @param array $args Query arguments
-     * @return array<IntergroupMeetingAttendance>
+     * @return array<IntergroupMeetingGroupAttendance>
      */
     public function findAll(array $args = []): array
     {
         global $wpdb;
 
-        $table = TsmlIntergroupMeetingAttendanceTable::getTableName();
+        $table = TsmlIntergroupMeetingGroupAttendanceTable::getTableName();
 
         $where = [];
         $values = [];
@@ -143,7 +143,7 @@ class TsmlIntergroupMeetingAttendanceRepository implements IntergroupMeetingAtte
      * Find all attendance records for a specific intergroup meeting
      *
      * @param int $intergroupMeetingId
-     * @return array<IntergroupMeetingAttendance>
+     * @return array<IntergroupMeetingGroupAttendance>
      */
     public function findByIntergroupMeeting(int $intergroupMeetingId): array
     {
@@ -162,7 +162,7 @@ class TsmlIntergroupMeetingAttendanceRepository implements IntergroupMeetingAtte
     {
         global $wpdb;
 
-        $table = TsmlIntergroupMeetingAttendanceTable::getTableName();
+        $table = TsmlIntergroupMeetingGroupAttendanceTable::getTableName();
 
         $where = [];
         $values = [];
@@ -207,14 +207,14 @@ class TsmlIntergroupMeetingAttendanceRepository implements IntergroupMeetingAtte
     /**
      * Save an attendance record (insert or update)
      *
-     * @param IntergroupMeetingAttendance $attendance
+     * @param IntergroupMeetingGroupAttendance $attendance
      * @return bool
      */
-    public function save(IntergroupMeetingAttendance $attendance): bool
+    public function save(IntergroupMeetingGroupAttendance $attendance): bool
     {
         global $wpdb;
 
-        $table = TsmlIntergroupMeetingAttendanceTable::getTableName();
+        $table = TsmlIntergroupMeetingGroupAttendanceTable::getTableName();
 
         $data = [
             'intergroup_meeting_id' => $attendance->getIntergroupMeetingId(),
@@ -256,7 +256,7 @@ class TsmlIntergroupMeetingAttendanceRepository implements IntergroupMeetingAtte
     {
         global $wpdb;
 
-        $table = TsmlIntergroupMeetingAttendanceTable::getTableName();
+        $table = TsmlIntergroupMeetingGroupAttendanceTable::getTableName();
 
         $result = $wpdb->delete($table, ['id' => $id], ['%d']);
 
@@ -274,7 +274,7 @@ class TsmlIntergroupMeetingAttendanceRepository implements IntergroupMeetingAtte
     {
         global $wpdb;
 
-        $table = TsmlIntergroupMeetingAttendanceTable::getTableName();
+        $table = TsmlIntergroupMeetingGroupAttendanceTable::getTableName();
 
         $result = $wpdb->delete(
             $table,

@@ -5,24 +5,24 @@ declare(strict_types=1);
 namespace TsmlForUnity\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingAttendance;
-use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingAttendance;
+use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendance;
+use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingGroupAttendance;
 
 /**
- * Tests for TsmlIntergroupMeetingAttendance entity
+ * Tests for TsmlIntergroupMeetingGroupAttendance entity
  *
- * @covers \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingAttendance
+ * @covers \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendance
  */
-class TsmlIntergroupMeetingAttendanceTest extends TestCase
+class TsmlIntergroupMeetingGroupAttendanceTest extends TestCase
 {
     /**
      * @test
      */
     public function it_implements_intergroup_meeting_attendance_interface(): void
     {
-        $attendance = new TsmlIntergroupMeetingAttendance();
+        $attendance = new TsmlIntergroupMeetingGroupAttendance();
 
-        $this->assertInstanceOf(IntergroupMeetingAttendance::class, $attendance);
+        $this->assertInstanceOf(IntergroupMeetingGroupAttendance::class, $attendance);
     }
 
     /**
@@ -30,7 +30,7 @@ class TsmlIntergroupMeetingAttendanceTest extends TestCase
      */
     public function it_can_be_instantiated_with_default_values(): void
     {
-        $attendance = new TsmlIntergroupMeetingAttendance();
+        $attendance = new TsmlIntergroupMeetingGroupAttendance();
 
         $this->assertEquals(0, $attendance->getId());
         $this->assertEquals(0, $attendance->getIntergroupMeetingId());
@@ -46,7 +46,7 @@ class TsmlIntergroupMeetingAttendanceTest extends TestCase
      */
     public function it_can_be_instantiated_with_all_values(): void
     {
-        $attendance = new TsmlIntergroupMeetingAttendance(
+        $attendance = new TsmlIntergroupMeetingGroupAttendance(
             id: 42,
             intergroupMeetingId: 100,
             memberId: 55,
@@ -70,7 +70,7 @@ class TsmlIntergroupMeetingAttendanceTest extends TestCase
      */
     public function proxy_flag_defaults_to_false(): void
     {
-        $attendance = new TsmlIntergroupMeetingAttendance(
+        $attendance = new TsmlIntergroupMeetingGroupAttendance(
             id: 1,
             intergroupMeetingId: 10,
             memberId: 20,
@@ -87,7 +87,7 @@ class TsmlIntergroupMeetingAttendanceTest extends TestCase
      */
     public function proxy_name_is_independent_of_proxy_flag(): void
     {
-        $attendance = new TsmlIntergroupMeetingAttendance(
+        $attendance = new TsmlIntergroupMeetingGroupAttendance(
             id: 1,
             gsrProxy: false,
             gsrProxyName: 'Orphaned Name'
@@ -102,7 +102,7 @@ class TsmlIntergroupMeetingAttendanceTest extends TestCase
      */
     public function it_stores_meeting_group_as_plain_text(): void
     {
-        $attendance = new TsmlIntergroupMeetingAttendance(
+        $attendance = new TsmlIntergroupMeetingGroupAttendance(
             id: 1,
             meetingGroup: 'Tuesday Night Big Book Study'
         );
@@ -116,7 +116,7 @@ class TsmlIntergroupMeetingAttendanceTest extends TestCase
      */
     public function it_stores_gsr_name_as_plain_text(): void
     {
-        $attendance = new TsmlIntergroupMeetingAttendance(
+        $attendance = new TsmlIntergroupMeetingGroupAttendance(
             id: 1,
             gsrName: 'Mary K.'
         );
@@ -130,7 +130,7 @@ class TsmlIntergroupMeetingAttendanceTest extends TestCase
      */
     public function it_handles_empty_strings_for_text_fields(): void
     {
-        $attendance = new TsmlIntergroupMeetingAttendance(
+        $attendance = new TsmlIntergroupMeetingGroupAttendance(
             id: 1,
             meetingGroup: '',
             gsrName: '',
@@ -147,7 +147,7 @@ class TsmlIntergroupMeetingAttendanceTest extends TestCase
      */
     public function it_stores_member_id_as_integer(): void
     {
-        $attendance = new TsmlIntergroupMeetingAttendance(
+        $attendance = new TsmlIntergroupMeetingGroupAttendance(
             id: 1,
             memberId: 55
         );
@@ -161,7 +161,7 @@ class TsmlIntergroupMeetingAttendanceTest extends TestCase
      */
     public function it_stores_intergroup_meeting_id_as_integer(): void
     {
-        $attendance = new TsmlIntergroupMeetingAttendance(
+        $attendance = new TsmlIntergroupMeetingGroupAttendance(
             id: 1,
             intergroupMeetingId: 999
         );

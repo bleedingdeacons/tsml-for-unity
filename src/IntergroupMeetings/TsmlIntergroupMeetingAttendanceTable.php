@@ -9,7 +9,7 @@ namespace TsmlForUnity\IntergroupMeetings;
  *
  * Handles table creation on activation and schema upgrades via dbDelta.
  */
-class TsmlIntergroupMeetingAttendanceTable
+class TsmlIntergroupMeetingGroupAttendanceTable
 {
     /**
      * Database table version for schema upgrades

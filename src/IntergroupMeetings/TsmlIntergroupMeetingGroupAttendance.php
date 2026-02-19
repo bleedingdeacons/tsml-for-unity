@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\IntergroupMeetings;
 
-use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingAttendance;
+use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingGroupAttendance;
 
 /**
  * TSML Intergroup Meeting Attendance
@@ -12,7 +12,7 @@ use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingAttendance;
  * Records individual attendance at an intergroup meeting.
  * Backed by a custom database table rather than a custom post type.
  */
-class TsmlIntergroupMeetingAttendance implements IntergroupMeetingAttendance
+class TsmlIntergroupMeetingGroupAttendance implements IntergroupMeetingGroupAttendance
 {
     private int $id;
     private int $intergroupMeetingId;
@@ -23,7 +23,7 @@ class TsmlIntergroupMeetingAttendance implements IntergroupMeetingAttendance
     private string $gsrProxyName;
 
     /**
-     * TsmlIntergroupMeetingAttendance constructor
+     * TsmlIntergroupMeetingGroupAttendance constructor
      *
      * @param int    $id                   Row ID (0 for new unsaved records)
      * @param int    $intergroupMeetingId   Parent intergroup meeting post ID
