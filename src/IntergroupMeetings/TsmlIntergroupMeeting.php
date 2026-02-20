@@ -13,6 +13,8 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
 {
     private int $id;
 
+    private string $title;
+
     /**
      * @var array<int>
      */
@@ -29,17 +31,20 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
      * TsmlIntergroupMeeting constructor
      *
      * @param int $id Post ID
+     * @param string $title Meeting title
      * @param array<int> $groupAttendees Array of member IDs
      * @param array<int> $officersAttending Array of officer IDs
      * @param string $date Meeting date (Y-m-d format)
      */
     public function __construct(
         int $id,
+        string $title = '',
         array $groupAttendees = [],
         array $officersAttending = [],
         string $date = ''
     ) {
         $this->id = $id;
+        $this->title = $title;
         $this->groupAttendees = $groupAttendees;
         $this->officersAttending = $officersAttending;
         $this->date = $date;
@@ -53,6 +58,16 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
     public function getId(): int
     {
         return $this->id;
+    }
+
+    /**
+     * Get the title of the intergroup meeting
+     *
+     * @return string The meeting title or empty string if not set
+     */
+    public function getTitle(): string
+    {
+        return $this->title;
     }
 
     /**

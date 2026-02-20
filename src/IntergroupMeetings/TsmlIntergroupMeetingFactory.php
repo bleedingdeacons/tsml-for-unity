@@ -7,6 +7,7 @@ namespace TsmlForUnity\IntergroupMeetings;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingFactory;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeeting;
 use function get_field;
+use function get_the_title;
 
 /**
  * TSML Intergroup Meeting Factory Implementation
@@ -24,6 +25,9 @@ class TsmlIntergroupMeetingFactory implements IntergroupMeetingFactory
      */
     public function createFromSource(int $id): IntergroupMeeting
     {
+        $title = get_the_title($id);
+        $title = is_string($title) ? $title : '';
+
         $attendeesField = get_field(TsmlIntergroupMeetingFields::FIELD_ATTENDEES, $id);
         $attendees = $this->parsePostIds($attendeesField);
 
@@ -35,6 +39,7 @@ class TsmlIntergroupMeetingFactory implements IntergroupMeetingFactory
 
         return new TsmlIntergroupMeeting(
             $id,
+            $title,
             $attendees,
             $officers,
             $date
