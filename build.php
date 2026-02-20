@@ -221,7 +221,12 @@ class PluginBuilder
         $vendorDir = $this->pluginDir . DIRECTORY_SEPARATOR . 'vendor';
         if (!is_dir($vendorDir)) {
             $this->log("Warning: vendor directory not found. Running 'composer install'...");
-            $this->runComposer($type);
+            if ($type === 'production') {
+                echo $this->log("Composer install not run when build is production.");
+            } else {
+                // TODO: Test Dependencies Broken!!!
+                $this->runComposer($type);
+            }
         }
 
         // Create build directory
