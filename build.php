@@ -35,102 +35,89 @@ class PluginBuilder
     // Files and directories to exclude in production builds
     private array $productionExcludes = [
         // Version control
-        '.git',
-        '.gitignore',
-        '.gitattributes',
+            '.git',
+            '.gitignore',
+            '.gitattributes',
 
         // IDE/Editor
-        '.idea',
-        '.vscode',
+            '.idea',
+            '.vscode',
 
         // Build artifacts
-        'build',
+            'build',
 
         // Tests
-        'tests',
+            'tests',
 
         // Setup/config files not needed in production
-        'setup',
-        'node_modules',
-        '.DS_Store',
-        'Thumbs.db',
+            'setup',
+            'node_modules',
+            '.DS_Store',
+            'Thumbs.db',
 
         // Composer files (not needed after autoload is generated)
-        'composer.json',
-        'composer.lock',
+            'composer.json',
+            'composer.lock',
 
         // PHPUnit
-        'phpunit.xml',
-        'phpunit.xml.dist',
+            'phpunit.xml',
+            'phpunit.xml.dist',
 
         // Code style
-        '.phpcs.xml',
-        '.phpcs.xml.dist',
-        '.php-cs-fixer.php',
-        '.php-cs-fixer.cache',
+            '.phpcs.xml',
+            '.phpcs.xml.dist',
+            '.php-cs-fixer.php',
+            '.php-cs-fixer.cache',
 
         // Static analysis
-        'phpstan.neon',
-        'phpstan.neon.dist',
+            'phpstan.neon',
+            'phpstan.neon.dist',
 
         // Documentation
-        '*.md',
+            '*.md',
 
         // Package manager
-        'package.json',
-        'package-lock.json',
+            'package.json',
+            'package-lock.json',
 
         // Editor config
-        '.editorconfig',
+            '.editorconfig',
 
         // Build script
-        'build.php',
+            'build.php',
 
-        // ==== ALL VENDOR PACKAGES (no production dependencies) ====
-        'vendor/bin',
-        'vendor/myclabs',
-        'vendor/nikic',
-        'vendor/phar-io',
-        'vendor/phpstan',
-        'vendor/phpunit',
-        'vendor/sebastian',
-        'vendor/theseer',
-        'vendor/10up',
-        'vendor/mockery',
-        'vendor/squizlabs',
-        'vendor/szepeviktor',
-        'vendor/antecedent',
-        'vendor/hamcrest',
+        // Vendor (no production dependencies needed)
+            'vendor',
     ];
 
     // Files and directories to exclude in dev builds
     private array $devExcludes = [
         // Version control
-        '.git',
+            '.git',
 
         // IDE/Editor
-        '.idea',
-        '.vscode',
+            '.idea',
+            '.vscode',
 
         // Build artifacts
-        'build',
+            'build',
 
         // OS files
-        'node_modules',
-        '.DS_Store',
-        'Thumbs.db',
+            'node_modules',
+            '.DS_Store',
+            'Thumbs.db',
 
         // ==== VENDOR DEV PACKAGES NOT NEEDED IN DEV BUILD ====
         // These are dev tools, not needed to run/test the plugin
-        'vendor/bin',
-        'vendor/phpstan',
+            'vendor/bin',
+            'vendor/phpstan',
 
         // Vendor unnecessary files
-        'vendor/*/.git',
-        'vendor/*/.github',
-        'vendor/*/*/.github',
-        'vendor/*/doc',
-        'vendor/*/docs',
+            'vendor/*/.git',
+            'vendor/*/.github',
+            'vendor/*/*/.github',
+            'vendor/*/doc',
+            'vendor/*/docs',
     ];
 
     public function __construct()
@@ -255,9 +242,12 @@ class PluginBuilder
         $this->createZip($archiveName, $excludes);
 
         // Display file size
-        $size = $this->formatBytes(filesize($archiveName));
         $this->log("Archive created successfully: " . basename($archiveName));
-        $this->log("File size: {$size}");
+        $fileSize = filesize($archiveName);
+        if ($fileSize !== false) {
+            $size = $this->formatBytes($fileSize);
+            $this->log("File size: {$size}");
+        }
         $this->log("Location: {$archiveName}");
     }
 
@@ -302,8 +292,9 @@ class PluginBuilder
     {
         $zip = new ZipArchive();
 
-        if ($zip->open($archiveName, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            $this->error("Failed to create ZIP archive: {$archiveName}");
+        $result = $zip->open($archiveName, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        if ($result !== true) {
+            $this->error("Failed to create ZIP archive (error code: {$result})");
             exit(1);
         }
 
@@ -319,12 +310,23 @@ class PluginBuilder
             if (is_dir($file)) {
                 $zip->addEmptyDir($zipPath);
             } else {
-                $zip->addFile($file, $zipPath);
+                // Read file content and add as string to avoid keeping file handles
+                // open (which causes failures on Windows with many files)
+                $contents = file_get_contents($file);
+                if ($contents === false) {
+                    $this->error("Warning: Could not read file: {$file}");
+                    continue;
+                }
+                $zip->addFromString($zipPath, $contents);
                 $fileCount++;
             }
         }
 
-        $zip->close();
+        if (!$zip->close()) {
+            $this->error("Failed to write ZIP archive to: {$archiveName}");
+            exit(1);
+        }
+
         $this->log("Added {$fileCount} files to archive");
     }
 
@@ -335,8 +337,8 @@ class PluginBuilder
     {
         $files = [];
         $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::SELF_FIRST
+                new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::SELF_FIRST
         );
 
         foreach ($iterator as $file) {
