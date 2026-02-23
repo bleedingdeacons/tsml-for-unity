@@ -42,7 +42,9 @@ class TsmlIntergroupMeetingFactory implements IntergroupMeetingFactory
             $title,
             $attendees,
             $officers,
-            $date
+            $date,
+            $attendees,
+            $officers
         );
     }
 

@@ -25,6 +25,16 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
      */
     private array $officersAttending;
 
+    /**
+     * @var array<int>
+     */
+    private array $attendingGroups;
+
+    /**
+     * @var array<int>
+     */
+    private array $attendingOfficers;
+
     private string $date;
 
     /**
@@ -35,19 +45,25 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
      * @param array<int> $groupAttendees Array of member IDs
      * @param array<int> $officersAttending Array of officer IDs
      * @param string $date Meeting date (Y-m-d format)
+     * @param array<int> $attendingGroups Array of group post IDs (ACF: attending_groups)
+     * @param array<int> $attendingOfficers Array of officer post IDs (ACF: attending_officers)
      */
     public function __construct(
         int $id,
         string $title = '',
         array $groupAttendees = [],
         array $officersAttending = [],
-        string $date = ''
+        string $date = '',
+        array $attendingGroups = [],
+        array $attendingOfficers = []
     ) {
         $this->id = $id;
         $this->title = $title;
         $this->groupAttendees = $groupAttendees;
         $this->officersAttending = $officersAttending;
         $this->date = $date;
+        $this->attendingGroups = $attendingGroups;
+        $this->attendingOfficers = $attendingOfficers;
     }
 
     /**
@@ -190,5 +206,25 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
     public function hasOfficerAttendee(int $officerId): bool
     {
         return in_array($officerId, $this->officersAttending, true);
+    }
+
+    /**
+     * Get the array of group post IDs attending the meeting (ACF field: attending_groups)
+     *
+     * @return array<int>
+     */
+    public function getAttendingGroups(): array
+    {
+        return $this->attendingGroups;
+    }
+
+    /**
+     * Get the array of officer post IDs attending the meeting (ACF field: attending_officers)
+     *
+     * @return array<int>
+     */
+    public function getAttendingOfficers(): array
+    {
+        return $this->attendingOfficers;
     }
 }
