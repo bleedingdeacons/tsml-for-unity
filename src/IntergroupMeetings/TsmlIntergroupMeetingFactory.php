@@ -14,6 +14,9 @@ use function get_the_title;
  *
  * Factory class for creating IntergroupMeeting objects from TSML data.
  * This implementation uses TsmlIntergroupMeetingFields constants for field names.
+ *
+ * All ACF fields are read via get_field() so that relationship fields resolve
+ * correctly regardless of the configured return format (post object or ID).
  */
 class TsmlIntergroupMeetingFactory implements IntergroupMeetingFactory
 {
@@ -28,11 +31,15 @@ class TsmlIntergroupMeetingFactory implements IntergroupMeetingFactory
         $title = get_the_title($id);
         $title = is_string($title) ? $title : '';
 
-        $attendeesField = get_field(TsmlIntergroupMeetingFields::FIELD_ATTENDEES, $id);
-        $attendees = $this->parsePostIds($attendeesField);
+        // Use get_field() for ACF relationship fields so the values are
+        // consistent with what the ACF admin UI reads and writes.
+        // A relationship field returns WP_Post objects or post IDs depending
+        // on the field's "Return Format" setting; parsePostIds() handles both.
+        $attendeesRaw = get_field(TsmlIntergroupMeetingFields::FIELD_ATTENDEES, $id);
+        $attendees = $this->parsePostIds($attendeesRaw);
 
-        $officersField = get_field(TsmlIntergroupMeetingFields::FIELD_ATTENDING_OFFICERS, $id);
-        $officers = $this->parsePostIds($officersField);
+        $officersRaw = get_field(TsmlIntergroupMeetingFields::FIELD_ATTENDING_OFFICERS, $id);
+        $officers = $this->parsePostIds($officersRaw);
 
         $dateField = get_field(TsmlIntergroupMeetingFields::FIELD_DATE, $id);
         $date = is_string($dateField) ? $dateField : '';
@@ -42,14 +49,17 @@ class TsmlIntergroupMeetingFactory implements IntergroupMeetingFactory
             $title,
             $attendees,
             $officers,
-            $date,
-            $attendees,
-            $officers
+            $date
         );
     }
 
     /**
      * Parse a field into an array of post IDs
+     *
+     * Handles ACF relationship fields which may return:
+     *   - An array of WP_Post objects (return format: "Post Object")
+     *   - An array of integer IDs (return format: "Post ID")
+     *   - false/null when the field is empty
      *
      * @param mixed $field The raw field value from ACF
      * @return array<int> Array of post IDs

@@ -16,6 +16,7 @@ class TsmlIntergroupMeetingGroupAttendance implements IntergroupMeetingGroupAtte
 {
     private int $id;
     private int $intergroupMeetingId;
+    private int $groupId;
     private int $memberId;
     private string $meetingGroup;
     private string $gsrName;
@@ -27,8 +28,9 @@ class TsmlIntergroupMeetingGroupAttendance implements IntergroupMeetingGroupAtte
      *
      * @param int    $id                   Row ID (0 for new unsaved records)
      * @param int    $intergroupMeetingId   Parent intergroup meeting post ID
+     * @param int    $groupId              Group CPT post ID
      * @param int    $memberId             Member ID
-     * @param string $meetingGroup          Meeting or group name (plain text)
+     * @param string $meetingGroup          Meeting or group name (looked up from group CPT)
      * @param string $gsrName              GSR name (plain text)
      * @param bool   $gsrProxy             Whether a proxy attended for the GSR
      * @param string $gsrProxyName         Proxy name (plain text)
@@ -36,6 +38,7 @@ class TsmlIntergroupMeetingGroupAttendance implements IntergroupMeetingGroupAtte
     public function __construct(
         int $id = 0,
         int $intergroupMeetingId = 0,
+        int $groupId = 0,
         int $memberId = 0,
         string $meetingGroup = '',
         string $gsrName = '',
@@ -44,6 +47,7 @@ class TsmlIntergroupMeetingGroupAttendance implements IntergroupMeetingGroupAtte
     ) {
         $this->id = $id;
         $this->intergroupMeetingId = $intergroupMeetingId;
+        $this->groupId = $groupId;
         $this->memberId = $memberId;
         $this->meetingGroup = $meetingGroup;
         $this->gsrName = $gsrName;
@@ -72,6 +76,16 @@ class TsmlIntergroupMeetingGroupAttendance implements IntergroupMeetingGroupAtte
     }
 
     /**
+     * Get the group ID (group CPT post ID) this attendance belongs to
+     *
+     * @return int
+     */
+    public function getGroupId(): int
+    {
+        return $this->groupId;
+    }
+
+    /**
      * Get the member ID this attendance record belongs to
      *
      * @return int
@@ -82,7 +96,7 @@ class TsmlIntergroupMeetingGroupAttendance implements IntergroupMeetingGroupAtte
     }
 
     /**
-     * Get the meeting or group name (plain text, no relationship)
+     * Get the meeting or group name
      *
      * @return string
      */
@@ -92,7 +106,7 @@ class TsmlIntergroupMeetingGroupAttendance implements IntergroupMeetingGroupAtte
     }
 
     /**
-     * Get the GSR name (plain text, no relationship)
+     * Get the GSR name (plain text)
      *
      * @return string
      */

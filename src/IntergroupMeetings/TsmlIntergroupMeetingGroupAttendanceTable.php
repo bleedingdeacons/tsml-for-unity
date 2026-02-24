@@ -14,7 +14,7 @@ class TsmlIntergroupMeetingGroupAttendanceTable
     /**
      * Database table version for schema upgrades
      */
-    public const DB_VERSION = '1.0';
+    public const DB_VERSION = '1.1';
 
     /**
      * Option key storing the current installed table version
@@ -55,6 +55,7 @@ class TsmlIntergroupMeetingGroupAttendanceTable
         $sql = "CREATE TABLE {$table} (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             intergroup_meeting_id bigint(20) unsigned NOT NULL,
+            group_id bigint(20) unsigned NOT NULL DEFAULT 0,
             member_id bigint(20) unsigned NOT NULL,
             meeting_group varchar(255) NOT NULL DEFAULT '',
             gsr_name varchar(255) NOT NULL DEFAULT '',
@@ -62,6 +63,7 @@ class TsmlIntergroupMeetingGroupAttendanceTable
             gsr_proxy_name varchar(255) NOT NULL DEFAULT '',
             PRIMARY KEY  (id),
             KEY intergroup_meeting_id (intergroup_meeting_id),
+            KEY group_id (group_id),
             KEY member_id (member_id)
         ) {$charsetCollate};";
 

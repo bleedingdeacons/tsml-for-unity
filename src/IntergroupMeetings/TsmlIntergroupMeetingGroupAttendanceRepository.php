@@ -57,6 +57,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepository implements IntergroupMeetin
      *
      * Supported $args keys:
      *  - intergroup_meeting_id (int)  Filter by parent meeting
+     *  - group_id              (int)    Filter by group CPT post ID
      *  - member_id             (int)    Filter by member
      *  - meeting_group         (string) Filter by meeting/group name
      *  - gsr_name              (string) Filter by GSR name
@@ -82,6 +83,11 @@ class TsmlIntergroupMeetingGroupAttendanceRepository implements IntergroupMeetin
             $values[] = (int) $args['intergroup_meeting_id'];
         }
 
+        if (isset($args['group_id'])) {
+            $where[] = 'group_id = %d';
+            $values[] = (int) $args['group_id'];
+        }
+
         if (isset($args['member_id'])) {
             $where[] = 'member_id = %d';
             $values[] = (int) $args['member_id'];
@@ -102,7 +108,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepository implements IntergroupMeetin
             $whereClause = 'WHERE ' . implode(' AND ', $where);
         }
 
-        $allowedOrderBy = ['id', 'intergroup_meeting_id', 'meeting_group', 'gsr_name'];
+        $allowedOrderBy = ['id', 'intergroup_meeting_id', 'group_id', 'meeting_group', 'gsr_name'];
         $orderBy = isset($args['orderby']) && in_array($args['orderby'], $allowedOrderBy, true)
             ? $args['orderby']
             : 'id';
@@ -172,6 +178,11 @@ class TsmlIntergroupMeetingGroupAttendanceRepository implements IntergroupMeetin
             $values[] = (int) $args['intergroup_meeting_id'];
         }
 
+        if (isset($args['group_id'])) {
+            $where[] = 'group_id = %d';
+            $values[] = (int) $args['group_id'];
+        }
+
         if (isset($args['member_id'])) {
             $where[] = 'member_id = %d';
             $values[] = (int) $args['member_id'];
@@ -218,6 +229,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepository implements IntergroupMeetin
 
         $data = [
             'intergroup_meeting_id' => $attendance->getIntergroupMeetingId(),
+            'group_id'              => $attendance->getGroupId(),
             'member_id'             => $attendance->getMemberId(),
             'meeting_group'         => $attendance->getMeetingGroup(),
             'gsr_name'              => $attendance->getGsrName(),
@@ -225,7 +237,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepository implements IntergroupMeetin
             'gsr_proxy_name'        => $attendance->getGsrProxyName(),
         ];
 
-        $formats = ['%d', '%d', '%s', '%s', '%d', '%s'];
+        $formats = ['%d', '%d', '%d', '%s', '%s', '%d', '%s'];
 
         // Update existing record
         if ($attendance->getId() > 0) {
@@ -281,6 +293,31 @@ class TsmlIntergroupMeetingGroupAttendanceRepository implements IntergroupMeetin
             [
                 'intergroup_meeting_id' => $intergroupMeetingId,
                 'member_id'             => $memberId,
+            ],
+            ['%d', '%d']
+        );
+
+        return $result !== false;
+    }
+
+    /**
+     * Delete the attendance record for a specific group at a specific intergroup meeting
+     *
+     * @param int $intergroupMeetingId
+     * @param int $groupId
+     * @return bool
+     */
+    public function deleteByIntergroupMeetingAndGroup(int $intergroupMeetingId, int $groupId): bool
+    {
+        global $wpdb;
+
+        $table = TsmlIntergroupMeetingGroupAttendanceTable::getTableName();
+
+        $result = $wpdb->delete(
+            $table,
+            [
+                'intergroup_meeting_id' => $intergroupMeetingId,
+                'group_id'              => $groupId,
             ],
             ['%d', '%d']
         );

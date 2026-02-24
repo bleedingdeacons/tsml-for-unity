@@ -50,6 +50,7 @@ class TsmlIntergroupMeetingGroupAttendanceFactory implements IntergroupMeetingGr
         return new TsmlIntergroupMeetingGroupAttendance(
             id: (int) ($row['id'] ?? 0),
             intergroupMeetingId: (int) ($row['intergroup_meeting_id'] ?? 0),
+            groupId: (int) ($row['group_id'] ?? 0),
             memberId: (int) ($row['member_id'] ?? 0),
             meetingGroup: (string) ($row['meeting_group'] ?? ''),
             gsrName: (string) ($row['gsr_name'] ?? ''),
@@ -62,8 +63,9 @@ class TsmlIntergroupMeetingGroupAttendanceFactory implements IntergroupMeetingGr
      * Create a new IntergroupMeetingGroupAttendance instance (not yet persisted)
      *
      * @param int    $intergroupMeetingId Parent intergroup meeting ID
+     * @param int    $groupId            Group CPT post ID
      * @param int    $memberId           Member ID
-     * @param string $meetingGroup        Meeting or group name (plain text)
+     * @param string $meetingGroup        Meeting or group name (looked up from group CPT)
      * @param string $gsrName            GSR name (plain text)
      * @param bool   $gsrProxy           Whether a proxy attended for the GSR
      * @param string $gsrProxyName       Proxy name (plain text)
@@ -71,6 +73,7 @@ class TsmlIntergroupMeetingGroupAttendanceFactory implements IntergroupMeetingGr
      */
     public function createNew(
         int $intergroupMeetingId,
+        int $groupId,
         int $memberId,
         string $meetingGroup,
         string $gsrName,
@@ -80,6 +83,7 @@ class TsmlIntergroupMeetingGroupAttendanceFactory implements IntergroupMeetingGr
         return new TsmlIntergroupMeetingGroupAttendance(
             id: 0,
             intergroupMeetingId: $intergroupMeetingId,
+            groupId: $groupId,
             memberId: $memberId,
             meetingGroup: $meetingGroup,
             gsrName: $gsrName,

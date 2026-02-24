@@ -16,7 +16,7 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
     private string $title;
 
     /**
-     * @var array<int>
+     * @var array<int> Array of group IDs (group CPT post IDs) attending
      */
     private array $groupAttendees;
 
@@ -25,16 +25,6 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
      */
     private array $officersAttending;
 
-    /**
-     * @var array<int>
-     */
-    private array $attendingGroups;
-
-    /**
-     * @var array<int>
-     */
-    private array $attendingOfficers;
-
     private string $date;
 
     /**
@@ -42,28 +32,22 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
      *
      * @param int $id Post ID
      * @param string $title Meeting title
-     * @param array<int> $groupAttendees Array of member IDs
-     * @param array<int> $officersAttending Array of officer IDs
+     * @param array<int> $groupAttendees Array of group IDs (group CPT post IDs) attending
+     * @param array<int> $officersAttending Array of officer member IDs attending
      * @param string $date Meeting date (Y-m-d format)
-     * @param array<int> $attendingGroups Array of group post IDs (ACF: attending_groups)
-     * @param array<int> $attendingOfficers Array of officer post IDs (ACF: attending_officers)
      */
     public function __construct(
         int $id,
         string $title = '',
         array $groupAttendees = [],
         array $officersAttending = [],
-        string $date = '',
-        array $attendingGroups = [],
-        array $attendingOfficers = []
+        string $date = ''
     ) {
         $this->id = $id;
         $this->title = $title;
         $this->groupAttendees = $groupAttendees;
         $this->officersAttending = $officersAttending;
         $this->date = $date;
-        $this->attendingGroups = $attendingGroups;
-        $this->attendingOfficers = $attendingOfficers;
     }
 
     /**
@@ -87,7 +71,7 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
     }
 
     /**
-     * Get the array of member IDs attending the meeting
+     * Get the array of group IDs attending the meeting
      *
      * @return array<int>
      */
@@ -117,30 +101,30 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
     }
 
     /**
-     * Add a member ID to the group attendees list
+     * Add a group ID to the group attendees list
      *
-     * @param int $memberId
-     * @return bool True if the member was added, false if already present
+     * @param int $groupId
+     * @return bool True if the group was added, false if already present
      */
-    public function addGroupAttendee(int $memberId): bool
+    public function addGroupAttendee(int $groupId): bool
     {
-        if (in_array($memberId, $this->groupAttendees, true)) {
+        if (in_array($groupId, $this->groupAttendees, true)) {
             return false;
         }
 
-        $this->groupAttendees[] = $memberId;
+        $this->groupAttendees[] = $groupId;
         return true;
     }
 
     /**
-     * Remove a member ID from the group attendees list
+     * Remove a group ID from the group attendees list
      *
-     * @param int $memberId
-     * @return bool True if the member was removed, false if not present
+     * @param int $groupId
+     * @return bool True if the group was removed, false if not present
      */
-    public function removeGroupAttendee(int $memberId): bool
+    public function removeGroupAttendee(int $groupId): bool
     {
-        $key = array_search($memberId, $this->groupAttendees, true);
+        $key = array_search($groupId, $this->groupAttendees, true);
 
         if ($key === false) {
             return false;
@@ -152,14 +136,14 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
     }
 
     /**
-     * Check if a member ID is in the group attendees list
+     * Check if a group ID is in the group attendees list
      *
-     * @param int $memberId
+     * @param int $groupId
      * @return bool
      */
-    public function hasGroupAttendee(int $memberId): bool
+    public function hasGroupAttendee(int $groupId): bool
     {
-        return in_array($memberId, $this->groupAttendees, true);
+        return in_array($groupId, $this->groupAttendees, true);
     }
 
     /**
@@ -206,25 +190,5 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
     public function hasOfficerAttendee(int $officerId): bool
     {
         return in_array($officerId, $this->officersAttending, true);
-    }
-
-    /**
-     * Get the array of group post IDs attending the meeting (ACF field: attending_groups)
-     *
-     * @return array<int>
-     */
-    public function getAttendingGroups(): array
-    {
-        return $this->attendingGroups;
-    }
-
-    /**
-     * Get the array of officer post IDs attending the meeting (ACF field: attending_officers)
-     *
-     * @return array<int>
-     */
-    public function getAttendingOfficers(): array
-    {
-        return $this->attendingOfficers;
     }
 }
