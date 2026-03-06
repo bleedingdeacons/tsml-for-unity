@@ -285,4 +285,37 @@ class TsmlIntergroupMeetingOfficerAttendanceRepository implements IntergroupMeet
 
         return $result !== false;
     }
+
+    /**
+     * Update the position name and officer name on the attendance record
+     * for a given officer at a specific intergroup meeting.
+     *
+     * @param int    $intergroupMeetingId The intergroup meeting ID
+     * @param int    $officerId           The officer (member) ID
+     * @param string $positionName        New position name (plain text)
+     * @param string $officerName         New officer name (plain text)
+     * @return int Number of rows updated
+     */
+    public function updateByMeetingAndOfficer(int $intergroupMeetingId, int $officerId, string $positionName, string $officerName): int
+    {
+        global $wpdb;
+
+        $table = TsmlIntergroupMeetingOfficerAttendanceTable::getTableName();
+
+        $result = $wpdb->update(
+            $table,
+            [
+                'position_name' => $positionName,
+                'officer_name'  => $officerName,
+            ],
+            [
+                'intergroup_meeting_id' => $intergroupMeetingId,
+                'officer_id'            => $officerId,
+            ],
+            ['%s', '%s'],
+            ['%d', '%d']
+        );
+
+        return $result !== false ? (int) $result : 0;
+    }
 }
