@@ -27,6 +27,8 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
 
     private string $date;
 
+    private string $updated;
+
     /**
      * TsmlIntergroupMeeting constructor
      *
@@ -35,19 +37,22 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
      * @param array<int> $groupAttendees Array of group IDs (group CPT post IDs) attending
      * @param array<int> $officersAttending Array of officer member IDs attending
      * @param string $date Meeting date (Y-m-d format)
+     * @param string $updated Last updated datetime string
      */
     public function __construct(
         int $id,
         string $title = '',
         array $groupAttendees = [],
         array $officersAttending = [],
-        string $date = ''
+        string $date = '',
+        string $updated = ''
     ) {
         $this->id = $id;
         $this->title = $title;
         $this->groupAttendees = $groupAttendees;
         $this->officersAttending = $officersAttending;
         $this->date = $date;
+        $this->updated = $updated;
     }
 
     /**
@@ -190,5 +195,13 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
     public function hasOfficerAttendee(int $officerId): bool
     {
         return in_array($officerId, $this->officersAttending, true);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getUpdated(): string
+    {
+        return $this->updated;
     }
 }

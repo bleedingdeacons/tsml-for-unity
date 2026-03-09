@@ -7,6 +7,7 @@ namespace TsmlForUnity\IntergroupMeetings;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingFactory;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeeting;
 use function get_field;
+use function get_post;
 use function get_the_title;
 
 /**
@@ -44,12 +45,16 @@ class TsmlIntergroupMeetingFactory implements IntergroupMeetingFactory
         $dateField = get_field(TsmlIntergroupMeetingFields::FIELD_DATE, $id);
         $date = is_string($dateField) ? $dateField : '';
 
+        $post = get_post($id);
+        $updated = ($post && isset($post->post_modified)) ? $post->post_modified : '';
+
         return new TsmlIntergroupMeeting(
             $id,
             $title,
             $attendees,
             $officers,
-            $date
+            $date,
+            $updated
         );
     }
 
