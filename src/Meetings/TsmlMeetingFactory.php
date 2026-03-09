@@ -308,7 +308,8 @@ class TsmlMeetingFactory implements MeetingFactory
                 $contacts,
                 $processedMeta,
                 $onlineLink,
-                $onlineNotes
+                $onlineNotes,
+                get_post($id)->post_modified ?? ''
             );
         } catch (Exception $e) {
             $this->logError('Error creating Meeting: ' . $e->getMessage(), [

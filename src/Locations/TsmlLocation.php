@@ -28,6 +28,7 @@ class TsmlLocation implements Location
     private ?float $longitude;
     private string $timezone;
     private array $meetingIds;
+    private string $updated;
 
     /**
      * Locations constructor
@@ -46,6 +47,7 @@ class TsmlLocation implements Location
      * @param float|null $longitude  Longitude coordinate
      * @param string     $timezone   Timezone identifier
      * @param array      $meetingIds Associated meeting post IDs
+     * @param string     $updated    Last updated datetime string
      */
     public function __construct(
         int $id = 0,
@@ -61,7 +63,8 @@ class TsmlLocation implements Location
         ?float $latitude = null,
         ?float $longitude = null,
         string $timezone = '',
-        array $meetingIds = []
+        array $meetingIds = [],
+        string $updated = ''
     ) {
         $this->id = $id;
         $this->name = $name;
@@ -77,6 +80,7 @@ class TsmlLocation implements Location
         $this->longitude = $longitude;
         $this->timezone = $timezone;
         $this->meetingIds = $meetingIds;
+        $this->updated = $updated;
     }
 
     /**
@@ -239,5 +243,13 @@ class TsmlLocation implements Location
     public function hasCoordinates(): bool
     {
         return $this->latitude !== null && $this->longitude !== null;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getUpdated(): string
+    {
+        return $this->updated;
     }
 }

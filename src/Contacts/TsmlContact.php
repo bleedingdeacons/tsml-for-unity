@@ -16,6 +16,7 @@ class TsmlContact implements Contact
     private string $name;
     private string $email;
     private string $phone;
+    private string $updated;
 
     /**
      * Constructor.
@@ -23,12 +24,14 @@ class TsmlContact implements Contact
      * @param string $name The contact's name.
      * @param string $email The contact's email address.
      * @param string $phone The contact's phone number.
+     * @param string $updated Last updated datetime string.
      */
-    public function __construct(string $name = '', string $email = '', string $phone = '')
+    public function __construct(string $name = '', string $email = '', string $phone = '', string $updated = '')
     {
         $this->name = $name;
         $this->email = $email;
         $this->phone = $phone;
+        $this->updated = $updated;
     }
 
     /**
@@ -53,5 +56,13 @@ class TsmlContact implements Contact
     public function getPhone(): string
     {
         return $this->phone;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getUpdated(): string
+    {
+        return $this->updated;
     }
 }

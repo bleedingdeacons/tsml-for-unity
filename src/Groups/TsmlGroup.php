@@ -29,6 +29,7 @@ class TsmlGroup implements Group
     private ?int $districtId;
     private ?string $lastContact;
     private array $contacts;
+    private string $updated;
 
     /**
      * Constructor.
@@ -47,6 +48,7 @@ class TsmlGroup implements Group
      * @param int|null $districtId District ID
      * @param string|null $lastContact Last contact timestamp
      * @param ContactInterface[] $contacts Array of TsmlContact objects
+     * @param string $updated Last updated datetime string
      */
     public function __construct(
         int $id,
@@ -62,7 +64,8 @@ class TsmlGroup implements Group
         string $square = '',
         ?int $districtId = null,
         ?string $lastContact = null,
-        array $contacts = []
+        array $contacts = [],
+        string $updated = ''
     ) {
         $this->id = $id;
         $this->title = $title;
@@ -78,6 +81,7 @@ class TsmlGroup implements Group
         $this->districtId = $districtId;
         $this->lastContact = $lastContact;
         $this->contacts = $contacts;
+        $this->updated = $updated;
     }
 
     /**
@@ -209,5 +213,13 @@ class TsmlGroup implements Group
         return !empty($this->venmo)
             || !empty($this->paypal)
             || !empty($this->square);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getUpdated(): string
+    {
+        return $this->updated;
     }
 }

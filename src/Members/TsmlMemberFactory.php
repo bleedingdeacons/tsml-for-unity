@@ -72,7 +72,8 @@ class TsmlMemberFactory implements MemberFactory
             (bool) (get_field(TsmlMemberFields::FIELD_HOMEGROUP_GSR, $id) ?? false),
             get_field(TsmlMemberFields::FIELD_MEETING_PO, $id) ?? null,
             get_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $id) ?? '',
-            get_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $id) ?? ''
+            get_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $id) ?? '',
+            get_post($id)->post_modified ?? ''
         );
     }
 
@@ -95,6 +96,7 @@ class TsmlMemberFactory implements MemberFactory
      * @param mixed  $meetingPO                    Meeting PO reference
      * @param string $personalEmail                Personal email
      * @param string $mobileNumber                 Mobile number
+     * @param string $updated                      Last updated datetime
      * @return Member
      */
     public function createNew(
@@ -109,7 +111,8 @@ class TsmlMemberFactory implements MemberFactory
         bool $isGSR = false,
         mixed $meetingPO = null,
         string $personalEmail = '',
-        string $mobileNumber = ''
+        string $mobileNumber = '',
+        string $updated = ''
     ): Member {
         return new TsmlMember(
             $id,
@@ -123,7 +126,8 @@ class TsmlMemberFactory implements MemberFactory
             $isGSR,
             $meetingPO,
             $personalEmail,
-            $mobileNumber
+            $mobileNumber,
+            $updated
         );
     }
 

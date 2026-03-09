@@ -23,6 +23,7 @@ class TsmlMember implements Member
     private mixed $meetingPO;
     private string $personalEmail;
     private string $mobileNumber;
+    private string $updated;
 
     /**
      * Member constructor
@@ -39,6 +40,7 @@ class TsmlMember implements Member
      * @param mixed $meetingPO Meeting PO reference
      * @param string $personalEmail Personal email address
      * @param string $mobileNumber Mobile phone number
+     * @param string $updated Last updated datetime string
      */
     public function __construct(
         int $id,
@@ -52,7 +54,8 @@ class TsmlMember implements Member
         bool $isGSR = false,
         mixed $meetingPO = null, // Need to removed
         string $personalEmail = '',
-        string $mobileNumber = ''
+        string $mobileNumber = '',
+        string $updated = ''
     ) {
         $this->id = $id;
         $this->anonymousName = $anonymousName;
@@ -66,6 +69,7 @@ class TsmlMember implements Member
         $this->meetingPO = $meetingPO;
         $this->personalEmail = $personalEmail;
         $this->mobileNumber = $mobileNumber;
+        $this->updated = $updated;
     }
 
     public function getId(): int
@@ -126,5 +130,10 @@ class TsmlMember implements Member
     public function getMobileNumber(): string
     {
         return $this->mobileNumber;
+    }
+
+    public function getUpdated(): string
+    {
+        return $this->updated;
     }
 }

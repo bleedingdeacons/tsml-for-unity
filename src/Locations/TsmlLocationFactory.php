@@ -53,7 +53,8 @@ class TsmlLocationFactory implements LocationFactory
             latitude: $this->parseFloat($this->getMetaField($meta, TsmlLocationFields::LATITUDE, null)),
             longitude: $this->parseFloat($this->getMetaField($meta, TsmlLocationFields::LONGITUDE, null)),
             timezone: $this->getMetaField($meta, TsmlLocationFields::TIMEZONE, ''),
-            meetingIds: $meetingIds
+            meetingIds: $meetingIds,
+            updated: $post->post_modified ?? ''
         );
     }
 

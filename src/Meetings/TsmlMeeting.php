@@ -30,6 +30,7 @@ class TsmlMeeting implements Meeting
     private array $meta;
     private string $onlineLink;
     private string $onlineNotes;
+    private string $updated;
 
     /**
      * Constructor.
@@ -50,6 +51,7 @@ class TsmlMeeting implements Meeting
      * @param array $meta Meta data
      * @param string $onlineLink Online meeting link
      * @param string $onlineNotes Online meeting notes
+     * @param string $updated Last updated datetime string
      */
     public function __construct(
         int $id,
@@ -67,7 +69,8 @@ class TsmlMeeting implements Meeting
         array $contacts = [],
         array $meta = [],
         string $onlineLink = '',
-        string $onlineNotes = ''
+        string $onlineNotes = '',
+        string $updated = ''
     ) {
         $this->id = $id;
         $this->name = $name;
@@ -85,6 +88,7 @@ class TsmlMeeting implements Meeting
         $this->meta = $meta;
         $this->onlineLink = $onlineLink;
         $this->onlineNotes = $onlineNotes;
+        $this->updated = $updated;
     }
 
     /**
@@ -213,5 +217,13 @@ class TsmlMeeting implements Meeting
     public function getOnlineNotes(): string
     {
         return $this->onlineNotes;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getUpdated(): string
+    {
+        return $this->updated;
     }
 }

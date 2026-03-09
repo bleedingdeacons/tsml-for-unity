@@ -177,6 +177,10 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
             return true;
         }
 
+        if ($originalMember->getUpdated() !== $updatedMember->getUpdated()) {
+            return true;
+        }
+
         return false;
     }
 }

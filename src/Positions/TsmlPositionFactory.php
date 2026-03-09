@@ -52,7 +52,8 @@ class TsmlPositionFactory implements PositionFactory
             (string) $acfData[TsmlPositionFields::LONG_NAME],
             (string) $acfData[TsmlPositionFields::SHORT_DESCRIPTION],
             (string) $acfData[TsmlPositionFields::SUMMARY],
-            $link
+            $link,
+            $post->post_modified ?? ''
         );
     }
 }

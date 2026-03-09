@@ -19,6 +19,7 @@ class TsmlPosition implements Position
     private string $shortDescription;
     private string $summary;
     private string $link;
+    private string $updated;
 
     /**
      * Position constructor
@@ -31,6 +32,7 @@ class TsmlPosition implements Position
      * @param string $shortDescription  Short description
      * @param string $summary           Summary
      * @param string $link              Link URL
+     * @param string $updated           Last updated datetime string
      */
     public function __construct(
         int $id = 0,
@@ -40,7 +42,8 @@ class TsmlPosition implements Position
         string $longName = '',
         string $shortDescription = '',
         string $summary = '',
-        string $link = ''
+        string $link = '',
+        string $updated = ''
     ) {
         $this->id = $id;
         $this->minimumSobriety = $minimumSobriety;
@@ -50,6 +53,7 @@ class TsmlPosition implements Position
         $this->shortDescription = $shortDescription;
         $this->summary = $summary;
         $this->link = $link;
+        $this->updated = $updated;
     }
 
     /**
@@ -128,5 +132,13 @@ class TsmlPosition implements Position
             && !empty($this->summary)
             && $this->minimumSobriety >= 6
             && $this->termYears >= 1;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getUpdated(): string
+    {
+        return $this->updated;
     }
 }
