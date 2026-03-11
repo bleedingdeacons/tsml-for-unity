@@ -14,6 +14,8 @@ class TsmlGroupView implements GroupView
     private int $id;
     private string $title;
     private string $email;
+    private string $groupEmail;
+    private bool $groupEmailActive;
     private array $meetings;
     private string $link;
     private array $contacts;
@@ -24,14 +26,19 @@ class TsmlGroupView implements GroupView
      * @param int    $id       Post ID
      * @param string $title    Group title
      * @param string $email    Email address
+     * @param string $groupEmail Group email address
+     * @param bool   $groupEmailActive Whether the group email is active
      * @param array  $meetings Array of Meeting objects
      * @param string $link     Link URL
      * @param array  $contacts Array of Contact objects
+     * @param array  $members  Array of Member objects
      */
     public function __construct(
         int $id = 0,
         string $title = '',
         string $email = '',
+        string $groupEmail = '',
+        bool $groupEmailActive = false,
         array $meetings = [],
         string $link = '',
         array $contacts = [],
@@ -40,6 +47,8 @@ class TsmlGroupView implements GroupView
         $this->id = $id;
         $this->title = $title;
         $this->email = $email;
+        $this->groupEmail = $groupEmail;
+        $this->groupEmailActive = $groupEmailActive;
         $this->meetings = $meetings;
         $this->link = $link;
         $this->contacts = $contacts;
@@ -84,6 +93,22 @@ class TsmlGroupView implements GroupView
     public function getLink(): string
     {
         return $this->link;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getGroupEmail(): string
+    {
+        return $this->groupEmail;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function isGroupEmailActive(): bool
+    {
+        return $this->groupEmailActive;
     }
 
     /**

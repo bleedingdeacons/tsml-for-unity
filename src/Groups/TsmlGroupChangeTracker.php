@@ -169,6 +169,14 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
             return true;
         }
 
+        if ($originalGroup->getGroupEmail() !== $updatedGroup->getGroupEmail()) {
+            return true;
+        }
+
+        if ($originalGroup->isGroupEmailActive() !== $updatedGroup->isGroupEmailActive()) {
+            return true;
+        }
+
         $originalMeetingIds = $this->getMeetingIds($originalGroup);
         $updatedMeetingIds = $this->getMeetingIds($updatedGroup);
 

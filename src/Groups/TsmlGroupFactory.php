@@ -119,6 +119,8 @@ class TsmlGroupFactory implements GroupFactory
             square: $this->getMetaField($meta, TsmlGroupFields::SQUARE, ''),
             districtId: $this->getDistrictId($meta),
             lastContact: $this->getMetaField($meta, TsmlGroupFields::LAST_CONTACT, null),
+            groupEmail: $this->getMetaField($meta, TsmlGroupFields::GROUP_EMAIL, ''),
+            groupEmailActive: (bool) $this->getMetaField($meta, TsmlGroupFields::GROUP_EMAIL_ACTIVE, false),
             contacts: $contacts,
             updated: $post->post_modified ?? ''
         );

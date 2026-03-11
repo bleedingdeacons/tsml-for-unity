@@ -28,6 +28,8 @@ class TsmlGroup implements Group
     private string $square;
     private ?int $districtId;
     private ?string $lastContact;
+    private string $groupEmail;
+    private bool $groupEmailActive;
     private array $contacts;
     private string $updated;
 
@@ -47,6 +49,8 @@ class TsmlGroup implements Group
      * @param string $square Square Cash App cashtag for contributions
      * @param int|null $districtId District ID
      * @param string|null $lastContact Last contact timestamp
+     * @param string $groupEmail Group email address
+     * @param bool $groupEmailActive Whether the group email is active
      * @param ContactInterface[] $contacts Array of TsmlContact objects
      * @param string $updated Last updated datetime string
      */
@@ -64,6 +68,8 @@ class TsmlGroup implements Group
         string $square = '',
         ?int $districtId = null,
         ?string $lastContact = null,
+        string $groupEmail = '',
+        bool $groupEmailActive = false,
         array $contacts = [],
         string $updated = ''
     ) {
@@ -80,6 +86,8 @@ class TsmlGroup implements Group
         $this->square = $square;
         $this->districtId = $districtId;
         $this->lastContact = $lastContact;
+        $this->groupEmail = $groupEmail;
+        $this->groupEmailActive = $groupEmailActive;
         $this->contacts = $contacts;
         $this->updated = $updated;
     }
@@ -179,6 +187,22 @@ class TsmlGroup implements Group
     public function getSquare(): string
     {
         return $this->square;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getGroupEmail(): string
+    {
+        return $this->groupEmail;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function isGroupEmailActive(): bool
+    {
+        return $this->groupEmailActive;
     }
 
     /**
