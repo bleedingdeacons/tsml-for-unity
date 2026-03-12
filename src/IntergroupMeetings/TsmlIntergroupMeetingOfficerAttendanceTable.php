@@ -14,7 +14,7 @@ class TsmlIntergroupMeetingOfficerAttendanceTable
     /**
      * Database table version for schema upgrades
      */
-    public const DB_VERSION = '1.0';
+    public const DB_VERSION = '1.1';
 
     /**
      * Option key storing the current installed table version
@@ -59,6 +59,7 @@ class TsmlIntergroupMeetingOfficerAttendanceTable
             position_name varchar(255) NOT NULL DEFAULT '',
             officer_name varchar(255) NOT NULL DEFAULT '',
             PRIMARY KEY  (id),
+            UNIQUE KEY uq_meeting_officer (intergroup_meeting_id, officer_id),
             KEY intergroup_meeting_id (intergroup_meeting_id),
             KEY officer_id (officer_id)
         ) {$charsetCollate};";

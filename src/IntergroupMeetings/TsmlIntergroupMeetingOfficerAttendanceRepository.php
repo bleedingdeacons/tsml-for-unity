@@ -318,4 +318,23 @@ class TsmlIntergroupMeetingOfficerAttendanceRepository implements IntergroupMeet
 
         return $result !== false ? (int) $result : 0;
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function existsForMeetingAndOfficer(int $intergroupMeetingId, int $officerId): bool
+    {
+        global $wpdb;
+
+        $table = TsmlIntergroupMeetingOfficerAttendanceTable::getTableName();
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from constant; esc_sql as defence-in-depth
+        $count = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM `" . esc_sql($table) . "` WHERE intergroup_meeting_id = %d AND officer_id = %d",
+            $intergroupMeetingId,
+            $officerId
+        ));
+
+        return $count > 0;
+    }
 }

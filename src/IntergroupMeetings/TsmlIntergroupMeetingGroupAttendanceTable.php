@@ -14,7 +14,7 @@ class TsmlIntergroupMeetingGroupAttendanceTable
     /**
      * Database table version for schema upgrades
      */
-    public const DB_VERSION = '1.1';
+    public const DB_VERSION = '1.2';
 
     /**
      * Option key storing the current installed table version
@@ -62,6 +62,7 @@ class TsmlIntergroupMeetingGroupAttendanceTable
             gsr_proxy tinyint(1) NOT NULL DEFAULT 0,
             gsr_proxy_name varchar(255) NOT NULL DEFAULT '',
             PRIMARY KEY  (id),
+            UNIQUE KEY uq_meeting_group (intergroup_meeting_id, group_id),
             KEY intergroup_meeting_id (intergroup_meeting_id),
             KEY group_id (group_id),
             KEY member_id (member_id)
