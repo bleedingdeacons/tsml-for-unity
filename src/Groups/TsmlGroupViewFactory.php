@@ -78,8 +78,6 @@ class TsmlGroupViewFactory implements GroupViewFactory
             $group->getId(),
             $group->getTitle(),
             $group->getEmail(),
-            $group->getGroupEmail(),
-            $group->isGroupEmailActive(),
             $group->getMeetings(),
             $group->getLink(),
             $group->getContacts(),

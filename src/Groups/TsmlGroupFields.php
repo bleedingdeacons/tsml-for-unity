@@ -73,16 +73,6 @@ final class TsmlGroupFields
     public const LAST_CONTACT = 'last_contact';
 
     /**
-     * Group email address field
-     */
-    public const GROUP_EMAIL = 'group_email';
-
-    /**
-     * Group email active flag field
-     */
-    public const GROUP_EMAIL_ACTIVE = 'group_email_active';
-
-    /**
      * TsmlContact field prefix (contact_1_name, contact_1_email, etc.)
      */
     public const CONTACT_PREFIX = 'contact_';
