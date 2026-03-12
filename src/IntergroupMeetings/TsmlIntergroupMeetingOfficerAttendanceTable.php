@@ -81,8 +81,8 @@ class TsmlIntergroupMeetingOfficerAttendanceTable
         global $wpdb;
 
         $table = self::getTableName();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $wpdb->query("DROP TABLE IF EXISTS {$table}");
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names cannot be parameterised with prepare(); esc_sql used as defence-in-depth
+        $wpdb->query("DROP TABLE IF EXISTS `" . esc_sql($table) . "`");
 
         delete_option(self::DB_VERSION_OPTION);
     }
