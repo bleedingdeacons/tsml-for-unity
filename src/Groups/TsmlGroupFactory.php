@@ -200,28 +200,32 @@ class TsmlGroupFactory implements GroupFactory
         $factory = $this->getContactFactory();
 
         for ($i = 1; $i <= TsmlGroupFields::MAX_CONTACTS; $i++) {
-            $name = $this->getMetaField($meta, TsmlGroupFields::CONTACT_PREFIX . $i . '_name', '');
-            $email = $this->getMetaField($meta, TsmlGroupFields::CONTACT_PREFIX . $i . '_email', '');
-            $phone = $this->getMetaField($meta, TsmlGroupFields::CONTACT_PREFIX . $i . '_phone', '');
+            $name = trim((string) $this->getMetaField($meta, TsmlGroupFields::CONTACT_PREFIX . $i . '_name', ''));
+            $email = trim((string) $this->getMetaField($meta, TsmlGroupFields::CONTACT_PREFIX . $i . '_email', ''));
+            $phone = trim((string) $this->getMetaField($meta, TsmlGroupFields::CONTACT_PREFIX . $i . '_phone', ''));
 
-            if (!empty($name) || !empty($email) || !empty($phone)) {
-                $key = ((string) $name) . '|' . ((string) $email) . '|' . ((string) $phone);
+            if ($name === '' && $email === '' && $phone === '') {
+                continue;
+            }
 
-                if (!isset($seen[$key])) {
-                    $seen[$key] = true;
-                    $contacts[] = $factory->create(
-                        (string) $name,
-                        (string) $email,
-                        (string) $phone
-                    );
-                }
+            $key = strtolower($name) . '|' . strtolower($email) . '|' . strtolower($phone);
+
+            if (!isset($seen[$key])) {
+                $seen[$key] = true;
+                $contacts[] = $factory->create($name, $email, $phone);
             }
         }
 
         // Then, collect contacts from meetings (deduplicating against group contacts)
         foreach ($meetings as $meeting) {
             foreach ($meeting->getContacts() as $contact) {
-                $key = $contact->getName() . '|' . $contact->getEmail() . '|' . $contact->getPhone();
+                $key = strtolower(trim($contact->getName()))
+                    . '|' . strtolower(trim($contact->getEmail()))
+                    . '|' . strtolower(trim($contact->getPhone()));
+
+                if ($key === '||') {
+                    continue;
+                }
 
                 if (!isset($seen[$key])) {
                     $seen[$key] = true;
