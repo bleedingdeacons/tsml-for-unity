@@ -18,7 +18,7 @@ use const WP_DEBUG;
 /**
  * Class TsmlMemberChangeTracker
  *
- * Tracks changes to members via ACF and fires the amber/member_changing hook
+ * Tracks changes to members via ACF and fires the unity/member_changing hook
  * when actual changes are detected.
  */
 class TsmlMemberChangeTracker implements MemberChangeTracker
@@ -93,7 +93,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
 
             if ($this->hasMemberChanged(self::$originalMember, $updatedMember)) {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('Changes detected in member ID: ' . $postId . ', firing amber/member_changing hook');
+                    error_log('Changes detected in member ID: ' . $postId . ', firing unity/member_changing hook');
                 }
 
                 $post = get_post($postId);
@@ -104,7 +104,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
                     ]);
                 }
 
-                do_action('amber/member_changing', $updatedMember, self::$originalMember);
+                do_action('unity/member_changing', $updatedMember, self::$originalMember);
 
             } else {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
