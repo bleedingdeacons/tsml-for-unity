@@ -21,10 +21,10 @@ use function wp_update_post;
 class TsmlGroupRepository implements GroupRepository
 {
     private GroupFactory $factory;
-    
+
     /**
      * TsmlGroupRepository constructor
-     * 
+     *
      * @param GroupFactory $factory The group factory
      */
     public function __construct(GroupFactory $factory)
@@ -56,6 +56,9 @@ class TsmlGroupRepository implements GroupRepository
         $groups = [];
 
         foreach ($posts as $post) {
+            if (empty($post->ID)) {
+                continue;
+            }
             $group = $this->factory->createFromSource($post->ID);
             if ($group !== null) {
                 $groups[] = $group;
@@ -71,7 +74,7 @@ class TsmlGroupRepository implements GroupRepository
     public function save(Group $group): bool
     {
         $postId = $group->getId();
-        
+
         if ($postId > 0) {
             return $this->update($group);
         }
@@ -103,14 +106,14 @@ class TsmlGroupRepository implements GroupRepository
 
         return true;
     }
-    
+
     /**
      * {@inheritdoc}
      */
     public function update(Group $group): bool
     {
         $postId = $group->getId();
-        
+
         if ($postId <= 0) {
             return false;
         }
@@ -140,7 +143,7 @@ class TsmlGroupRepository implements GroupRepository
 
         return true;
     }
-    
+
     /**
      * {@inheritdoc}
      */

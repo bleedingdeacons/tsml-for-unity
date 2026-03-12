@@ -86,7 +86,7 @@ class Plugin
      */
     public static function unityIsAvailable(): bool
     {
-        return class_exists('Unity\\Core\\Interfaces\\Container')
+        return class_exists('Unity\\Core\\DependencyContainer')
             && class_exists('Unity\\Core\\UnityServiceProvider')
             && class_exists('Unity\\Core\\UnityConfiguration');
     }
