@@ -2,7 +2,6 @@
     "name": "bleeding-deacons/tsml-for-unity",
     "description": "Integration between 12 Step Meeting List (TSML) and Unity plugins for WordPress",
     "type": "wordpress-plugin",
-    "version": "1.0.0",
     "license": "MIT",
     "authors": [
         {
