@@ -58,7 +58,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
                 error_log('Original member captured for post ID: ' . $postId);
             }
 
-            do_action('amber/member_before_save', $postId, self::$originalMember);
+            do_action('unity/member_before_save', $postId, self::$originalMember);
         } catch (Exception $e) {
             error_log('Error capturing original member: ' . $e->getMessage());
         }

@@ -18,7 +18,7 @@ use const WP_DEBUG;
 /**
  * Class TsmlPositionChangeTracker
  *
- * Tracks changes to positions via ACF and fires the position_changed hook
+ * Tracks changes to positions via ACF and fires the unity/position_changing hook
  * when actual changes are detected.
  */
 class TsmlPositionChangeTracker implements PositionChangeTracker
@@ -58,7 +58,7 @@ class TsmlPositionChangeTracker implements PositionChangeTracker
                 error_log('Original position captured for post ID: ' . $postId);
             }
 
-            do_action('position_before_save', $postId, self::$originalPosition);
+            do_action('unity/position_before_save', $postId, self::$originalPosition);
         } catch (Exception $e) {
             error_log('Error capturing original position: ' . $e->getMessage());
         }
@@ -93,7 +93,7 @@ class TsmlPositionChangeTracker implements PositionChangeTracker
 
             if ($this->hasPositionChanged(self::$originalPosition, $updatedPosition)) {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('Changes detected in position ID: ' . $postId . ', firing position_changed hook');
+                    error_log('Changes detected in position ID: ' . $postId . ', firing unity/position_changing hook');
                 }
 
                 $post = get_post($postId);
@@ -104,14 +104,14 @@ class TsmlPositionChangeTracker implements PositionChangeTracker
                     ]);
                 }
 
-                do_action('position_changed', $updatedPosition, self::$originalPosition);
+                do_action('unity/position_changing', $updatedPosition, self::$originalPosition);
             } else {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
                     error_log('No changes detected in position ID: ' . $postId);
                 }
             }
 
-            do_action('position_after_save', $postId, $updatedPosition, self::$originalPosition);
+            do_action('unity/position_changed', $postId, $updatedPosition, self::$originalPosition);
 
             self::$originalPosition = null;
         } catch (Exception $e) {
