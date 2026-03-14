@@ -12,7 +12,7 @@ use Exception;
 
 /**
  * Position View Class
- * 
+ *
  * Combines position and member data
  */
 class TsmlPositionView implements PositionView
@@ -26,7 +26,7 @@ class TsmlPositionView implements PositionView
 
     /**
      * Constructor
-     * 
+     *
      * @param Position $position The position
      * @param Member|null $member The member assigned to the position (if any)
      */
@@ -40,16 +40,18 @@ class TsmlPositionView implements PositionView
         $this->title = $position->getShortDescription();
         $this->privateEmail = null;
         $this->privateContact = null;
-        
+
         if ($this->member !== null) {
             try {
                 $this->privateEmail = $this->member->getPersonalEmail();
                 $this->privateContact = $this->member->getMobileNumber();
                 $rotationStr = $this->member->getIntergroupPositionRotation();
                 if (!empty($rotationStr)) {
-                    $this->rotationDate = DateTime::createFromFormat('d/m/Y', $rotationStr);
-                    if ($this->rotationDate) {
-                        $this->rotationDate->setTime(0, 0);
+                    $parsed = DateTime::createFromFormat('Y-m-d', $rotationStr)
+                        ?: DateTime::createFromFormat('d/m/Y', $rotationStr);
+                    if ($parsed !== false) {
+                        $parsed->setTime(0, 0);
+                        $this->rotationDate = $parsed;
                     }
                 }
             } catch (Exception $ex) {
@@ -174,11 +176,11 @@ class TsmlPositionView implements PositionView
         if ($this->isVacant()) {
             return '';
         }
-        
+
         if ($this->member->showAnonymousName()) {
             return $this->member->getAnonymousName();
         }
-        
+
         return '';
     }
 
