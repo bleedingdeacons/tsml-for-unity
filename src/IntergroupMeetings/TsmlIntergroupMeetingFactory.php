@@ -42,11 +42,21 @@ class TsmlIntergroupMeetingFactory implements IntergroupMeetingFactory
         $officersRaw = get_field(TsmlIntergroupMeetingFields::FIELD_ATTENDING_OFFICERS, $id);
         $officers = $this->parsePostIds($officersRaw);
 
+        // ACF date_picker returns d/m/Y (per the field's return_format).
+        // Normalise to Y-m-d so the value is safe for strcmp sorting,
+        // strtotime parsing, and comparison with WordPress date functions.
         $dateField = get_field(TsmlIntergroupMeetingFields::FIELD_DATE, $id);
-        $date = is_string($dateField) ? $dateField : '';
+        $rawDate = is_string($dateField) ? $dateField : '';
+        $date = '';
+        if ($rawDate !== '') {
+            $parsed = \DateTime::createFromFormat('d/m/Y', $rawDate);
+            $date = $parsed ? $parsed->format('Y-m-d') : $rawDate;
+        }
 
         $post = get_post($id);
-        $updated = ($post && isset($post->post_modified)) ? $post->post_modified : '';
+        // Use post_modified_gmt (UTC) rather than post_modified (site-local
+        // timezone) so the REST API's formatUpdatedTimestamp is accurate.
+        $updated = ($post && isset($post->post_modified_gmt)) ? $post->post_modified_gmt : '';
 
         return new TsmlIntergroupMeeting(
             $id,

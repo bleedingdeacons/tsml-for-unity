@@ -120,7 +120,7 @@ class TsmlGroupFactory implements GroupFactory
             districtId: $this->getDistrictId($meta),
             lastContact: $this->getMetaField($meta, TsmlGroupFields::LAST_CONTACT, null),
             contacts: $contacts,
-            updated: $post->post_modified ?? ''
+            updated: $post->post_modified_gmt ?? ''
         );
     }
 

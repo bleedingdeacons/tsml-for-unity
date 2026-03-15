@@ -123,7 +123,14 @@ class TsmlPositionViewFactory implements PositionViewFactory
             }
 
             try {
-                $rotationDate = new DateTime($rotationDateStr);
+                // Value is Y-m-d (normalised at factory level). Fall back to
+                // d/m/Y for any legacy data that hasn't been re-saved.
+                $rotationDate = DateTime::createFromFormat('Y-m-d', $rotationDateStr)
+                    ?: DateTime::createFromFormat('d/m/Y', $rotationDateStr);
+
+                if (!$rotationDate) {
+                    continue;
+                }
 
                 if ($latestDate === null) {
                     $latestDate = $rotationDate;

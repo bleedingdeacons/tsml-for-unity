@@ -36,7 +36,7 @@ class TsmlIntergroupMeeting implements IntergroupMeeting
      * @param string $title Meeting title
      * @param array<int> $groupAttendees Array of group IDs (group CPT post IDs) attending
      * @param array<int> $officersAttending Array of officer member IDs attending
-     * @param string $date Meeting date (Y-m-d format)
+     * @param string $date Meeting date (Y-m-d format, normalised from ACF d/m/Y at factory level)
      * @param string $updated Last updated datetime string
      */
     public function __construct(

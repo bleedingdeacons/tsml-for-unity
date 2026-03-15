@@ -60,6 +60,21 @@ class TsmlMemberFactory implements MemberFactory
             $intergroupPositionId = (int) $intergroupPositionField;
         }
 
+        // ACF date_picker returns d/m/Y (per the field's return_format).
+        // Normalise to Y-m-d so the value is safe for DateTime parsing,
+        // strcmp sorting, and comparison with WordPress date functions.
+        $rawRotation = get_field(TsmlMemberFields::FIELD_INTERGROUP_POSITION_ROTATION, $id) ?? '';
+        $rotation = '';
+        if ($rawRotation !== '') {
+            $parsed = \DateTime::createFromFormat('d/m/Y', $rawRotation);
+            $rotation = $parsed ? $parsed->format('Y-m-d') : $rawRotation;
+        }
+
+        // Use post_modified_gmt (UTC) rather than post_modified (site-local
+        // timezone) so the REST API's formatUpdatedTimestamp is accurate.
+        $post = get_post($id);
+        $updated = ($post && isset($post->post_modified_gmt)) ? $post->post_modified_gmt : '';
+
         return new TsmlMember(
             $id,
             get_field(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $id) ?? '',
@@ -67,13 +82,13 @@ class TsmlMemberFactory implements MemberFactory
             (bool) (get_field(TsmlMemberFields::FIELD_SHOW_MEMBER_PROFILE, $id) ?? false),
             get_field(TsmlMemberFields::FIELD_ANONYMOUS_PROFILE, $id) ?? '',
             $intergroupPositionId,
-            get_field(TsmlMemberFields::FIELD_INTERGROUP_POSITION_ROTATION, $id) ?? '',
+            $rotation,
             $homeGroupId,
             (bool) (get_field(TsmlMemberFields::FIELD_HOMEGROUP_GSR, $id) ?? false),
             get_field(TsmlMemberFields::FIELD_MEETING_PO, $id) ?? null,
             get_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $id) ?? '',
             get_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $id) ?? '',
-            get_post($id)->post_modified ?? ''
+            $updated
         );
     }
 
