@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity;
 
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use TsmlForUnity\Contacts\TsmlContactFactory;

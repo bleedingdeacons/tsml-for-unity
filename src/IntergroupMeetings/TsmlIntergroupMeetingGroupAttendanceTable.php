@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\IntergroupMeetings;
 
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 /**
  * Manages the custom database table for intergroup meeting attendance.
  *

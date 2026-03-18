@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Groups;
 
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use Unity\Groups\Interfaces\GroupFactory;
 use Unity\Groups\Interfaces\Group;
 use Unity\Groups\Interfaces\GroupRepository;

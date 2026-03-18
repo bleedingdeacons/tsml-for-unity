@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Positions;
 
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use Unity\Positions\Interfaces\PositionChangeTracker;
 use Unity\Positions\Interfaces\Position;
 use Unity\Positions\Interfaces\PositionRepository;
@@ -60,6 +65,7 @@ class TsmlPositionChangeTracker implements PositionChangeTracker
 
             do_action('unity/position_before_save', $postId, self::$originalPosition);
         } catch (Exception $e) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
             error_log('Error capturing original position: ' . $e->getMessage());
         }
     }
@@ -115,6 +121,7 @@ class TsmlPositionChangeTracker implements PositionChangeTracker
 
             self::$originalPosition = null;
         } catch (Exception $e) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
             error_log('Error checking for position changes: ' . $e->getMessage());
         }
     }

@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Plugin Name: TSML for Unity
  * Plugin URI: https://github.com/bleeding-deacons/tsml-for-unity
  * Description: Integrates 12 Step Meeting List (TSML) with the Unity plugin, providing meeting, group & location support.
- * Version: 1.7.8
+ * Version: 1.7.9
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: The Bleeding Deacons
@@ -45,8 +45,10 @@ spl_autoload_register(function ($class) {
             require $file;
         }
     } catch (\Exception $e) {
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
         error_log('TSML for Unity Autoloader Error: ' . $e->getMessage());
     } catch (\Throwable $e) {
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
         error_log('TSML for Unity Autoloader Fatal Error: ' . $e->getMessage());
     }
 });
@@ -69,7 +71,9 @@ add_action('unity/loaded', function ($container) {
         do_action('tsml_for_unity/loaded');
 
     } catch (\Exception $e) {
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
         error_log('TSML for Unity Plugin Initialization Error: ' . $e->getMessage());
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
         error_log('TSML for Unity Plugin Stack Trace: ' . $e->getTraceAsString());
 
         if (is_admin()) {
@@ -85,7 +89,9 @@ add_action('unity/loaded', function ($container) {
         return;
 
     } catch (\Throwable $e) {
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
         error_log('TSML for Unity Plugin Fatal Error: ' . $e->getMessage());
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
         error_log('TSML for Unity Plugin Stack Trace: ' . $e->getTraceAsString());
 
         if (is_admin()) {
@@ -130,8 +136,10 @@ add_action('unity/register_services', function ($container) {
         \TsmlForUnity\Plugin::registerWithUnity($container);
 
     } catch (\Exception $e) {
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
         error_log('TSML for Unity Registration Error: ' . $e->getMessage());
     } catch (\Throwable $e) {
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
         error_log('TSML for Unity Registration Fatal Error: ' . $e->getMessage());
     }
 });

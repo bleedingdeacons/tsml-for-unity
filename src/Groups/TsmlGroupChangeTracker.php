@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Groups;
 
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use Unity\Core\Interfaces\ConfigurationInterface;
 use Unity\Groups\Interfaces\GroupChangeTracker;
 use Unity\Groups\Interfaces\Group;
@@ -61,6 +66,7 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
 
             do_action('group_before_save', $postId, self::$originalGroup);
         } catch (Exception $e) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
             error_log('Error capturing original group: ' . $e->getMessage());
         }
     }
@@ -116,6 +122,7 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
 
             self::$originalGroup = null;
         } catch (Exception $e) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
             error_log('Error checking for group changes: ' . $e->getMessage());
         }
     }

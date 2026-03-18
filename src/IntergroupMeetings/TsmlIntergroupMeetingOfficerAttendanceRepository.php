@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\IntergroupMeetings;
 
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingOfficerAttendance;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingOfficerAttendanceFactory;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingOfficerAttendanceRepository;

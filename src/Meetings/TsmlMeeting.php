@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Meetings;
 
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use Unity\Meetings\Interfaces\Meeting;
 use Unity\Locations\Interfaces\Location;
 

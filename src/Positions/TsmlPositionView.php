@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Positions;
 
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use Unity\Members\Interfaces\Member;
 use Unity\Positions\Interfaces\Position;
 use Unity\Positions\Interfaces\PositionView;
@@ -55,6 +60,7 @@ class TsmlPositionView implements PositionView
                     }
                 }
             } catch (Exception $ex) {
+                // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
                 error_log('Error in creating position_view: ' . $ex->getMessage());
             }
         }
@@ -128,6 +134,7 @@ class TsmlPositionView implements PositionView
             }
             return $value;
         } catch (Exception $ex) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
             error_log('Error in getMonthsUntilRotation: ' . $ex->getMessage());
             return null;
         }

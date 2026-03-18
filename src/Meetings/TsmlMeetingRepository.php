@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Meetings;
 
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use TsmlForUnity\Meetings\TsmlMeetingFields;
 
 use Unity\Core\Interfaces\Cache;

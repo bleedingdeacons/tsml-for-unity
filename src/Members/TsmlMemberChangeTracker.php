@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Members;
 
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use Unity\Members\Interfaces\MemberChangeTracker;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberRepository;
@@ -60,6 +65,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
 
             do_action('unity/member_before_save', $postId, self::$originalMember);
         } catch (Exception $e) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
             error_log('Error capturing original member: ' . $e->getMessage());
         }
     }
@@ -116,6 +122,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
 
             self::$originalMember = null;
         } catch (Exception $e) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
             error_log('Error checking for member changes: ' . $e->getMessage());
         }
     }

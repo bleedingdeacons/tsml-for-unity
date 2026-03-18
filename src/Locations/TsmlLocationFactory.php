@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Locations;
 
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use Unity\Locations\Interfaces\LocationFactory;
 use Unity\Locations\Interfaces\Location;
 

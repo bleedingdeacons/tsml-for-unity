@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Positions;
 
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use Unity\Positions\Interfaces\Position;
 
 /**

@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Members;
 
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use Unity\Members\Interfaces\MemberFactory;
 use Unity\Members\Interfaces\Member;
 use function get_field;

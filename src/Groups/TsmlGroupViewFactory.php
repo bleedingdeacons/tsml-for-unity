@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Groups;
 
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use TsmlForUnity\Meetings\TsmlMeetingFields;
 use TsmlForUnity\Meetings\TsmlMeetingViewFactory;
 use TsmlForUnity\Members\TsmlMemberFields;
