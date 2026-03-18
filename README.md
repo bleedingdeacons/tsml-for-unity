@@ -1,8 +1,8 @@
 # TSML for Unity
 
-A companion WordPress plugin that bridges [12 Step Meeting List (TSML)](https://wordpress.org/plugins/12-step-meeting-list/) with the [Unity](https://github.com/bleeding-deacons/unity) intergroup management framework — providing concrete implementations of every Unity interface backed by TSML data.
+A companion WordPress plugin that bridges [12 Step Meeting List (TSML)](https://wordpress.org/plugins/12-step-meeting-list/) with the [Unity](https://github.com/bleedingdeacons/unity) intergroup management framework — providing concrete implementations of every Unity interface backed by TSML data.
 
-**Version:** 1.7.9
+**Version:** 1.7.10
 
 ---
 
