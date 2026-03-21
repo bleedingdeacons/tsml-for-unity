@@ -43,6 +43,9 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
 
         add_action('acf/save_post', [$this, 'captureOriginalGroup'], 1);
         add_action('acf/save_post', [$this, 'checkForChanges'], 20);
+        add_action('before_delete_post', [$this, 'onGroupDeleted'], 10, 1);
+        add_action('wp_trash_post', [$this, 'onGroupDeleted'], 10, 1);
+        add_action('transition_post_status', [$this, 'onGroupHidden'], 10, 3);
     }
 
     /**
@@ -124,6 +127,80 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
         } catch (Exception $e) {
             // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
             error_log('Error checking for group changes: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Handle group deletion (trash or permanent delete)
+     *
+     * Captures the group before it is removed and fires the
+     * unity/group_deleted hook so that listeners can react.
+     *
+     * @param int $postId The post ID being deleted or trashed
+     * @return void
+     */
+    public function onGroupDeleted(int $postId): void
+    {
+        if (get_post_type($postId) !== TsmlGroupFields::POST_TYPE) {
+            return;
+        }
+
+        try {
+            $group = $this->repository->findById($postId);
+
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Group deleted, firing unity/group_deleted hook for post ID: ' . $postId);
+            }
+
+            do_action('unity/group_deleted', $postId, $group);
+        } catch (Exception $e) {
+            // Group may already be partially removed; fire with null so
+            // listeners can still react to the deletion itself.
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Error fetching group during deletion: ' . $e->getMessage());
+            }
+
+            do_action('unity/group_deleted', $postId, null);
+        }
+    }
+
+    /**
+     * Handle a group being hidden (post status set to private)
+     *
+     * Fires the unity/group_hidden hook when a group's publish state
+     * transitions to private.
+     *
+     * @param string $newStatus The new post status
+     * @param string $oldStatus The previous post status
+     * @param \WP_Post $post The post object
+     * @return void
+     */
+    public function onGroupHidden(string $newStatus, string $oldStatus, \WP_Post $post): void
+    {
+        if ($post->post_type !== TsmlGroupFields::POST_TYPE) {
+            return;
+        }
+
+        if ($newStatus !== 'private' || $oldStatus === 'private') {
+            return;
+        }
+
+        try {
+            $group = $this->repository->findById($post->ID);
+
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Group hidden (set to private), firing unity/group_hidden hook for post ID: ' . $post->ID);
+            }
+
+            do_action('unity/group_hidden', $post->ID, $group);
+        } catch (Exception $e) {
+            // The repository may not return private posts; fire with null
+            // so listeners can still react.
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Error fetching group during hide: ' . $e->getMessage());
+            }
+
+            do_action('unity/group_hidden', $post->ID, null);
         }
     }
 
