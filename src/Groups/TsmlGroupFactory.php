@@ -304,8 +304,6 @@ class TsmlGroupFactory implements GroupFactory
 
         $contextStr = empty($context) ? '' : ' ' . json_encode($context);
 
-        if (function_exists('error_log')) {
-            error_log("[TSML Group Factory Error] {$message}{$contextStr}");
-        }
+        \TsmlForUnity\Plugin::logError("[TSML Group Factory Error] {$message}{$contextStr}");
     }
 }

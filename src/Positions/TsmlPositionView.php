@@ -60,8 +60,7 @@ class TsmlPositionView implements PositionView
                     }
                 }
             } catch (Exception $ex) {
-                // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-                error_log('Error in creating position_view: ' . $ex->getMessage());
+                \TsmlForUnity\Plugin::logError('Error in creating position_view: ' . $ex->getMessage(), ['exception' => $ex->getMessage(), 'trace' => $ex->getTraceAsString()]);
             }
         }
     }
@@ -134,8 +133,7 @@ class TsmlPositionView implements PositionView
             }
             return $value;
         } catch (Exception $ex) {
-            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-            error_log('Error in getMonthsUntilRotation: ' . $ex->getMessage());
+            \TsmlForUnity\Plugin::logError('Error in getMonthsUntilRotation: ' . $ex->getMessage(), ['exception' => $ex->getMessage(), 'trace' => $ex->getTraceAsString()]);
             return null;
         }
     }

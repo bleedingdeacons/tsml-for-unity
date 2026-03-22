@@ -77,6 +77,13 @@ use Unity\Positions\Interfaces\PositionViewFactory;
  */
 class Plugin
 {
+    use \TsmlForUnity\Logger\HasLogger;
+
+    protected static function logChannel(): string
+    {
+        return 'tsml-for-unity';
+    }
+
     private static ?TsmlMeetingFactory $meetingFactory = null;
     private static ?TsmlGroupFactory $groupFactory = null;
     private static ?TsmlLocationFactory $locationFactory = null;

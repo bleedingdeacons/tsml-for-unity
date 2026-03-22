@@ -64,13 +64,12 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
             self::$originalGroup = $this->repository->findById($postId);
 
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Original group captured for post ID: ' . $postId);
+                \TsmlForUnity\Plugin::logError('Original group captured for post ID: ' . $postId);
             }
 
             do_action('group_before_save', $postId, self::$originalGroup);
         } catch (Exception $e) {
-            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-            error_log('Error capturing original group: ' . $e->getMessage());
+            \TsmlForUnity\Plugin::logError('Error capturing original group: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
         }
     }
 
@@ -88,7 +87,7 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
 
         if (!self::$originalGroup) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('No original group captured for comparison, post ID: ' . $postId);
+                \TsmlForUnity\Plugin::logError('No original group captured for comparison, post ID: ' . $postId);
             }
             return;
         }
@@ -97,13 +96,13 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
             $updatedGroup = $this->repository->findById($postId);
 
             if (!$updatedGroup) {
-                error_log('Could not fetch updated group for post ID: ' . $postId);
+                \TsmlForUnity\Plugin::logError('Could not fetch updated group for post ID: ' . $postId);
                 return;
             }
 
             if ($this->hasGroupChanged(self::$originalGroup, $updatedGroup)) {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('Changes detected in group ID: ' . $postId . ', firing unity/group_changing hook');
+                    \TsmlForUnity\Plugin::logError('Changes detected in group ID: ' . $postId . ', firing unity/group_changing hook');
                 }
 
                 $post = get_post($postId);
@@ -117,7 +116,7 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
                 do_action('unity/group_changing', $updatedGroup, self::$originalGroup);
             } else {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('No changes detected in group ID: ' . $postId);
+                    \TsmlForUnity\Plugin::logError('No changes detected in group ID: ' . $postId);
                 }
             }
 
@@ -125,8 +124,7 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
 
             self::$originalGroup = null;
         } catch (Exception $e) {
-            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-            error_log('Error checking for group changes: ' . $e->getMessage());
+            \TsmlForUnity\Plugin::logError('Error checking for group changes: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
         }
     }
 
@@ -149,7 +147,7 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
             $group = $this->repository->findById($postId);
 
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Group deleted, firing unity/group_deleted hook for post ID: ' . $postId);
+                \TsmlForUnity\Plugin::logError('Group deleted, firing unity/group_deleted hook for post ID: ' . $postId);
             }
 
             do_action('unity/group_deleted', $postId, $group);
@@ -157,7 +155,7 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
             // Group may already be partially removed; fire with null so
             // listeners can still react to the deletion itself.
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Error fetching group during deletion: ' . $e->getMessage());
+                \TsmlForUnity\Plugin::logError('Error fetching group during deletion: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             }
 
             do_action('unity/group_deleted', $postId, null);
@@ -189,7 +187,7 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
             $group = $this->repository->findById($post->ID);
 
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Group hidden (set to private), firing unity/group_hidden hook for post ID: ' . $post->ID);
+                \TsmlForUnity\Plugin::logError('Group hidden (set to private), firing unity/group_hidden hook for post ID: ' . $post->ID);
             }
 
             do_action('unity/group_hidden', $post->ID, $group);
@@ -197,7 +195,7 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
             // The repository may not return private posts; fire with null
             // so listeners can still react.
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Error fetching group during hide: ' . $e->getMessage());
+                \TsmlForUnity\Plugin::logError('Error fetching group during hide: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             }
 
             do_action('unity/group_hidden', $post->ID, null);

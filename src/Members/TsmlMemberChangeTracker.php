@@ -62,13 +62,12 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
             self::$originalMember = $this->repository->find($postId);
 
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Original member captured for post ID: ' . $postId);
+                \TsmlForUnity\Plugin::logError('Original member captured for post ID: ' . $postId);
             }
 
             do_action('unity/member_before_save', $postId, self::$originalMember);
         } catch (Exception $e) {
-            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-            error_log('Error capturing original member: ' . $e->getMessage());
+            \TsmlForUnity\Plugin::logError('Error capturing original member: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
         }
     }
 
@@ -86,7 +85,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
 
         if (!self::$originalMember) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('No original member captured for comparison, post ID: ' . $postId);
+                \TsmlForUnity\Plugin::logError('No original member captured for comparison, post ID: ' . $postId);
             }
             return;
         }
@@ -95,13 +94,13 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
             $updatedMember = $this->repository->find($postId);
 
             if (!$updatedMember) {
-                error_log('Could not fetch updated member for post ID: ' . $postId);
+                \TsmlForUnity\Plugin::logError('Could not fetch updated member for post ID: ' . $postId);
                 return;
             }
 
             if ($this->hasMemberChanged(self::$originalMember, $updatedMember)) {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('Changes detected in member ID: ' . $postId . ', firing unity/member_changing hook');
+                    \TsmlForUnity\Plugin::logError('Changes detected in member ID: ' . $postId . ', firing unity/member_changing hook');
                 }
 
                 $post = get_post($postId);
@@ -116,7 +115,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
 
             } else {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('No changes detected in member ID: ' . $postId);
+                    \TsmlForUnity\Plugin::logError('No changes detected in member ID: ' . $postId);
                 }
             }
 
@@ -124,8 +123,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
 
             self::$originalMember = null;
         } catch (Exception $e) {
-            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-            error_log('Error checking for member changes: ' . $e->getMessage());
+            \TsmlForUnity\Plugin::logError('Error checking for member changes: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
         }
     }
 
@@ -148,7 +146,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
             $member = $this->repository->find($postId);
 
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Member deleted, firing unity/member_deleted hook for post ID: ' . $postId);
+                \TsmlForUnity\Plugin::logError('Member deleted, firing unity/member_deleted hook for post ID: ' . $postId);
             }
 
             do_action('unity/member_deleted', $postId, $member);
@@ -156,7 +154,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
             // Member may already be partially removed; fire with null so
             // listeners can still react to the deletion itself.
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Error fetching member during deletion: ' . $e->getMessage());
+                \TsmlForUnity\Plugin::logError('Error fetching member during deletion: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             }
 
             do_action('unity/member_deleted', $postId, null);

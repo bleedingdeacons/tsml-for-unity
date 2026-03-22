@@ -6,9 +6,10 @@ declare(strict_types=1);
  * Plugin Name: TSML for Unity
  * Plugin URI: https://github.com/bleeding-deacons/tsml-for-unity
  * Description: Integrates 12 Step Meeting List (TSML) with the Unity plugin, providing meeting, group & location support.
- * Version: 1.9.0
+ * Version: 1.10.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
+ * Requires Plugins: sentinel
  * Author: The Bleeding Deacons
  * Author URI: https://github.com/bleedingdeacons/tsml-for-unity
  * Contact: thebleedingdeacons@gmail.com
@@ -46,11 +47,13 @@ spl_autoload_register(function ($class) {
             require $file;
         }
     } catch (\Exception $e) {
-        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-        error_log('TSML for Unity Autoloader Error: ' . $e->getMessage());
+        function_exists('wp_log')
+            ? wp_log('tsml-for-unity')->error('TSML for Unity Autoloader Error: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()])
+            : error_log('TSML for Unity Autoloader Error: ' . $e->getMessage());
     } catch (\Throwable $e) {
-        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-        error_log('TSML for Unity Autoloader Fatal Error: ' . $e->getMessage());
+        function_exists('wp_log')
+            ? wp_log('tsml-for-unity')->critical('TSML for Unity Autoloader Fatal Error: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()])
+            : error_log('TSML for Unity Autoloader Fatal Error: ' . $e->getMessage());
     }
 });
 
@@ -72,10 +75,9 @@ add_action('unity/loaded', function ($container) {
         do_action('tsml_for_unity/loaded');
 
     } catch (\Exception $e) {
-        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-        error_log('TSML for Unity Plugin Initialization Error: ' . $e->getMessage());
-        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-        error_log('TSML for Unity Plugin Stack Trace: ' . $e->getTraceAsString());
+        function_exists('wp_log')
+            ? wp_log('tsml-for-unity')->error('TSML for Unity Plugin Initialization Error: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()])
+            : error_log('TSML for Unity Plugin Initialization Error: ' . $e->getMessage());
 
         if (is_admin()) {
             add_action('admin_notices', function () use ($e) {
@@ -90,10 +92,9 @@ add_action('unity/loaded', function ($container) {
         return;
 
     } catch (\Throwable $e) {
-        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-        error_log('TSML for Unity Plugin Fatal Error: ' . $e->getMessage());
-        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-        error_log('TSML for Unity Plugin Stack Trace: ' . $e->getTraceAsString());
+        function_exists('wp_log')
+            ? wp_log('tsml-for-unity')->critical('TSML for Unity Plugin Fatal Error: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()])
+            : error_log('TSML for Unity Plugin Fatal Error: ' . $e->getMessage());
 
         if (is_admin()) {
             add_action('admin_notices', function () {
@@ -137,11 +138,13 @@ add_action('unity/register_services', function ($container) {
         \TsmlForUnity\Plugin::registerWithUnity($container);
 
     } catch (\Exception $e) {
-        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-        error_log('TSML for Unity Registration Error: ' . $e->getMessage());
+        function_exists('wp_log')
+            ? wp_log('tsml-for-unity')->error('TSML for Unity Registration Error: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()])
+            : error_log('TSML for Unity Registration Error: ' . $e->getMessage());
     } catch (\Throwable $e) {
-        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-        error_log('TSML for Unity Registration Fatal Error: ' . $e->getMessage());
+        function_exists('wp_log')
+            ? wp_log('tsml-for-unity')->critical('TSML for Unity Registration Fatal Error: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()])
+            : error_log('TSML for Unity Registration Fatal Error: ' . $e->getMessage());
     }
 });
 

@@ -619,9 +619,7 @@ class TsmlMeetingFactory implements MeetingFactory
 
         $contextStr = empty($context) ? '' : ' ' . wp_json_encode($context);
 
-        if (function_exists('error_log')) {
-            error_log("[TSML Meeting Factory Error] {$message}{$contextStr}");
-        }
+        \TsmlForUnity\Plugin::logError("[TSML Meeting Factory Error] {$message}{$contextStr}");
     }
 
     /**

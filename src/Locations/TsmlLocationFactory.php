@@ -204,8 +204,6 @@ class TsmlLocationFactory implements LocationFactory
 
         $contextStr = empty($context) ? '' : ' ' . json_encode($context);
 
-        if (function_exists('error_log')) {
-            error_log("[TSML Location Factory Error] {$message}{$contextStr}");
-        }
+        \TsmlForUnity\Plugin::logError("[TSML Location Factory Error] {$message}{$contextStr}");
     }
 }

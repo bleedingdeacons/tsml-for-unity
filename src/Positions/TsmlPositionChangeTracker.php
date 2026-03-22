@@ -60,13 +60,12 @@ class TsmlPositionChangeTracker implements PositionChangeTracker
             self::$originalPosition = $this->repository->findById($postId);
 
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Original position captured for post ID: ' . $postId);
+                \TsmlForUnity\Plugin::logError('Original position captured for post ID: ' . $postId);
             }
 
             do_action('unity/position_before_save', $postId, self::$originalPosition);
         } catch (Exception $e) {
-            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-            error_log('Error capturing original position: ' . $e->getMessage());
+            \TsmlForUnity\Plugin::logError('Error capturing original position: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
         }
     }
 
@@ -84,7 +83,7 @@ class TsmlPositionChangeTracker implements PositionChangeTracker
 
         if (!self::$originalPosition) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('No original position captured for comparison, post ID: ' . $postId);
+                \TsmlForUnity\Plugin::logError('No original position captured for comparison, post ID: ' . $postId);
             }
             return;
         }
@@ -93,13 +92,13 @@ class TsmlPositionChangeTracker implements PositionChangeTracker
             $updatedPosition = $this->repository->findById($postId);
 
             if (!$updatedPosition) {
-                error_log('Could not fetch updated position for post ID: ' . $postId);
+                \TsmlForUnity\Plugin::logError('Could not fetch updated position for post ID: ' . $postId);
                 return;
             }
 
             if ($this->hasPositionChanged(self::$originalPosition, $updatedPosition)) {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('Changes detected in position ID: ' . $postId . ', firing unity/position_changing hook');
+                    \TsmlForUnity\Plugin::logError('Changes detected in position ID: ' . $postId . ', firing unity/position_changing hook');
                 }
 
                 $post = get_post($postId);
@@ -113,7 +112,7 @@ class TsmlPositionChangeTracker implements PositionChangeTracker
                 do_action('unity/position_changing', $updatedPosition, self::$originalPosition);
             } else {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('No changes detected in position ID: ' . $postId);
+                    \TsmlForUnity\Plugin::logError('No changes detected in position ID: ' . $postId);
                 }
             }
 
@@ -121,8 +120,7 @@ class TsmlPositionChangeTracker implements PositionChangeTracker
 
             self::$originalPosition = null;
         } catch (Exception $e) {
-            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-            error_log('Error checking for position changes: ' . $e->getMessage());
+            \TsmlForUnity\Plugin::logError('Error checking for position changes: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
         }
     }
 
