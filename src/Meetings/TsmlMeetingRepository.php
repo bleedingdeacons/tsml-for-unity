@@ -207,10 +207,18 @@ class TsmlMeetingRepository implements MeetingRepository
      */
     public function count(array $args = []): int
     {
-        $args['fields'] = 'ids';
-        $args['posts_per_page'] = -1;
+        $defaults = [
+            'post_type'      => TsmlMeetingFields::POST_TYPE,
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'orderby'        => 'title',
+            'order'          => 'ASC',
+        ];
 
-        $posts = $this->findAll($args);
+        $args = array_merge($defaults, $args);
+
+        $posts = get_posts($args);
         return count($posts);
     }
 

@@ -48,10 +48,20 @@ class TsmlIntergroupMeetingFactory implements IntergroupMeetingFactory
         // consistent with what the ACF admin UI reads and writes.
         // A relationship field returns WP_Post objects or post IDs depending
         // on the field's "Return Format" setting; parsePostIds() handles both.
-        $attendeesRaw = get_field(TsmlIntergroupMeetingFields::FIELD_ATTENDEES, $id);
+        //
+        // When the post lacks ACF shadow meta (e.g. created via the API),
+        // get_field() by name returns false. Fall back to reading by field
+        // key, which bypasses the shadow meta lookup entirely.
+        $attendeesRaw = $this->getFieldWithKeyFallback(
+            TsmlIntergroupMeetingFields::FIELD_ATTENDEES,
+            $id
+        );
         $attendees = $this->parsePostIds($attendeesRaw);
 
-        $officersRaw = get_field(TsmlIntergroupMeetingFields::FIELD_ATTENDING_OFFICERS, $id);
+        $officersRaw = $this->getFieldWithKeyFallback(
+            TsmlIntergroupMeetingFields::FIELD_ATTENDING_OFFICERS,
+            $id
+        );
         $officers = $this->parsePostIds($officersRaw);
 
         // ACF date_picker returns d/m/Y (per the field's return_format).
@@ -78,6 +88,39 @@ class TsmlIntergroupMeetingFactory implements IntergroupMeetingFactory
             $date,
             $updated
         );
+    }
+
+    /**
+     * Read an ACF field by name, falling back to the field key if the
+     * name-based lookup returns nothing.
+     *
+     * This handles posts that lack ACF shadow meta rows — typically
+     * posts created via the REST API rather than the ACF admin UI.
+     * When get_field('attending_groups', $postId) fails because the
+     * shadow meta row (_attending_groups → field_xxx) is missing,
+     * we retry with the resolved field key, which bypasses the
+     * shadow meta lookup entirely.
+     *
+     * @param string $fieldName The ACF field name
+     * @param int    $postId    The WordPress post ID
+     * @return mixed The field value, or false/null if not found
+     */
+    private function getFieldWithKeyFallback(string $fieldName, int $postId): mixed
+    {
+        $value = get_field($fieldName, $postId);
+
+        if ($value !== false && $value !== null) {
+            return $value;
+        }
+
+        // Name-based lookup failed — try by field key
+        $key = AcfFieldKeyResolver::getKey($fieldName);
+
+        if ($key !== null) {
+            return get_field($key, $postId);
+        }
+
+        return $value;
     }
 
     /**

@@ -132,10 +132,9 @@ class TsmlIntergroupMeetingRepository implements IntergroupMeetingRepository
      * is stored in the format ACF expects. This ensures the values are visible
      * in the ACF admin UI and that get_field() reads them correctly.
      *
-     * ACF relationship fields store an array of post IDs in postmeta. When
-     * update_field() is called with the field name, ACF resolves the field
-     * key via the shadow meta key (e.g. _attending_groups) and writes the
-     * data in its canonical format.
+     * Field keys are resolved dynamically via AcfFieldKeyResolver (cached
+     * at activation time) rather than hardcoded, so they stay correct if
+     * the ACF field group is ever re-imported with new keys.
      *
      * @param IntergroupMeeting $intergroupMeeting
      * @return bool
@@ -148,25 +147,32 @@ class TsmlIntergroupMeetingRepository implements IntergroupMeetingRepository
         //
         // When called with a field name like 'attending_groups', ACF must
         // resolve the key via the shadow meta row (_attending_groups →
-        // field_69760086d06fa). If that shadow row doesn't exist — e.g. the
-        // post was created via the API and never saved in the ACF admin —
+        // field_xxx). If that shadow row doesn't exist — e.g. the post
+        // was created via the API and never saved in the ACF admin —
         // the lookup fails silently and nothing is written.
         //
-        // Passing the field key directly (field_69760086d06fa) bypasses this
-        // lookup entirely, so the write always succeeds. ACF will also create
-        // the shadow meta row automatically, so future get_field() calls by
-        // name will work too.
-        update_field(
-            TsmlIntergroupMeetingFields::FIELD_KEY_ATTENDEES,
-            $intergroupMeeting->getGroupAttendees(),
-            $id
-        );
+        // Passing the field key directly bypasses this lookup entirely,
+        // so the write always succeeds. ACF will also create the shadow
+        // meta row automatically, so future get_field() calls by name
+        // will work too.
+        $attendeesKey = AcfFieldKeyResolver::getKey(TsmlIntergroupMeetingFields::FIELD_ATTENDEES);
+        $officersKey = AcfFieldKeyResolver::getKey(TsmlIntergroupMeetingFields::FIELD_ATTENDING_OFFICERS);
 
-        update_field(
-            TsmlIntergroupMeetingFields::FIELD_KEY_ATTENDING_OFFICERS,
-            $intergroupMeeting->getOfficersAttending(),
-            $id
-        );
+        if ($attendeesKey) {
+            update_field(
+                $attendeesKey,
+                $intergroupMeeting->getGroupAttendees(),
+                $id
+            );
+        }
+
+        if ($officersKey) {
+            update_field(
+                $officersKey,
+                $intergroupMeeting->getOfficersAttending(),
+                $id
+            );
+        }
 
         return true;
     }

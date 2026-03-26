@@ -162,9 +162,24 @@ register_activation_hook(__FILE__, function () {
     // Create the intergroup meeting attendance custom tables
     \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceTable::createTable();
     \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceTable::createTable();
+
+    // Resolve and cache ACF field name → key mapping so repositories
+    // can reliably read/write posts that lack ACF shadow meta rows
+    // (e.g. posts created via the REST API).
+    \TsmlForUnity\IntergroupMeetings\AcfFieldKeyResolver::resolve();
 });
+
+// Ensure ACF field keys are cached even if the plugin was activated
+// before ACF was fully loaded (activation hooks run early). The acf/init
+// hook fires after ACF has registered all field groups, so this is the
+// reliable moment to resolve field names to keys.
+add_action('acf/init', function () {
+    if (!\TsmlForUnity\IntergroupMeetings\AcfFieldKeyResolver::isCached()) {
+        \TsmlForUnity\IntergroupMeetings\AcfFieldKeyResolver::resolve();
+    }
+}, 20);
 
 // Plugin deactivation hook
 register_deactivation_hook(__FILE__, function () {
-    // Cleanup code here if needed
+    \TsmlForUnity\IntergroupMeetings\AcfFieldKeyResolver::clear();
 });
