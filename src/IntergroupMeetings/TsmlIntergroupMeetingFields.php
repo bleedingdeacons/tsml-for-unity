@@ -19,6 +19,7 @@ final class TsmlIntergroupMeetingFields
     public const POST_TYPE = 'intergroup-meeting';
 
     /** ACF field names (used with get_field) */
+    public const FIELD_MEETING_TITLE = 'meeting_title';
     public const FIELD_ATTENDEES = 'attending_groups';
     public const FIELD_ATTENDING_OFFICERS = 'attending_officers';
     public const FIELD_DATE = 'intergroup-meeting_date';
@@ -33,6 +34,7 @@ final class TsmlIntergroupMeetingFields
      * rather than the ACF admin UI — the lookup fails silently and no data
      * is written. Passing the key directly avoids this entirely.
      */
+    public const FIELD_KEY_MEETING_TITLE = 'field_69c468d5486dc';
     public const FIELD_KEY_ATTENDEES = 'field_69760086d06fa';
     public const FIELD_KEY_ATTENDING_OFFICERS = 'field_6977908548a32';
     public const FIELD_KEY_DATE = 'field_6976915075f95';

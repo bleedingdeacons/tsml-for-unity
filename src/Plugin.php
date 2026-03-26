@@ -17,6 +17,7 @@ use TsmlForUnity\Groups\TsmlGroupFactory;
 use TsmlForUnity\Groups\TsmlGroupFields;
 use TsmlForUnity\Groups\TsmlGroupRepository;
 use TsmlForUnity\Groups\TsmlGroupViewFactory;
+use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingChangeTracker;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceFactory;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceRepository;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceFactory;
@@ -49,6 +50,7 @@ use Unity\Groups\Interfaces\GroupFactory;
 use Unity\Groups\Interfaces\GroupRepository;
 use Unity\Groups\Interfaces\GroupViewFactory;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeeting;
+use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingChangeTracker;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingFactory;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingGroupAttendanceFactory;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingGroupAttendanceRepository;
@@ -255,7 +257,7 @@ class Plugin
         if (!method_exists($container, 'register')) {
             return;
 
-        self::logInfo('TSML for Unity initialised', ['version' => defined('TSML_FOR_UNITY_VERSION') ? TSML_FOR_UNITY_VERSION : 'unknown']);
+            self::logInfo('TSML for Unity initialised', ['version' => defined('TSML_FOR_UNITY_VERSION') ? TSML_FOR_UNITY_VERSION : 'unknown']);
         }
 
         // Configuration
@@ -504,6 +506,18 @@ class Plugin
 
             // Store the Group Fields
             $config->setConfig(IntergroupMeeting::class, self::extractConstants(TsmlIntergroupMeetingFields::class));
+
+            // Register Intergroup Meeting Change Tracker
+            $container->register(
+                IntergroupMeetingChangeTracker::class,
+                function (ContainerInterface $container) {
+                    $intergroupMeetingRepository = $container->has(IntergroupMeetingRepository::class)
+                        ? $container->get(IntergroupMeetingRepository::class)
+                        : null;
+
+                    return new TsmlIntergroupMeetingChangeTracker($intergroupMeetingRepository);
+                }
+            );
 
         }
 

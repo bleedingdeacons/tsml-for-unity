@@ -34,8 +34,15 @@ class TsmlIntergroupMeetingFactory implements IntergroupMeetingFactory
      */
     public function createFromSource(int $id): IntergroupMeeting
     {
-        $title = get_the_title($id);
-        $title = is_string($title) ? $title : '';
+        // Read the meeting title from the ACF field. Fall back to the
+        // WordPress post title when the ACF field is empty — this covers
+        // legacy posts created before the meeting_title field was added.
+        $meetingTitle = get_field(TsmlIntergroupMeetingFields::FIELD_MEETING_TITLE, $id);
+        $title = is_string($meetingTitle) && $meetingTitle !== '' ? $meetingTitle : '';
+        if ($title === '') {
+            $postTitle = get_the_title($id);
+            $title = is_string($postTitle) ? $postTitle : '';
+        }
 
         // Use get_field() for ACF relationship fields so the values are
         // consistent with what the ACF admin UI reads and writes.
