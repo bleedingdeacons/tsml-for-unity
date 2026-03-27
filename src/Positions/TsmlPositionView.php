@@ -24,6 +24,8 @@ class TsmlPositionView implements PositionView
 {
     private Position $position;
     private ?Member $member;
+    /** @var Member[] */
+    private array $members;
     private ?DateTime $rotationDate;
     private ?string $privateEmail;
     private ?string $privateContact;
@@ -33,18 +35,26 @@ class TsmlPositionView implements PositionView
      * Constructor
      *
      * @param Position $position The position
-     * @param Member|null $member The member assigned to the position (if any)
+     * @param Member|null $member The primary member assigned to the position (if any)
+     * @param array $members All members assigned to this position (when multiple share the same rotation date)
      */
     public function __construct(
         Position $position,
         ?Member $member = null,
+        array $members = [],
     ) {
         $this->position = $position;
         $this->member = $member;
+        $this->members = $members;
         $this->rotationDate = null;
         $this->title = $position->getShortDescription();
         $this->privateEmail = null;
         $this->privateContact = null;
+
+        // If members array was not explicitly provided, populate from single member
+        if (empty($this->members) && $this->member !== null) {
+            $this->members = [$this->member];
+        }
 
         if ($this->member !== null) {
             try {
@@ -103,6 +113,14 @@ class TsmlPositionView implements PositionView
     public function getMember(): ?Member
     {
         return $this->member;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getMembers(): array
+    {
+        return $this->members;
     }
 
     /**
@@ -182,11 +200,17 @@ class TsmlPositionView implements PositionView
             return '';
         }
 
-        if ($this->member->showAnonymousName()) {
-            return $this->member->getAnonymousName();
+        $names = [];
+        foreach ($this->members as $m) {
+            if ($m->showAnonymousName()) {
+                $name = $m->getAnonymousName();
+                if (!empty($name)) {
+                    $names[] = $name;
+                }
+            }
         }
 
-        return '';
+        return implode(', ', $names);
     }
 
     /**

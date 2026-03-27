@@ -64,12 +64,12 @@ class TsmlPositionViewFactory implements PositionViewFactory
         $matchingMembers = array_values($matchingMembers);
 
         if (count($matchingMembers) > 1) {
-            $latestMember = $this->findMemberWithLatestRotationDate($matchingMembers);
+            $membersWithLatestDate = $this->findMembersWithLatestRotationDate($matchingMembers);
         } else {
-            $latestMember = $matchingMembers[0];
+            $membersWithLatestDate = $matchingMembers;
         }
 
-        return new TsmlPositionView($position, $latestMember);
+        return new TsmlPositionView($position, $membersWithLatestDate[0], $membersWithLatestDate);
     }
 
     /**
@@ -89,14 +89,13 @@ class TsmlPositionViewFactory implements PositionViewFactory
             }));
 
             if (empty($matchingMembers)) {
-                $member = null;
+                $views[] = new TsmlPositionView($position, null);
             } elseif (count($matchingMembers) > 1) {
-                $member = $this->findMemberWithLatestRotationDate($matchingMembers);
+                $membersWithLatestDate = $this->findMembersWithLatestRotationDate($matchingMembers);
+                $views[] = new TsmlPositionView($position, $membersWithLatestDate[0], $membersWithLatestDate);
             } else {
-                $member = $matchingMembers[0];
+                $views[] = new TsmlPositionView($position, $matchingMembers[0], $matchingMembers);
             }
-
-            $views[] = new TsmlPositionView($position, $member);
         }
 
         usort($views, function(PositionView $a, PositionView $b) {
@@ -110,15 +109,17 @@ class TsmlPositionViewFactory implements PositionViewFactory
     }
 
     /**
-     * Find the member with the latest rotation date from a list of members
+     * Find all members that share the latest rotation date from a list of members
+     *
+     * When multiple members have the same (latest) rotation date, all are returned.
      *
      * @param array $members Array of Member objects
-     * @return Member The member with the latest rotation date
+     * @return array Array of Member objects with the latest rotation date
      */
-    private function findMemberWithLatestRotationDate(array $members): Member
+    private function findMembersWithLatestRotationDate(array $members): array
     {
-        $latestMember = $members[0];
         $latestDate = null;
+        $latestMembers = [$members[0]];
 
         foreach ($members as $member) {
             $rotationDateStr = $member->getIntergroupPositionRotation();
@@ -139,19 +140,21 @@ class TsmlPositionViewFactory implements PositionViewFactory
 
                 if ($latestDate === null) {
                     $latestDate = $rotationDate;
-                    $latestMember = $member;
+                    $latestMembers = [$member];
                     continue;
                 }
 
                 if ($rotationDate > $latestDate) {
                     $latestDate = $rotationDate;
-                    $latestMember = $member;
+                    $latestMembers = [$member];
+                } elseif ($rotationDate == $latestDate) {
+                    $latestMembers[] = $member;
                 }
             } catch (Exception $e) {
                 continue;
             }
         }
 
-        return $latestMember;
+        return $latestMembers;
     }
 }
