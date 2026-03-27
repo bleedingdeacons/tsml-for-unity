@@ -61,7 +61,8 @@ class TsmlIntergroupMeetingGroupAttendanceRepository implements IntergroupMeetin
      * Find all attendance records matching the given arguments
      *
      * Supported $args keys:
-     *  - intergroup_meeting_id (int)  Filter by parent meeting
+     *  - intergroup_meeting_id (int)    Filter by parent meeting
+     *  - meeting_label         (string) Filter by meeting label
      *  - group_id              (int)    Filter by group CPT post ID
      *  - member_id             (int)    Filter by member
      *  - meeting_group         (string) Filter by meeting/group name
@@ -86,6 +87,11 @@ class TsmlIntergroupMeetingGroupAttendanceRepository implements IntergroupMeetin
         if (isset($args['intergroup_meeting_id'])) {
             $where[] = 'intergroup_meeting_id = %d';
             $values[] = (int) $args['intergroup_meeting_id'];
+        }
+
+        if (isset($args['meeting_label'])) {
+            $where[] = 'meeting_label = %s';
+            $values[] = $args['meeting_label'];
         }
 
         if (isset($args['group_id'])) {
@@ -113,7 +119,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepository implements IntergroupMeetin
             $whereClause = 'WHERE ' . implode(' AND ', $where);
         }
 
-        $allowedOrderBy = ['id', 'intergroup_meeting_id', 'group_id', 'meeting_group', 'gsr_name'];
+        $allowedOrderBy = ['id', 'intergroup_meeting_id', 'meeting_label', 'group_id', 'meeting_group', 'gsr_name'];
         $orderBy = isset($args['orderby']) && in_array($args['orderby'], $allowedOrderBy, true)
             ? $args['orderby']
             : 'id';
@@ -183,6 +189,11 @@ class TsmlIntergroupMeetingGroupAttendanceRepository implements IntergroupMeetin
             $values[] = (int) $args['intergroup_meeting_id'];
         }
 
+        if (isset($args['meeting_label'])) {
+            $where[] = 'meeting_label = %s';
+            $values[] = $args['meeting_label'];
+        }
+
         if (isset($args['group_id'])) {
             $where[] = 'group_id = %d';
             $values[] = (int) $args['group_id'];
@@ -234,6 +245,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepository implements IntergroupMeetin
 
         $data = [
             'intergroup_meeting_id' => $attendance->getIntergroupMeetingId(),
+            'meeting_label'         => $attendance->getMeetingLabel(),
             'group_id'              => $attendance->getGroupId(),
             'member_id'             => $attendance->getMemberId(),
             'meeting_group'         => $attendance->getMeetingGroup(),
@@ -242,7 +254,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepository implements IntergroupMeetin
             'gsr_proxy_name'        => $attendance->getGsrProxyName(),
         ];
 
-        $formats = ['%d', '%d', '%d', '%s', '%s', '%d', '%s'];
+        $formats = ['%d', '%s', '%d', '%d', '%s', '%s', '%d', '%s'];
 
         // Update existing record
         if ($attendance->getId() > 0) {

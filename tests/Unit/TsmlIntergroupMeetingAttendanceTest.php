@@ -34,6 +34,7 @@ class TsmlIntergroupMeetingGroupAttendanceTest extends TestCase
 
         $this->assertEquals(0, $attendance->getId());
         $this->assertEquals(0, $attendance->getIntergroupMeetingId());
+        $this->assertEquals('', $attendance->getMeetingLabel());
         $this->assertEquals(0, $attendance->getMemberId());
         $this->assertEquals('', $attendance->getMeetingGroup());
         $this->assertEquals('', $attendance->getGsrName());
@@ -49,6 +50,7 @@ class TsmlIntergroupMeetingGroupAttendanceTest extends TestCase
         $attendance = new TsmlIntergroupMeetingGroupAttendance(
             id: 42,
             intergroupMeetingId: 100,
+            meetingLabel: 'Monthly Meeting — January 15, 2025',
             memberId: 55,
             meetingGroup: 'Saturday Morning Group',
             gsrName: 'John D.',
@@ -58,6 +60,7 @@ class TsmlIntergroupMeetingGroupAttendanceTest extends TestCase
 
         $this->assertEquals(42, $attendance->getId());
         $this->assertEquals(100, $attendance->getIntergroupMeetingId());
+        $this->assertEquals('Monthly Meeting — January 15, 2025', $attendance->getMeetingLabel());
         $this->assertEquals(55, $attendance->getMemberId());
         $this->assertEquals('Saturday Morning Group', $attendance->getMeetingGroup());
         $this->assertEquals('John D.', $attendance->getGsrName());

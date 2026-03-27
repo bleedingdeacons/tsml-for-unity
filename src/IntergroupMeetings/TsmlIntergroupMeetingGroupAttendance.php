@@ -21,6 +21,7 @@ class TsmlIntergroupMeetingGroupAttendance implements IntergroupMeetingGroupAtte
 {
     private int $id;
     private int $intergroupMeetingId;
+    private string $meetingLabel;
     private int $groupId;
     private int $memberId;
     private string $meetingGroup;
@@ -33,6 +34,7 @@ class TsmlIntergroupMeetingGroupAttendance implements IntergroupMeetingGroupAtte
      *
      * @param int    $id                   Row ID (0 for new unsaved records)
      * @param int    $intergroupMeetingId   Parent intergroup meeting post ID
+     * @param string $meetingLabel          Display label for the intergroup meeting (denormalised)
      * @param int    $groupId              Group CPT post ID
      * @param int    $memberId             Member ID
      * @param string $meetingGroup          Meeting or group name (looked up from group CPT)
@@ -43,6 +45,7 @@ class TsmlIntergroupMeetingGroupAttendance implements IntergroupMeetingGroupAtte
     public function __construct(
         int $id = 0,
         int $intergroupMeetingId = 0,
+        string $meetingLabel = '',
         int $groupId = 0,
         int $memberId = 0,
         string $meetingGroup = '',
@@ -52,6 +55,7 @@ class TsmlIntergroupMeetingGroupAttendance implements IntergroupMeetingGroupAtte
     ) {
         $this->id = $id;
         $this->intergroupMeetingId = $intergroupMeetingId;
+        $this->meetingLabel = $meetingLabel;
         $this->groupId = $groupId;
         $this->memberId = $memberId;
         $this->meetingGroup = $meetingGroup;
@@ -78,6 +82,16 @@ class TsmlIntergroupMeetingGroupAttendance implements IntergroupMeetingGroupAtte
     public function getIntergroupMeetingId(): int
     {
         return $this->intergroupMeetingId;
+    }
+
+    /**
+     * Get the display label for the intergroup meeting
+     *
+     * @return string
+     */
+    public function getMeetingLabel(): string
+    {
+        return $this->meetingLabel;
     }
 
     /**

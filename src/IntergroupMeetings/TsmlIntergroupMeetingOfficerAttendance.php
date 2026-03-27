@@ -21,6 +21,7 @@ class TsmlIntergroupMeetingOfficerAttendance implements IntergroupMeetingOfficer
 {
     private int $id;
     private int $intergroupMeetingId;
+    private string $meetingLabel;
     private int $officerId;
     private string $positionName;
     private string $officerName;
@@ -30,6 +31,7 @@ class TsmlIntergroupMeetingOfficerAttendance implements IntergroupMeetingOfficer
      *
      * @param int    $id                   Row ID (0 for new unsaved records)
      * @param int    $intergroupMeetingId   Parent intergroup meeting post ID
+     * @param string $meetingLabel          Display label for the intergroup meeting (denormalised)
      * @param int    $officerId            Officer member ID
      * @param string $positionName         Position name (plain text)
      * @param string $officerName          Officer name (plain text)
@@ -37,12 +39,14 @@ class TsmlIntergroupMeetingOfficerAttendance implements IntergroupMeetingOfficer
     public function __construct(
         int $id = 0,
         int $intergroupMeetingId = 0,
+        string $meetingLabel = '',
         int $officerId = 0,
         string $positionName = '',
         string $officerName = ''
     ) {
         $this->id = $id;
         $this->intergroupMeetingId = $intergroupMeetingId;
+        $this->meetingLabel = $meetingLabel;
         $this->officerId = $officerId;
         $this->positionName = $positionName;
         $this->officerName = $officerName;
@@ -66,6 +70,16 @@ class TsmlIntergroupMeetingOfficerAttendance implements IntergroupMeetingOfficer
     public function getIntergroupMeetingId(): int
     {
         return $this->intergroupMeetingId;
+    }
+
+    /**
+     * Get the display label for the intergroup meeting
+     *
+     * @return string
+     */
+    public function getMeetingLabel(): string
+    {
+        return $this->meetingLabel;
     }
 
     /**

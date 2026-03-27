@@ -62,6 +62,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepository implements IntergroupMeet
      *
      * Supported $args keys:
      *  - intergroup_meeting_id (int)    Filter by parent meeting
+     *  - meeting_label         (string) Filter by meeting label
      *  - officer_id            (int)    Filter by officer
      *  - position_name         (string) Filter by position name
      *  - officer_name          (string) Filter by officer name
@@ -87,6 +88,11 @@ class TsmlIntergroupMeetingOfficerAttendanceRepository implements IntergroupMeet
             $values[] = (int) $args['intergroup_meeting_id'];
         }
 
+        if (isset($args['meeting_label'])) {
+            $where[] = 'meeting_label = %s';
+            $values[] = $args['meeting_label'];
+        }
+
         if (isset($args['officer_id'])) {
             $where[] = 'officer_id = %d';
             $values[] = (int) $args['officer_id'];
@@ -107,7 +113,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepository implements IntergroupMeet
             $whereClause = 'WHERE ' . implode(' AND ', $where);
         }
 
-        $allowedOrderBy = ['id', 'intergroup_meeting_id', 'position_name', 'officer_name'];
+        $allowedOrderBy = ['id', 'intergroup_meeting_id', 'meeting_label', 'position_name', 'officer_name'];
         $orderBy = isset($args['orderby']) && in_array($args['orderby'], $allowedOrderBy, true)
             ? $args['orderby']
             : 'id';
@@ -177,6 +183,11 @@ class TsmlIntergroupMeetingOfficerAttendanceRepository implements IntergroupMeet
             $values[] = (int) $args['intergroup_meeting_id'];
         }
 
+        if (isset($args['meeting_label'])) {
+            $where[] = 'meeting_label = %s';
+            $values[] = $args['meeting_label'];
+        }
+
         if (isset($args['officer_id'])) {
             $where[] = 'officer_id = %d';
             $values[] = (int) $args['officer_id'];
@@ -223,12 +234,13 @@ class TsmlIntergroupMeetingOfficerAttendanceRepository implements IntergroupMeet
 
         $data = [
             'intergroup_meeting_id' => $attendance->getIntergroupMeetingId(),
+            'meeting_label'         => $attendance->getMeetingLabel(),
             'officer_id'            => $attendance->getOfficerId(),
             'position_name'         => $attendance->getPositionName(),
             'officer_name'          => $attendance->getOfficerName(),
         ];
 
-        $formats = ['%d', '%d', '%s', '%s'];
+        $formats = ['%d', '%s', '%d', '%s', '%s'];
 
         // Update existing record
         if ($attendance->getId() > 0) {

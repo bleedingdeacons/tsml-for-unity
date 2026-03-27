@@ -19,7 +19,7 @@ class TsmlIntergroupMeetingOfficerAttendanceTable
     /**
      * Database table version for schema upgrades
      */
-    public const DB_VERSION = '1.1';
+    public const DB_VERSION = '1.2';
 
     /**
      * Option key storing the current installed table version
@@ -60,6 +60,7 @@ class TsmlIntergroupMeetingOfficerAttendanceTable
         $sql = "CREATE TABLE {$table} (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             intergroup_meeting_id bigint(20) unsigned NOT NULL,
+            meeting_label varchar(255) NOT NULL DEFAULT '',
             officer_id bigint(20) unsigned NOT NULL,
             position_name varchar(255) NOT NULL DEFAULT '',
             officer_name varchar(255) NOT NULL DEFAULT '',

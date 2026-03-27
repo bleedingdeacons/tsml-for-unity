@@ -55,6 +55,7 @@ class TsmlIntergroupMeetingOfficerAttendanceFactory implements IntergroupMeeting
         return new TsmlIntergroupMeetingOfficerAttendance(
             id: (int) ($row['id'] ?? 0),
             intergroupMeetingId: (int) ($row['intergroup_meeting_id'] ?? 0),
+            meetingLabel: (string) ($row['meeting_label'] ?? ''),
             officerId: (int) ($row['officer_id'] ?? 0),
             positionName: (string) ($row['position_name'] ?? ''),
             officerName: (string) ($row['officer_name'] ?? '')
@@ -65,6 +66,7 @@ class TsmlIntergroupMeetingOfficerAttendanceFactory implements IntergroupMeeting
      * Create a new IntergroupMeetingOfficerAttendance instance (not yet persisted)
      *
      * @param int    $intergroupMeetingId Parent intergroup meeting ID
+     * @param string $meetingLabel        Display label for the intergroup meeting (denormalised)
      * @param int    $officerId           Officer member ID
      * @param string $positionName        Position name (plain text)
      * @param string $officerName         Officer name (plain text)
@@ -72,6 +74,7 @@ class TsmlIntergroupMeetingOfficerAttendanceFactory implements IntergroupMeeting
      */
     public function createNew(
         int $intergroupMeetingId,
+        string $meetingLabel,
         int $officerId,
         string $positionName,
         string $officerName
@@ -79,6 +82,7 @@ class TsmlIntergroupMeetingOfficerAttendanceFactory implements IntergroupMeeting
         return new TsmlIntergroupMeetingOfficerAttendance(
             id: 0,
             intergroupMeetingId: $intergroupMeetingId,
+            meetingLabel: $meetingLabel,
             officerId: $officerId,
             positionName: $positionName,
             officerName: $officerName
