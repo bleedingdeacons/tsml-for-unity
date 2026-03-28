@@ -24,7 +24,7 @@ class TsmlPositionView implements PositionView
 {
     private Position $position;
     private ?Member $member;
-    /** @var Member[] */
+    /** @var array<Member> */
     private array $members;
     private ?DateTime $rotationDate;
     private ?string $privateEmail;
@@ -34,9 +34,9 @@ class TsmlPositionView implements PositionView
     /**
      * Constructor
      *
-     * @param Position $position The position
-     * @param Member|null $member The primary member assigned to the position (if any)
-     * @param array $members All members assigned to this position (when multiple share the same rotation date)
+     * @param Position      $position The position
+     * @param Member|null   $member   The primary member assigned to the position (if any)
+     * @param array<Member> $members  All members sharing the latest rotation date (defaults to [$member] when omitted)
      */
     public function __construct(
         Position $position,
@@ -45,16 +45,11 @@ class TsmlPositionView implements PositionView
     ) {
         $this->position = $position;
         $this->member = $member;
-        $this->members = $members;
+        $this->members = !empty($members) ? $members : ($member !== null ? [$member] : []);
         $this->rotationDate = null;
         $this->title = $position->getShortDescription();
         $this->privateEmail = null;
         $this->privateContact = null;
-
-        // If members array was not explicitly provided, populate from single member
-        if (empty($this->members) && $this->member !== null) {
-            $this->members = [$this->member];
-        }
 
         if ($this->member !== null) {
             try {
@@ -121,6 +116,22 @@ class TsmlPositionView implements PositionView
     public function getMembers(): array
     {
         return $this->members;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getOfficerDisplayName(): string
+    {
+        if (empty($this->members)) {
+            return '';
+        }
+
+        $names = array_map(function (Member $m): string {
+            return $m->getAnonymousName();
+        }, $this->members);
+
+        return implode(', ', $names);
     }
 
     /**
@@ -200,17 +211,11 @@ class TsmlPositionView implements PositionView
             return '';
         }
 
-        $names = [];
-        foreach ($this->members as $m) {
-            if ($m->showAnonymousName()) {
-                $name = $m->getAnonymousName();
-                if (!empty($name)) {
-                    $names[] = $name;
-                }
-            }
+        if ($this->member->showAnonymousName()) {
+            return $this->member->getAnonymousName();
         }
 
-        return implode(', ', $names);
+        return '';
     }
 
     /**

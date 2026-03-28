@@ -64,12 +64,11 @@ class TsmlPositionViewFactory implements PositionViewFactory
         $matchingMembers = array_values($matchingMembers);
 
         if (count($matchingMembers) > 1) {
-            $membersWithLatestDate = $this->findMembersWithLatestRotationDate($matchingMembers);
-        } else {
-            $membersWithLatestDate = $matchingMembers;
+            $latestMembers = $this->findMembersWithLatestRotationDate($matchingMembers);
+            return new TsmlPositionView($position, $latestMembers[0], $latestMembers);
         }
 
-        return new TsmlPositionView($position, $membersWithLatestDate[0], $membersWithLatestDate);
+        return new TsmlPositionView($position, $matchingMembers[0]);
     }
 
     /**
@@ -89,13 +88,17 @@ class TsmlPositionViewFactory implements PositionViewFactory
             }));
 
             if (empty($matchingMembers)) {
-                $views[] = new TsmlPositionView($position, null);
+                $member = null;
+                $members = [];
             } elseif (count($matchingMembers) > 1) {
-                $membersWithLatestDate = $this->findMembersWithLatestRotationDate($matchingMembers);
-                $views[] = new TsmlPositionView($position, $membersWithLatestDate[0], $membersWithLatestDate);
+                $members = $this->findMembersWithLatestRotationDate($matchingMembers);
+                $member = $members[0];
             } else {
-                $views[] = new TsmlPositionView($position, $matchingMembers[0], $matchingMembers);
+                $member = $matchingMembers[0];
+                $members = [$member];
             }
+
+            $views[] = new TsmlPositionView($position, $member, $members);
         }
 
         usort($views, function(PositionView $a, PositionView $b) {
@@ -109,17 +112,19 @@ class TsmlPositionViewFactory implements PositionViewFactory
     }
 
     /**
-     * Find all members that share the latest rotation date from a list of members
+     * Find all members sharing the latest rotation date from a list of members.
      *
-     * When multiple members have the same (latest) rotation date, all are returned.
+     * Parses each member's rotation date, determines the overall latest date,
+     * then returns every member whose date matches. If no dates are parseable
+     * the first member is returned as a single-element array.
      *
-     * @param array $members Array of Member objects
-     * @return array Array of Member objects with the latest rotation date
+     * @param array<Member> $members Array of Member objects (must not be empty)
+     * @return array<Member> Members with the latest rotation date
      */
     private function findMembersWithLatestRotationDate(array $members): array
     {
-        $latestDate = null;
-        $latestMembers = [$members[0]];
+        $latestDateStr = null;
+        $parsed = []; // memberId => normalised Y-m-d string
 
         foreach ($members as $member) {
             $rotationDateStr = $member->getIntergroupPositionRotation();
@@ -129,32 +134,35 @@ class TsmlPositionViewFactory implements PositionViewFactory
             }
 
             try {
-                // Value is Y-m-d (normalised at factory level). Fall back to
-                // d/m/Y for any legacy data that hasn't been re-saved.
-                $rotationDate = DateTime::createFromFormat('Y-m-d', $rotationDateStr)
+                $dt = DateTime::createFromFormat('Y-m-d', $rotationDateStr)
                     ?: DateTime::createFromFormat('d/m/Y', $rotationDateStr);
 
-                if (!$rotationDate) {
+                if (!$dt) {
                     continue;
                 }
 
-                if ($latestDate === null) {
-                    $latestDate = $rotationDate;
-                    $latestMembers = [$member];
-                    continue;
-                }
+                $normalised = $dt->format('Y-m-d');
+                $parsed[$member->getId()] = $normalised;
 
-                if ($rotationDate > $latestDate) {
-                    $latestDate = $rotationDate;
-                    $latestMembers = [$member];
-                } elseif ($rotationDate == $latestDate) {
-                    $latestMembers[] = $member;
+                if ($latestDateStr === null || $normalised > $latestDateStr) {
+                    $latestDateStr = $normalised;
                 }
             } catch (Exception $e) {
                 continue;
             }
         }
 
-        return $latestMembers;
+        if ($latestDateStr === null) {
+            return [$members[0]];
+        }
+
+        $result = [];
+        foreach ($members as $member) {
+            if (isset($parsed[$member->getId()]) && $parsed[$member->getId()] === $latestDateStr) {
+                $result[] = $member;
+            }
+        }
+
+        return $result;
     }
 }
