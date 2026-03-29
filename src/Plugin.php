@@ -256,8 +256,6 @@ class Plugin
     {
         if (!method_exists($container, 'register')) {
             return;
-
-            self::logInfo('TSML for Unity initialised', ['version' => defined('TSML_FOR_UNITY_VERSION') ? TSML_FOR_UNITY_VERSION : 'unknown']);
         }
 
         // Configuration
@@ -588,5 +586,7 @@ class Plugin
                 }
             );
         }
+
+        self::logDebug('Initialised', ['version' => defined('TSML_FOR_UNITY_VERSION') ? TSML_FOR_UNITY_VERSION : 'unknown']);
     }
 }
