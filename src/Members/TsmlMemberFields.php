@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 final class TsmlMemberFields
 {
     public const POST_TYPE = 'intergroup-member';
-    
+
     public const FIELD_ANONYMOUS_NAME = 'about-layout-group_anonymous-name';
     public const FIELD_MOBILE_PHONE = 'about-layout-group_mobile-phone';
     public const FIELD_SHOW_ANONYMOUS_NAME = 'about-layout-group_show-anonymous-name';
@@ -30,6 +30,9 @@ final class TsmlMemberFields
     public const FIELD_MEETING_PO = 'home-layout-group_meeting_po';
     public const FIELD_PERSONAL_EMAIL = 'about-layout-group_personal-email';
     public const FIELD_MOBILE_NUMBER = 'about-layout-group_mobile-number';
+
+    public const KEY_PERSONAL_EMAIL = 'field_67d0eabc277cb';
+    public const KEY_MOBILE_NUMBER = 'field_67d0eaea7cdea';
 
     private function __construct()
     {
