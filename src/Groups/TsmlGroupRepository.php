@@ -76,6 +76,29 @@ class TsmlGroupRepository implements GroupRepository
     /**
      * {@inheritdoc}
      */
+    public function count(array $args = []): int
+    {
+        $defaultArgs = [
+            'post_type' => TsmlGroupFields::POST_TYPE,
+            'posts_per_page' => -1,
+            'post_status' => 'publish',
+            'fields' => 'ids',
+        ];
+
+        $queryArgs = wp_parse_args($args, $defaultArgs);
+
+        // Force lightweight ID-only query regardless of caller args
+        $queryArgs['fields'] = 'ids';
+        $queryArgs['posts_per_page'] = -1;
+
+        $posts = get_posts($queryArgs);
+
+        return is_array($posts) ? count($posts) : 0;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function save(Group $group): bool
     {
         $postId = $group->getId();
