@@ -2,7 +2,7 @@
 
 A companion WordPress plugin that bridges [12 Step Meeting List (TSML)](https://wordpress.org/plugins/12-step-meeting-list/) with the [Unity](https://github.com/bleedingdeacons/unity) intergroup management framework — providing concrete implementations of every Unity interface backed by TSML data.
 
-**Version:** 1.10.10
+**Version:** 1.10.12
 
 ---
 
