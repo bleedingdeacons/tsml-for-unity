@@ -40,7 +40,7 @@ class TsmlMemberRepository implements MemberRepository
      * @param int $id
      * @return Member|null
      */
-    public function find(int $id): ?Member
+    public function findById(int $id): ?Member
     {
         $post = get_post($id);
 
@@ -71,7 +71,7 @@ class TsmlMemberRepository implements MemberRepository
 
         if (!empty($posts)) {
             foreach ($posts as $post) {
-                $member = $this->find($post->ID);
+                $member = $this->findById($post->ID);
                 if ($member) {
                     $members[] = $member;
                 }

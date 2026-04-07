@@ -59,7 +59,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
         }
 
         try {
-            self::$originalMember = $this->repository->find($postId);
+            self::$originalMember = $this->repository->findById($postId);
 
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 \TsmlForUnity\Plugin::logError('Original member captured for post ID: ' . $postId);
@@ -91,7 +91,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
         }
 
         try {
-            $updatedMember = $this->repository->find($postId);
+            $updatedMember = $this->repository->findById($postId);
 
             if (!$updatedMember) {
                 \TsmlForUnity\Plugin::logError('Could not fetch updated member for post ID: ' . $postId);
@@ -143,7 +143,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
         }
 
         try {
-            $member = $this->repository->find($postId);
+            $member = $this->repository->findById($postId);
 
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 \TsmlForUnity\Plugin::logError('Member deleted, firing unity/member_deleted hook for post ID: ' . $postId);
