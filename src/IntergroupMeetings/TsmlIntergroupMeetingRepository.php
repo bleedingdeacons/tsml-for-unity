@@ -41,7 +41,7 @@ class TsmlIntergroupMeetingRepository implements IntergroupMeetingRepository
      * @param int $id
      * @return IntergroupMeeting|null
      */
-    public function find(int $id): ?IntergroupMeeting
+    public function findById(int $id): ?IntergroupMeeting
     {
         $post = get_post($id);
 
