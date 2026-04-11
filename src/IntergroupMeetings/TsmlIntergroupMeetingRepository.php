@@ -66,7 +66,7 @@ class TsmlIntergroupMeetingRepository implements IntergroupMeetingRepository
 
         if (!empty($posts)) {
             foreach ($posts as $post) {
-                $intergroupMeeting = $this->find($post->ID);
+                $intergroupMeeting = $this->findById($post->ID);
                 if ($intergroupMeeting) {
                     $intergroupMeetings[] = $intergroupMeeting;
                 }

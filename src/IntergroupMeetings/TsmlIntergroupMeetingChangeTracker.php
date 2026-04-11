@@ -65,7 +65,7 @@ class TsmlIntergroupMeetingChangeTracker implements IntergroupMeetingChangeTrack
         }
 
         try {
-            self::$originalMeeting = $this->repository->find($postId);
+            self::$originalMeeting = $this->repository->findById($postId);
 
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 \TsmlForUnity\Plugin::logError('Original intergroup meeting captured for post ID: ' . $postId);
@@ -97,7 +97,7 @@ class TsmlIntergroupMeetingChangeTracker implements IntergroupMeetingChangeTrack
         }
 
         try {
-            $updatedMeeting = $this->repository->find($postId);
+            $updatedMeeting = $this->repository->findById($postId);
 
             if (!$updatedMeeting) {
                 \TsmlForUnity\Plugin::logError('Could not fetch updated intergroup meeting for post ID: ' . $postId);
@@ -149,7 +149,7 @@ class TsmlIntergroupMeetingChangeTracker implements IntergroupMeetingChangeTrack
         }
 
         try {
-            $meeting = $this->repository->find($postId);
+            $meeting = $this->repository->findById($postId);
 
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 \TsmlForUnity\Plugin::logError('Intergroup meeting deleted, firing unity/intergroup_meeting_deleted hook for post ID: ' . $postId);

@@ -46,7 +46,7 @@ class TsmlMeetingRepository implements MeetingRepository
     /**
      * {@inheritdoc}
      */
-    public function find(int $id): ?Meeting
+    public function findById(int $id): ?Meeting
     {
         if ($id <= 0) {
             return null;

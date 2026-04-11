@@ -104,7 +104,7 @@ class TsmlGroupViewFactory implements GroupViewFactory
         foreach ($meetingIds as $meetingId) {
             $meeting = get_post($meetingId);
             if ($meeting && $meeting->post_type === 'tsml_meeting') {
-                $meetingObj = $this->meetingRepository->find((int)$meetingId);
+                $meetingObj = $this->meetingRepository->findById((int)$meetingId);
                 if ($meetingObj) {
                     $meetings[] = $meetingObj;
                 }

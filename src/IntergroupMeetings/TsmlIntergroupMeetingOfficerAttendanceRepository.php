@@ -38,7 +38,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepository implements IntergroupMeet
      * @param int $id
      * @return IntergroupMeetingOfficerAttendance|null
      */
-    public function find(int $id): ?IntergroupMeetingOfficerAttendance
+    public function findById(int $id): ?IntergroupMeetingOfficerAttendance
     {
         global $wpdb;
 
