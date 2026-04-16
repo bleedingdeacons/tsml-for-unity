@@ -216,7 +216,7 @@ class TsmlMeetingFactory implements MeetingFactory
                 throw new InvalidArgumentException("Invalid meeting ID: {$id}");
             }
 
-            $name = $source['name'];
+            $name = html_entity_decode($source['name'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
             $slug = $source['slug'];
 
             // Resolve location using LocationRepository if available

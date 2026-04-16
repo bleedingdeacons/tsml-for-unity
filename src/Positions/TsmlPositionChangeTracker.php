@@ -102,10 +102,11 @@ class TsmlPositionChangeTracker implements PositionChangeTracker
                 }
 
                 $post = get_post($postId);
-                if ($post && $post->post_title !== $updatedPosition->getLongName()) {
+                $encodedName = htmlspecialchars($updatedPosition->getLongName(), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                if ($post && $post->post_title !== $encodedName) {
                     wp_update_post([
                         'ID' => $postId,
-                        'post_title' => $updatedPosition->getLongName()
+                        'post_title' => $encodedName
                     ]);
                 }
 

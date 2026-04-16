@@ -112,7 +112,7 @@ class TsmlGroupFactory implements GroupFactory
 
         return new TsmlGroup(
             id: $sourceId,
-            title: $post->post_title ?? '',
+            title: html_entity_decode($post->post_title ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8'),
             email: $this->getMetaField($meta, TsmlGroupFields::EMAIL, ''),
             meetings: $meetings,
             link: $link,

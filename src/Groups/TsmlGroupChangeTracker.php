@@ -106,10 +106,11 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
                 }
 
                 $post = get_post($postId);
-                if ($post && $post->post_title !== $updatedGroup->getTitle()) {
+                $encodedTitle = htmlspecialchars($updatedGroup->getTitle(), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                if ($post && $post->post_title !== $encodedTitle) {
                     wp_update_post([
                         'ID' => $postId,
-                        'post_title' => $updatedGroup->getTitle()
+                        'post_title' => $encodedTitle
                     ]);
                 }
 

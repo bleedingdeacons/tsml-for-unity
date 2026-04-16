@@ -14,8 +14,11 @@ use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberRepository;
 use function get_post;
 use function get_posts;
+use function is_wp_error;
 use function update_field;
 use function wp_delete_post;
+use function wp_insert_post;
+use function wp_update_post;
 
 /**
  * TSML Member Repository
@@ -103,28 +106,95 @@ class TsmlMemberRepository implements MemberRepository
     }
 
     /**
-     * Save member data
+     * Save member data (insert or update)
      *
      * @param Member $member
      * @return bool
      */
     public function save(Member $member): bool
     {
-        $id = $member->getId();
+        $postId = $member->getId();
 
-        update_field(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $member->getAnonymousName(), $id);
-        update_field(TsmlMemberFields::FIELD_SHOW_ANONYMOUS_NAME, $member->showAnonymousName(), $id);
-        update_field(TsmlMemberFields::FIELD_SHOW_MEMBER_PROFILE, $member->showMemberProfile(), $id);
-        update_field(TsmlMemberFields::FIELD_ANONYMOUS_PROFILE, $member->getAnonymousProfile(), $id);
-        update_field(TsmlMemberFields::FIELD_INTERGROUP_POSITION, $member->getIntergroupPosition(), $id);
-        update_field(TsmlMemberFields::FIELD_INTERGROUP_POSITION_ROTATION, $member->getIntergroupPositionRotation(), $id);
-        update_field(TsmlMemberFields::FIELD_HOME_GROUP, $member->getHomeGroup(), $id);
-        update_field(TsmlMemberFields::FIELD_HOMEGROUP_GSR, $member->isGSR(), $id);
-        update_field(TsmlMemberFields::FIELD_MEETING_PO, $member->getMeetingPO(), $id);
-        update_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $member->getPersonalEmail(), $id);
-        update_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $member->getMobileNumber(), $id);
+        if ($postId > 0) {
+            return $this->update($member);
+        }
+
+        $encodedName = htmlspecialchars($member->getAnonymousName(), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        $postData = [
+            'post_type' => TsmlMemberFields::POST_TYPE,
+            'post_status' => 'publish',
+            'post_title' => $encodedName,
+            'post_content' => '',
+        ];
+
+        $result = wp_insert_post($postData, true);
+
+        if (is_wp_error($result)) {
+            return false;
+        }
+
+        $postId = $result;
+
+        $this->updateFields($member, $postId);
 
         return true;
+    }
+
+    /**
+     * Update an existing member
+     *
+     * @param Member $member
+     * @return bool
+     */
+    public function update(Member $member): bool
+    {
+        $postId = $member->getId();
+
+        if ($postId <= 0) {
+            return false;
+        }
+
+        $encodedName = htmlspecialchars($member->getAnonymousName(), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        $postData = [
+            'ID' => $postId,
+            'post_title' => $encodedName,
+            'post_type' => TsmlMemberFields::POST_TYPE,
+            'post_status' => 'publish',
+        ];
+
+        $result = wp_update_post($postData, true);
+
+        if (is_wp_error($result)) {
+            return false;
+        }
+
+        $this->updateFields($member, $postId);
+
+        return true;
+    }
+
+    /**
+     * Update ACF fields for a member
+     *
+     * @param Member $member
+     * @param int $postId
+     * @return void
+     */
+    private function updateFields(Member $member, int $postId): void
+    {
+        update_field(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $member->getAnonymousName(), $postId);
+        update_field(TsmlMemberFields::FIELD_SHOW_ANONYMOUS_NAME, $member->showAnonymousName(), $postId);
+        update_field(TsmlMemberFields::FIELD_SHOW_MEMBER_PROFILE, $member->showMemberProfile(), $postId);
+        update_field(TsmlMemberFields::FIELD_ANONYMOUS_PROFILE, $member->getAnonymousProfile(), $postId);
+        update_field(TsmlMemberFields::FIELD_INTERGROUP_POSITION, $member->getIntergroupPosition(), $postId);
+        update_field(TsmlMemberFields::FIELD_INTERGROUP_POSITION_ROTATION, $member->getIntergroupPositionRotation(), $postId);
+        update_field(TsmlMemberFields::FIELD_HOME_GROUP, $member->getHomeGroup(), $postId);
+        update_field(TsmlMemberFields::FIELD_HOMEGROUP_GSR, $member->isGSR(), $postId);
+        update_field(TsmlMemberFields::FIELD_MEETING_PO, $member->getMeetingPO(), $postId);
+        update_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $member->getPersonalEmail(), $postId);
+        update_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $member->getMobileNumber(), $postId);
     }
 
     /**

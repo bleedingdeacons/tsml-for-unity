@@ -104,10 +104,11 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
                 }
 
                 $post = get_post($postId);
-                if ($post && $post->post_title !== $updatedMember->getAnonymousName()) {
+                $encodedName = htmlspecialchars($updatedMember->getAnonymousName(), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                if ($post && $post->post_title !== $encodedName) {
                     wp_update_post([
                         'ID' => $postId,
-                        'post_title' => $updatedMember->getAnonymousName()
+                        'post_title' => $encodedName
                     ]);
                 }
 

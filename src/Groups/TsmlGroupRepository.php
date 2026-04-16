@@ -111,10 +111,12 @@ class TsmlGroupRepository implements GroupRepository
             return false;
         }
 
+        $encodedTitle = htmlspecialchars($group->getTitle(), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
         $postData = [
             'post_type' => TsmlGroupFields::POST_TYPE,
             'post_status' => 'publish',
-            'post_title' => $group->getTitle(),
+            'post_title' => $encodedTitle,
             'post_content' => '',
         ];
 
@@ -127,7 +129,7 @@ class TsmlGroupRepository implements GroupRepository
         $postId = $result;
 
         if (function_exists('update_field')) {
-            update_field(TsmlGroupFields::TITLE, $group->getTitle(), $postId);
+            update_field(TsmlGroupFields::TITLE, $encodedTitle, $postId);
             update_field(TsmlGroupFields::EMAIL, $group->getEmail(), $postId);
             update_field(TsmlGroupFields::MEETING, $group->getMeetingIds(), $postId);
         }
@@ -150,9 +152,11 @@ class TsmlGroupRepository implements GroupRepository
             return false;
         }
 
+        $encodedTitle = htmlspecialchars($group->getTitle(), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
         $postData = [
             'ID' => $postId,
-            'post_title' => $group->getTitle(),
+            'post_title' => $encodedTitle,
             'post_type' => TsmlGroupFields::POST_TYPE,
             'post_status' => 'publish',
         ];
@@ -164,7 +168,7 @@ class TsmlGroupRepository implements GroupRepository
         }
 
         if (function_exists('update_field')) {
-            update_field(TsmlGroupFields::TITLE, $group->getTitle(), $postId);
+            update_field(TsmlGroupFields::TITLE, $encodedTitle, $postId);
             update_field(TsmlGroupFields::EMAIL, $group->getEmail(), $postId);
             update_field(TsmlGroupFields::MEETING, $group->getMeetingIds(), $postId);
         }

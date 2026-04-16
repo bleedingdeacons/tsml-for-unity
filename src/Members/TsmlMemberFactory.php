@@ -82,7 +82,7 @@ class TsmlMemberFactory implements MemberFactory
 
         return new TsmlMember(
             $id,
-            get_field(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $id) ?? '',
+            html_entity_decode(get_field(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $id) ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8'),
             (bool) (get_field(TsmlMemberFields::FIELD_SHOW_ANONYMOUS_NAME, $id) ?? false),
             (bool) (get_field(TsmlMemberFields::FIELD_SHOW_MEMBER_PROFILE, $id) ?? false),
             get_field(TsmlMemberFields::FIELD_ANONYMOUS_PROFILE, $id) ?? '',

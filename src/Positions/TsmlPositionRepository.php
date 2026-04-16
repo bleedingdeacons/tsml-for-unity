@@ -103,10 +103,12 @@ class TsmlPositionRepository implements PositionRepository
             return false;
         }
 
+        $encodedName = htmlspecialchars($position->getLongName(), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
         $postData = [
             'post_type' => TsmlPositionFields::POST_TYPE,
             'post_status' => 'publish',
-            'post_title' => $position->getLongName(),
+            'post_title' => $encodedName,
             'post_content' => '',
         ];
 
@@ -122,7 +124,7 @@ class TsmlPositionRepository implements PositionRepository
             update_field(TsmlPositionFields::MINIMUM_SOBRIETY, $position->getMinimumSobriety(), $postId);
             update_field(TsmlPositionFields::TERM_YEARS, $position->getTermYears(), $postId);
             update_field(TsmlPositionFields::EMAIL_ADDRESS, $position->getEmail(), $postId);
-            update_field(TsmlPositionFields::LONG_NAME, $position->getLongName(), $postId);
+            update_field(TsmlPositionFields::LONG_NAME, $encodedName, $postId);
             update_field(TsmlPositionFields::SHORT_DESCRIPTION, $position->getShortDescription(), $postId);
             update_field(TsmlPositionFields::SUMMARY, $position->getSummary(), $postId);
         }
@@ -145,9 +147,11 @@ class TsmlPositionRepository implements PositionRepository
             return false;
         }
 
+        $encodedName = htmlspecialchars($position->getLongName(), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
         $postData = [
             'ID' => $postId,
-            'post_title' => $position->getLongName(),
+            'post_title' => $encodedName,
             'post_type' => TsmlPositionFields::POST_TYPE,
             'post_status' => 'publish',
         ];
@@ -162,7 +166,7 @@ class TsmlPositionRepository implements PositionRepository
             update_field(TsmlPositionFields::MINIMUM_SOBRIETY, $position->getMinimumSobriety(), $postId);
             update_field(TsmlPositionFields::TERM_YEARS, $position->getTermYears(), $postId);
             update_field(TsmlPositionFields::EMAIL_ADDRESS, $position->getEmail(), $postId);
-            update_field(TsmlPositionFields::LONG_NAME, $position->getLongName(), $postId);
+            update_field(TsmlPositionFields::LONG_NAME, $encodedName, $postId);
             update_field(TsmlPositionFields::SHORT_DESCRIPTION, $position->getShortDescription(), $postId);
             update_field(TsmlPositionFields::SUMMARY, $position->getSummary(), $postId);
         }

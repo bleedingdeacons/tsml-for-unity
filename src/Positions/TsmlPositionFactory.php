@@ -54,7 +54,7 @@ class TsmlPositionFactory implements PositionFactory
             (int) $acfData[TsmlPositionFields::MINIMUM_SOBRIETY],
             (int) $acfData[TsmlPositionFields::TERM_YEARS],
             (string) $acfData[TsmlPositionFields::EMAIL_ADDRESS],
-            (string) $acfData[TsmlPositionFields::LONG_NAME],
+            html_entity_decode((string) $acfData[TsmlPositionFields::LONG_NAME], ENT_QUOTES | ENT_HTML5, 'UTF-8'),
             (string) $acfData[TsmlPositionFields::SHORT_DESCRIPTION],
             (string) $acfData[TsmlPositionFields::SUMMARY],
             $link,
