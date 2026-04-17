@@ -46,7 +46,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepository implements IntergroupMeet
 
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $row = $wpdb->get_row(
-            $wpdb->prepare("SELECT * FROM {$table} WHERE id = %d", $id),
+            $wpdb->prepare("SELECT * FROM `" . esc_sql($table) . "` WHERE id = %d", $id),
             ARRAY_A
         );
 
@@ -128,7 +128,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepository implements IntergroupMeet
         }
 
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $sql = "SELECT * FROM {$table} {$whereClause} ORDER BY {$orderBy} {$order} {$limit}";
+        $sql = "SELECT * FROM `" . esc_sql($table) . "` {$whereClause} ORDER BY {$orderBy} {$order} {$limit}";
 
         if (!empty($values)) {
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -209,7 +209,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepository implements IntergroupMeet
         }
 
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $sql = "SELECT COUNT(*) FROM {$table} {$whereClause}";
+        $sql = "SELECT COUNT(*) FROM `" . esc_sql($table) . "` {$whereClause}";
 
         if (!empty($values)) {
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
