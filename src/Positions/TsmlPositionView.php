@@ -27,8 +27,8 @@ class TsmlPositionView implements PositionView
     /** @var array<Member> */
     private array $members;
     private ?DateTime $rotationDate;
-    private ?string $privateEmail;
-    private ?string $privateContact;
+    private ?string $personalEmail;
+    private ?string $mobileNumber;
     private ?string $title;
 
     /**
@@ -48,13 +48,13 @@ class TsmlPositionView implements PositionView
         $this->members = !empty($members) ? $members : ($member !== null ? [$member] : []);
         $this->rotationDate = null;
         $this->title = $position->getShortDescription();
-        $this->privateEmail = null;
-        $this->privateContact = null;
+        $this->personalEmail = null;
+        $this->mobileNumber = null;
 
         if ($this->member !== null) {
             try {
-                $this->privateEmail = $this->member->getPersonalEmail();
-                $this->privateContact = $this->member->getMobileNumber();
+                $this->personalEmail = $this->member->getPersonalEmail();
+                $this->mobileNumber = $this->member->getMobileNumber();
                 $rotationStr = $this->member->getIntergroupPositionRotation();
                 if (!empty($rotationStr)) {
                     $parsed = DateTime::createFromFormat('Y-m-d', $rotationStr)
@@ -81,17 +81,17 @@ class TsmlPositionView implements PositionView
     /**
      * {@inheritdoc}
      */
-    public function getPrivateEmail(): ?string
+    public function getPersonalEmail(): ?string
     {
-        return $this->privateEmail;
+        return $this->personalEmail;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getPrivateContact(): ?string
+    public function getMobileNumber(): ?string
     {
-        return $this->privateContact;
+        return $this->mobileNumber;
     }
 
     /**
