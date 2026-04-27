@@ -75,6 +75,17 @@ class TsmlMemberFactory implements MemberFactory
             $rotation = $parsed ? $parsed->format('Y-m-d') : $rawRotation;
         }
 
+        // ACF date_time_picker returns 'd/m/Y g:i a' for this field. Normalise
+        // to ISO 8601 (Y-m-d H:i:s) for the same reasons as the rotation date,
+        // so the GDPR acceptance timestamp can be safely sorted, compared,
+        // and serialised by the REST API. Empty when never accepted.
+        $rawGdprAcceptedAt = get_field(TsmlMemberFields::FIELD_GDPR_ACCEPTED_AT, $id) ?? '';
+        $gdprAcceptedAt = '';
+        if ($rawGdprAcceptedAt !== '') {
+            $parsedAt = \DateTime::createFromFormat('d/m/Y g:i a', $rawGdprAcceptedAt);
+            $gdprAcceptedAt = $parsedAt ? $parsedAt->format('Y-m-d H:i:s') : $rawGdprAcceptedAt;
+        }
+
         // Use post_modified_gmt (UTC) rather than post_modified (site-local
         // timezone) so the REST API's formatUpdatedTimestamp is accurate.
         $post = get_post($id);
@@ -93,6 +104,11 @@ class TsmlMemberFactory implements MemberFactory
             get_field(TsmlMemberFields::FIELD_MEETING_PO, $id) ?? null,
             get_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $id) ?? '',
             get_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $id) ?? '',
+            (bool) (get_field(TsmlMemberFields::FIELD_GDPR_ACCEPTED, $id) ?? false),
+            $gdprAcceptedAt,
+            (string) (get_field(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_VERSION, $id) ?? ''),
+            (string) (get_field(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_METHOD, $id) ?? ''),
+            (string) (get_field(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_STATEMENT, $id) ?? ''),
             $updated
         );
     }
@@ -116,6 +132,11 @@ class TsmlMemberFactory implements MemberFactory
      * @param mixed  $meetingPO                    Meeting PO reference
      * @param string $personalEmail                Personal email
      * @param string $mobileNumber                 Mobile number
+     * @param bool   $gdprAccepted                 GDPR acceptance flag
+     * @param string $gdprAcceptedAt               GDPR acceptance timestamp (Y-m-d H:i:s)
+     * @param string $gdprAcceptanceVersion        Privacy policy version accepted
+     * @param string $gdprAcceptanceMethod         How acceptance was captured
+     * @param string $gdprAcceptanceStatement      Exact statement that was accepted
      * @param string $updated                      Last updated datetime
      * @return Member
      */
@@ -132,6 +153,11 @@ class TsmlMemberFactory implements MemberFactory
         mixed $meetingPO = null,
         string $personalEmail = '',
         string $mobileNumber = '',
+        bool $gdprAccepted = false,
+        string $gdprAcceptedAt = '',
+        string $gdprAcceptanceVersion = '',
+        string $gdprAcceptanceMethod = '',
+        string $gdprAcceptanceStatement = '',
         string $updated = ''
     ): Member {
         return new TsmlMember(
@@ -147,6 +173,11 @@ class TsmlMemberFactory implements MemberFactory
             $meetingPO,
             $personalEmail,
             $mobileNumber,
+            $gdprAccepted,
+            $gdprAcceptedAt,
+            $gdprAcceptanceVersion,
+            $gdprAcceptanceMethod,
+            $gdprAcceptanceStatement,
             $updated
         );
     }

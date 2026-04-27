@@ -195,6 +195,16 @@ class TsmlMemberRepository implements MemberRepository
         update_field(TsmlMemberFields::FIELD_MEETING_PO, $member->getMeetingPO(), $postId);
         update_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $member->getPersonalEmail(), $postId);
         update_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $member->getMobileNumber(), $postId);
+
+        // GDPR compliance fields. ACF stores the date_time_picker value
+        // internally as Y-m-d H:i:s regardless of the field's return_format,
+        // so the domain value (already normalised to Y-m-d H:i:s) can be
+        // written back as-is.
+        update_field(TsmlMemberFields::FIELD_GDPR_ACCEPTED, $member->isGdprAccepted(), $postId);
+        update_field(TsmlMemberFields::FIELD_GDPR_ACCEPTED_AT, $member->getGdprAcceptedAt(), $postId);
+        update_field(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_VERSION, $member->getGdprAcceptanceVersion(), $postId);
+        update_field(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_METHOD, $member->getGdprAcceptanceMethod(), $postId);
+        update_field(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_STATEMENT, $member->getGdprAcceptanceStatement(), $postId);
     }
 
     /**

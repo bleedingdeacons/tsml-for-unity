@@ -28,6 +28,11 @@ class TsmlMember implements Member
     private mixed $meetingPO;
     private string $personalEmail;
     private string $mobileNumber;
+    private bool $gdprAccepted;
+    private string $gdprAcceptedAt;
+    private string $gdprAcceptanceVersion;
+    private string $gdprAcceptanceMethod;
+    private string $gdprAcceptanceStatement;
     private string $updated;
 
     /**
@@ -45,6 +50,11 @@ class TsmlMember implements Member
      * @param mixed $meetingPO Meeting PO reference
      * @param string $personalEmail Personal email address
      * @param string $mobileNumber Mobile phone number
+     * @param bool $gdprAccepted GDPR acceptance flag
+     * @param string $gdprAcceptedAt GDPR acceptance timestamp (Y-m-d H:i:s)
+     * @param string $gdprAcceptanceVersion Privacy policy version accepted
+     * @param string $gdprAcceptanceMethod How acceptance was captured
+     * @param string $gdprAcceptanceStatement The exact statement that was accepted
      * @param string $updated Last updated datetime string
      */
     public function __construct(
@@ -60,6 +70,11 @@ class TsmlMember implements Member
         mixed $meetingPO = null, // Need to removed
         string $personalEmail = '',
         string $mobileNumber = '',
+        bool $gdprAccepted = false,
+        string $gdprAcceptedAt = '',
+        string $gdprAcceptanceVersion = '',
+        string $gdprAcceptanceMethod = '',
+        string $gdprAcceptanceStatement = '',
         string $updated = ''
     ) {
         $this->id = $id;
@@ -74,6 +89,11 @@ class TsmlMember implements Member
         $this->meetingPO = $meetingPO;
         $this->personalEmail = $personalEmail;
         $this->mobileNumber = $mobileNumber;
+        $this->gdprAccepted = $gdprAccepted;
+        $this->gdprAcceptedAt = $gdprAcceptedAt;
+        $this->gdprAcceptanceVersion = $gdprAcceptanceVersion;
+        $this->gdprAcceptanceMethod = $gdprAcceptanceMethod;
+        $this->gdprAcceptanceStatement = $gdprAcceptanceStatement;
         $this->updated = $updated;
     }
 
@@ -135,6 +155,31 @@ class TsmlMember implements Member
     public function getMobileNumber(): string
     {
         return $this->mobileNumber;
+    }
+
+    public function isGdprAccepted(): bool
+    {
+        return $this->gdprAccepted;
+    }
+
+    public function getGdprAcceptedAt(): string
+    {
+        return $this->gdprAcceptedAt;
+    }
+
+    public function getGdprAcceptanceVersion(): string
+    {
+        return $this->gdprAcceptanceVersion;
+    }
+
+    public function getGdprAcceptanceMethod(): string
+    {
+        return $this->gdprAcceptanceMethod;
+    }
+
+    public function getGdprAcceptanceStatement(): string
+    {
+        return $this->gdprAcceptanceStatement;
     }
 
     public function getUpdated(): string

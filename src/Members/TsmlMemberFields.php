@@ -31,8 +31,20 @@ final class TsmlMemberFields
     public const FIELD_PERSONAL_EMAIL = 'about-layout-group_personal-email';
     public const FIELD_MOBILE_NUMBER = 'about-layout-group_mobile-number';
 
+    public const FIELD_GDPR_ACCEPTED = 'gdpr-compliance-group_gdpr_accepted';
+    public const FIELD_GDPR_ACCEPTED_AT = 'gdpr-compliance-group_gdpr_accepted_at';
+    public const FIELD_GDPR_ACCEPTANCE_VERSION = 'gdpr-compliance-group_gdpr_acceptance_version';
+    public const FIELD_GDPR_ACCEPTANCE_METHOD = 'gdpr-compliance-group_gdpr_acceptance_method';
+    public const FIELD_GDPR_ACCEPTANCE_STATEMENT = 'gdpr-compliance-group_gdpr_acceptance_statement';
+
     public const KEY_PERSONAL_EMAIL = 'field_67d0eabc277cb';
     public const KEY_MOBILE_NUMBER = 'field_67d0eaea7cdea';
+
+    public const KEY_GDPR_ACCEPTED = 'field_69efda5e524ed';
+    public const KEY_GDPR_ACCEPTED_AT = 'field_69efda79524ee';
+    public const KEY_GDPR_ACCEPTANCE_VERSION = 'field_69efdacd524ef';
+    public const KEY_GDPR_ACCEPTANCE_METHOD = 'field_69efdaf0524f0';
+    public const KEY_GDPR_ACCEPTANCE_STATEMENT = 'field_69efdb05524f1';
 
     private function __construct()
     {

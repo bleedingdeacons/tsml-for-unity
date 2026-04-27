@@ -29,6 +29,12 @@ if (!interface_exists('Unity\\Members\\Interfaces\\Member')) {
         public function getMeetingPO(): mixed;
         public function getPersonalEmail(): string;
         public function getMobileNumber(): string;
+        public function isGdprAccepted(): bool;
+        public function getGdprAcceptedAt(): string;
+        public function getGdprAcceptanceVersion(): string;
+        public function getGdprAcceptanceMethod(): string;
+        public function getGdprAcceptanceStatement(): string;
+        public function getUpdated(): string;
     }');
 }
 
@@ -48,7 +54,12 @@ if (!interface_exists('Unity\\Members\\Interfaces\\MemberFactory')) {
             bool $isGSR = false,
             mixed $meetingPO = null,
             string $personalEmail = \'\',
-            string $mobileNumber = \'\'
+            string $mobileNumber = \'\',
+            bool $gdprAccepted = false,
+            string $gdprAcceptedAt = \'\',
+            string $gdprAcceptanceVersion = \'\',
+            string $gdprAcceptanceMethod = \'\',
+            string $gdprAcceptanceStatement = \'\'
         ): Member;
     }');
 }
@@ -70,6 +81,12 @@ if (!class_exists('Unity\\Members\\Member')) {
         private mixed $meetingPO;
         private string $personalEmail;
         private string $mobileNumber;
+        private bool $gdprAccepted;
+        private string $gdprAcceptedAt;
+        private string $gdprAcceptanceVersion;
+        private string $gdprAcceptanceMethod;
+        private string $gdprAcceptanceStatement;
+        private string $updated;
 
         public function __construct(
             int $id,
@@ -83,7 +100,13 @@ if (!class_exists('Unity\\Members\\Member')) {
             bool $isGSR = false,
             mixed $meetingPO = null,
             string $personalEmail = "",
-            string $mobileNumber = ""
+            string $mobileNumber = "",
+            bool $gdprAccepted = false,
+            string $gdprAcceptedAt = "",
+            string $gdprAcceptanceVersion = "",
+            string $gdprAcceptanceMethod = "",
+            string $gdprAcceptanceStatement = "",
+            string $updated = ""
         ) {
             $this->id = $id;
             $this->anonymousName = $anonymousName;
@@ -97,6 +120,12 @@ if (!class_exists('Unity\\Members\\Member')) {
             $this->meetingPO = $meetingPO;
             $this->personalEmail = $personalEmail;
             $this->mobileNumber = $mobileNumber;
+            $this->gdprAccepted = $gdprAccepted;
+            $this->gdprAcceptedAt = $gdprAcceptedAt;
+            $this->gdprAcceptanceVersion = $gdprAcceptanceVersion;
+            $this->gdprAcceptanceMethod = $gdprAcceptanceMethod;
+            $this->gdprAcceptanceStatement = $gdprAcceptanceStatement;
+            $this->updated = $updated;
         }
 
         public function getId(): int { return $this->id; }
@@ -111,6 +140,12 @@ if (!class_exists('Unity\\Members\\Member')) {
         public function getMeetingPO(): mixed { return $this->meetingPO; }
         public function getPersonalEmail(): string { return $this->personalEmail; }
         public function getMobileNumber(): string { return $this->mobileNumber; }
+        public function isGdprAccepted(): bool { return $this->gdprAccepted; }
+        public function getGdprAcceptedAt(): string { return $this->gdprAcceptedAt; }
+        public function getGdprAcceptanceVersion(): string { return $this->gdprAcceptanceVersion; }
+        public function getGdprAcceptanceMethod(): string { return $this->gdprAcceptanceMethod; }
+        public function getGdprAcceptanceStatement(): string { return $this->gdprAcceptanceStatement; }
+        public function getUpdated(): string { return $this->updated; }
     }
     ');
 }

@@ -211,11 +211,27 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
             return true;
         }
 
-        if ($originalMember->getPersonalEmail() !== $updatedMember->getPersonalEmail()) {
+        if ($originalMember->getMobileNumber() !== $updatedMember->getMobileNumber()) {
             return true;
         }
 
-        if ($originalMember->getMobileNumber() !== $updatedMember->getMobileNumber()) {
+        if ($originalMember->isGdprAccepted() !== $updatedMember->isGdprAccepted()) {
+            return true;
+        }
+
+        if ($originalMember->getGdprAcceptedAt() !== $updatedMember->getGdprAcceptedAt()) {
+            return true;
+        }
+
+        if ($originalMember->getGdprAcceptanceVersion() !== $updatedMember->getGdprAcceptanceVersion()) {
+            return true;
+        }
+
+        if ($originalMember->getGdprAcceptanceMethod() !== $updatedMember->getGdprAcceptanceMethod()) {
+            return true;
+        }
+
+        if ($originalMember->getGdprAcceptanceStatement() !== $updatedMember->getGdprAcceptanceStatement()) {
             return true;
         }
 

@@ -44,6 +44,11 @@ class TsmlMemberTest extends TestCase
         $this->assertNull($member->getMeetingPO());
         $this->assertEquals('', $member->getPersonalEmail());
         $this->assertEquals('', $member->getMobileNumber());
+        $this->assertFalse($member->isGdprAccepted());
+        $this->assertEquals('', $member->getGdprAcceptedAt());
+        $this->assertEquals('', $member->getGdprAcceptanceVersion());
+        $this->assertEquals('', $member->getGdprAcceptanceMethod());
+        $this->assertEquals('', $member->getGdprAcceptanceStatement());
     }
 
     /**
@@ -63,7 +68,12 @@ class TsmlMemberTest extends TestCase
             isGSR: true,
             meetingPO: 200,
             personalEmail: 'john.personal@example.com',
-            mobileNumber: '+1234567890'
+            mobileNumber: '+1234567890',
+            gdprAccepted: true,
+            gdprAcceptedAt: '2026-04-27 15:45:00',
+            gdprAcceptanceVersion: '2.1',
+            gdprAcceptanceMethod: 'web-form',
+            gdprAcceptanceStatement: 'I agree to the privacy policy.'
         );
 
         $this->assertEquals(42, $member->getId());
@@ -78,6 +88,11 @@ class TsmlMemberTest extends TestCase
         $this->assertEquals(200, $member->getMeetingPO());
         $this->assertEquals('john.personal@example.com', $member->getPersonalEmail());
         $this->assertEquals('+1234567890', $member->getMobileNumber());
+        $this->assertTrue($member->isGdprAccepted());
+        $this->assertEquals('2026-04-27 15:45:00', $member->getGdprAcceptedAt());
+        $this->assertEquals('2.1', $member->getGdprAcceptanceVersion());
+        $this->assertEquals('web-form', $member->getGdprAcceptanceMethod());
+        $this->assertEquals('I agree to the privacy policy.', $member->getGdprAcceptanceStatement());
     }
 
     /**
@@ -173,5 +188,34 @@ class TsmlMemberTest extends TestCase
         $this->assertEquals(200, $withInt->getMeetingPO());
         $this->assertEquals('Some PO', $withString->getMeetingPO());
         $this->assertNull($withNull->getMeetingPO());
+    }
+
+    /**
+     * @test
+     */
+    public function gdpr_compliance_fields_are_independent(): void
+    {
+        $accepted = new TsmlMember(
+            id: 1,
+            gdprAccepted: true,
+            gdprAcceptedAt: '2026-04-27 15:45:00',
+            gdprAcceptanceVersion: '2.1',
+            gdprAcceptanceMethod: 'web-form',
+            gdprAcceptanceStatement: 'I agree to the privacy policy.'
+        );
+
+        $notAccepted = new TsmlMember(id: 2);
+
+        $this->assertTrue($accepted->isGdprAccepted());
+        $this->assertEquals('2026-04-27 15:45:00', $accepted->getGdprAcceptedAt());
+        $this->assertEquals('2.1', $accepted->getGdprAcceptanceVersion());
+        $this->assertEquals('web-form', $accepted->getGdprAcceptanceMethod());
+        $this->assertEquals('I agree to the privacy policy.', $accepted->getGdprAcceptanceStatement());
+
+        $this->assertFalse($notAccepted->isGdprAccepted());
+        $this->assertEquals('', $notAccepted->getGdprAcceptedAt());
+        $this->assertEquals('', $notAccepted->getGdprAcceptanceVersion());
+        $this->assertEquals('', $notAccepted->getGdprAcceptanceMethod());
+        $this->assertEquals('', $notAccepted->getGdprAcceptanceStatement());
     }
 }
