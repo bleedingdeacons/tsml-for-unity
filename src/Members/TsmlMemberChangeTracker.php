@@ -219,22 +219,6 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
             return true;
         }
 
-        if ($originalMember->getGdprAcceptedAt() !== $updatedMember->getGdprAcceptedAt()) {
-            return true;
-        }
-
-        if ($originalMember->getGdprAcceptanceVersion() !== $updatedMember->getGdprAcceptanceVersion()) {
-            return true;
-        }
-
-        if ($originalMember->getGdprAcceptanceMethod() !== $updatedMember->getGdprAcceptanceMethod()) {
-            return true;
-        }
-
-        if ($originalMember->getGdprAcceptanceStatement() !== $updatedMember->getGdprAcceptanceStatement()) {
-            return true;
-        }
-
         if ($originalMember->getUpdated() !== $updatedMember->getUpdated()) {
             return true;
         }
