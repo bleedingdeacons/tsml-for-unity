@@ -160,6 +160,56 @@ class TsmlMemberRepository implements MemberRepository
     }
 
     /**
+     * Insert a new member record with just an anonymous name
+     *
+     * Owns the wp_insert_post call so callers don't have to pre-create
+     * the post and pass its ID in. After insertion the persisted member
+     * is re-read and unity/member_created is fired so audit listeners
+     * pick up the event.
+     *
+     * Intended for the two-phase create-then-fill flow used by the
+     * admin form and the Integrity REST API: insert the post here to
+     * get an ID, then build a fully populated Member around that ID and
+     * pass it to save() to persist the rest of the fields.
+     *
+     * @param string $anonymousName The anonymous name for the new member
+     * @return int The new post ID, or 0 if insertion failed
+     */
+    public function create(string $anonymousName): int
+    {
+        $encodedName = htmlspecialchars($anonymousName, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        $postData = [
+            'post_type' => TsmlMemberFields::POST_TYPE,
+            'post_status' => 'publish',
+            'post_title' => $encodedName,
+            'post_content' => '',
+        ];
+
+        $result = wp_insert_post($postData, true);
+
+        if (is_wp_error($result)) {
+            return 0;
+        }
+
+        $postId = (int) $result;
+
+        // Persist the anonymous name into ACF too, so the field-backed
+        // value matches the post_title from the very first read.
+        update_field(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $anonymousName, $postId);
+
+        // Re-read so listeners see the persisted state — including any
+        // values that acf/update_value filters may have transformed.
+        $createdMember = $this->findById($postId);
+
+        if ($createdMember !== null) {
+            do_action('unity/member_created', $createdMember);
+        }
+
+        return $postId;
+    }
+
+    /**
      * Update an existing member
      *
      * Captures the original member before writing, then re-reads after
