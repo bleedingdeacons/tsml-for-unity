@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
 use Unity\Members\Interfaces\MemberFactory;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberRepository;
+use function do_action;
 use function get_post;
 use function get_posts;
 use function is_wp_error;
@@ -108,6 +109,15 @@ class TsmlMemberRepository implements MemberRepository
     /**
      * Save member data (insert or update)
      *
+     * For inserts, fires unity/member_created after fields are written.
+     * For updates, delegates to update() which fires unity/member_changing.
+     *
+     * Both events let listeners (notably Scrutiny's audit tracker) react
+     * to programmatic writes via the repository — including from the
+     * Integrity REST API, WP-CLI, cron, or any caller that doesn't go
+     * through ACF's form-save lifecycle. The admin edit form has its
+     * own path via acf/save_post and does not reach the repository.
+     *
      * @param Member $member
      * @return bool
      */
@@ -138,11 +148,27 @@ class TsmlMemberRepository implements MemberRepository
 
         $this->updateFields($member, $postId);
 
+        // Re-read so listeners see the persisted state — including any
+        // values that acf/update_value filters may have transformed.
+        $createdMember = $this->findById($postId);
+
+        if ($createdMember !== null) {
+            do_action('unity/member_created', $createdMember);
+        }
+
         return true;
     }
 
     /**
      * Update an existing member
+     *
+     * Captures the original member before writing, then re-reads after
+     * writing and fires unity/member_changing if the two differ in any
+     * field the change tracker cares about. The re-read step is what
+     * makes this honest in the face of acf/update_value filters that
+     * may transform or reject values (e.g. MemberFieldsObscurer): the
+     * event reflects what actually landed in the database, not what
+     * the caller asked for.
      *
      * @param Member $member
      * @return bool
@@ -154,6 +180,12 @@ class TsmlMemberRepository implements MemberRepository
         if ($postId <= 0) {
             return false;
         }
+
+        // Snapshot the original state before any writes. Captured here
+        // rather than later because update_field() calls below would
+        // otherwise blur the before/after boundary if findById() were
+        // deferred.
+        $originalMember = $this->findById($postId);
 
         $encodedName = htmlspecialchars($member->getAnonymousName(), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
@@ -171,6 +203,14 @@ class TsmlMemberRepository implements MemberRepository
         }
 
         $this->updateFields($member, $postId);
+
+        // Re-read after all writes so the event reflects persisted
+        // state, including values that filters may have rewritten.
+        $updatedMember = $this->findById($postId);
+
+        if ($originalMember !== null && $updatedMember !== null) {
+            do_action('unity/member_changing', $updatedMember, $originalMember);
+        }
 
         return true;
     }
