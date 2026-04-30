@@ -136,14 +136,11 @@ class TsmlMemberChangeTrackerTest extends TestCase
     {
         WP_Mock::tearDown();
 
-        // Reset static state so test order can't leak isNewMember /
-        // originalMember between cases.
+        // Reset static state so test order can't leak originalMember /
+        // newMemberIds between cases.
         $reflection = new \ReflectionClass(TsmlMemberChangeTracker::class);
-        foreach (['originalMember', 'isNewMember'] as $name) {
-            $prop = $reflection->getProperty($name);
-            $prop->setAccessible(true);
-            $prop->setValue(null, $name === 'originalMember' ? null : false);
-        }
+        $reflection->getProperty('originalMember')->setValue(null, null);
+        $reflection->getProperty('newMemberIds')->setValue(null, []);
 
         parent::tearDown();
     }
@@ -159,11 +156,19 @@ class TsmlMemberChangeTrackerTest extends TestCase
             ->andReturn(TsmlMemberFields::POST_TYPE);
     }
 
-    private function stubPostStatus(int $postId, string $status): void
+    /**
+     * Simulate the wp_insert_post lifecycle that flags a post as a creation:
+     * fire onPostStatusTransition with auto-draft → publish for a member post.
+     * After this the next checkForChanges call for that post id will treat
+     * the save as a creation.
+     */
+    private function flagAsNewMember(int $postId): void
     {
-        WP_Mock::userFunction('get_post_status')
-            ->with($postId)
-            ->andReturn($status);
+        $this->tracker->onPostStatusTransition(
+            'publish',
+            'auto-draft',
+            (object) ['ID' => $postId, 'post_type' => TsmlMemberFields::POST_TYPE]
+        );
     }
 
     /**
@@ -205,7 +210,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
         );
 
         $this->stubPostTypeGuard($postId);
-        $this->stubPostStatus($postId, 'auto-draft');
+        $this->flagAsNewMember($postId);
         $this->stubTitleSyncIsNoop($postId, 'New Anon');
 
         $this->repository->expects($this->exactly(2))
@@ -228,16 +233,17 @@ class TsmlMemberChangeTrackerTest extends TestCase
      */
     public function first_save_fires_member_created_even_when_no_fields_were_populated(): void
     {
-        // The "is this a new member" decision is taken from the post
-        // status alone, not from the field diff. Even if every field
-        // remains empty after submit, the create event must still fire.
+        // The "is this a new member" decision is taken from the
+        // earlier transition_post_status hook, not from the field
+        // diff. Even if every field remains empty after submit, the
+        // create event must still fire.
         $postId = 4321;
 
         $before = new MemberStub($postId);
         $after  = new MemberStub($postId);
 
         $this->stubPostTypeGuard($postId);
-        $this->stubPostStatus($postId, 'auto-draft');
+        $this->flagAsNewMember($postId);
         $this->stubTitleSyncIsNoop($postId);
 
         $this->repository->expects($this->exactly(2))
@@ -271,7 +277,6 @@ class TsmlMemberChangeTrackerTest extends TestCase
         );
 
         $this->stubPostTypeGuard($postId);
-        $this->stubPostStatus($postId, 'publish');
         $this->stubTitleSyncIsNoop($postId, 'Anon');
 
         $this->repository->expects($this->exactly(2))
@@ -299,7 +304,6 @@ class TsmlMemberChangeTrackerTest extends TestCase
         $updated  = new MemberStub(...$args);
 
         $this->stubPostTypeGuard($postId);
-        $this->stubPostStatus($postId, 'publish');
         $this->stubTitleSyncIsNoop($postId, 'Anon');
 
         $this->repository->expects($this->exactly(2))
@@ -315,6 +319,88 @@ class TsmlMemberChangeTrackerTest extends TestCase
 
         $this->tracker->captureOriginalMember($postId);
         $this->tracker->checkForChanges($postId);
+    }
+
+    // ─── onPostStatusTransition filters correctly ────────────────────
+
+    /**
+     * Inspect the static $newMemberIds map by reflection so each
+     * transition test can assert on the exact effect of the call.
+     */
+    private function newMemberIds(): array
+    {
+        $r = new \ReflectionClass(TsmlMemberChangeTracker::class);
+        $prop = $r->getProperty('newMemberIds');
+        $prop->setAccessible(true);
+        return $prop->getValue();
+    }
+
+    /**
+     * @test
+     */
+    public function transition_from_auto_draft_to_publish_flags_the_post(): void
+    {
+        $post = (object) ['ID' => 314, 'post_type' => TsmlMemberFields::POST_TYPE];
+
+        $this->tracker->onPostStatusTransition('publish', 'auto-draft', $post);
+
+        $this->assertSame([314 => true], $this->newMemberIds());
+    }
+
+    /**
+     * @test
+     */
+    public function transition_from_auto_draft_to_draft_also_flags_the_post(): void
+    {
+        // "Save Draft" on a brand-new Add New form is still a creation.
+        $post = (object) ['ID' => 315, 'post_type' => TsmlMemberFields::POST_TYPE];
+
+        $this->tracker->onPostStatusTransition('draft', 'auto-draft', $post);
+
+        $this->assertSame([315 => true], $this->newMemberIds());
+    }
+
+    /**
+     * @test
+     */
+    public function transition_between_two_live_statuses_does_not_flag_the_post(): void
+    {
+        // Editing an existing member and changing draft → publish is a
+        // status change, not a creation.
+        $post = (object) ['ID' => 316, 'post_type' => TsmlMemberFields::POST_TYPE];
+
+        $this->tracker->onPostStatusTransition('publish', 'draft', $post);
+
+        $this->assertSame([], $this->newMemberIds());
+    }
+
+    /**
+     * @test
+     */
+    public function transition_into_auto_draft_does_not_flag_the_post(): void
+    {
+        // The new → auto-draft transition fires when WordPress creates
+        // the scaffolding row on /post-new.php load. No fields will be
+        // saved for that, so it must not be flagged as a creation.
+        $post = (object) ['ID' => 317, 'post_type' => TsmlMemberFields::POST_TYPE];
+
+        $this->tracker->onPostStatusTransition('auto-draft', 'new', $post);
+
+        $this->assertSame([], $this->newMemberIds());
+    }
+
+    /**
+     * @test
+     */
+    public function transition_for_non_member_post_types_is_ignored(): void
+    {
+        // Posts, pages, and other CPTs share transition_post_status; we
+        // must not touch the flag map for them.
+        $post = (object) ['ID' => 318, 'post_type' => 'post'];
+
+        $this->tracker->onPostStatusTransition('publish', 'auto-draft', $post);
+
+        $this->assertSame([], $this->newMemberIds());
     }
 
     // ─── Static state isolation ──────────────────────────────────────
@@ -334,7 +420,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
         $createPopulated = new MemberStub($createId, 'A', false, false, '', 0, '', 0, false, null, 'a@b.com');
 
         $this->stubPostTypeGuard($createId);
-        $this->stubPostStatus($createId, 'auto-draft');
+        $this->flagAsNewMember($createId);
         $this->stubTitleSyncIsNoop($createId, 'A');
 
         $editId = 222;
@@ -342,7 +428,6 @@ class TsmlMemberChangeTrackerTest extends TestCase
         $editUpdated  = new MemberStub($editId, 'B', false, false, '', 0, '', 0, false, null, 'b@b.com', 'NEW');
 
         $this->stubPostTypeGuard($editId);
-        $this->stubPostStatus($editId, 'publish');
         $this->stubTitleSyncIsNoop($editId, 'B');
 
         $this->repository->expects($this->exactly(4))
@@ -361,7 +446,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
         $this->tracker->captureOriginalMember($createId);
         $this->tracker->checkForChanges($createId);
 
-        // Request 2 — edit on a different post, status publish
+        // Request 2 — edit on a different post; no creation flag set
         $this->tracker->captureOriginalMember($editId);
         $this->tracker->checkForChanges($editId);
     }
