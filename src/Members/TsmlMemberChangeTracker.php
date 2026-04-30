@@ -16,6 +16,7 @@ use Exception;
 use function add_action;
 use function do_action;
 use function get_post;
+use function get_post_status;
 use function get_post_type;
 use function wp_update_post;
 use const WP_DEBUG;
@@ -24,11 +25,22 @@ use const WP_DEBUG;
  * Class TsmlMemberChangeTracker
  *
  * Tracks changes to members via ACF and fires the unity/member_changing hook
- * when actual changes are detected.
+ * when actual changes are detected, or unity/member_created when a member is
+ * being saved for the first time via the admin form.
  */
 class TsmlMemberChangeTracker implements MemberChangeTracker
 {
     private static ?Member $originalMember = null;
+
+    /**
+     * Whether the current acf/save_post pass represents the first save of
+     * a brand-new member (admin "Add New" flow). Captured at priority 1
+     * — before ACF writes any fields — by inspecting the post status,
+     * which is `auto-draft` for a freshly created post and only flips to
+     * `publish`/`draft` when the user submits the form.
+     */
+    private static bool $isNewMember = false;
+
     private MemberRepository $repository;
 
     /**
@@ -49,6 +61,13 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
     /**
      * Capture the original member before ACF makes changes
      *
+     * Also records whether this save represents the first persistence
+     * of a brand-new admin-created member, by checking the post status.
+     * `auto-draft` is the status WordPress assigns when "Add New" is
+     * clicked, before the form is ever submitted; any other status
+     * means the post has been saved at least once and we treat the
+     * incoming write as an update.
+     *
      * @param int $postId The post ID being saved
      * @return void
      */
@@ -59,6 +78,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
         }
 
         try {
+            self::$isNewMember = get_post_status($postId) === 'auto-draft';
             self::$originalMember = $this->repository->findById($postId);
 
             if (defined('WP_DEBUG') && WP_DEBUG) {
@@ -74,6 +94,14 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
     /**
      * Check for changes after ACF has saved all fields
      *
+     * Dispatches one of two hooks depending on whether the save was the
+     * first persistence of a new admin-created member (captured at
+     * priority 1):
+     *   - unity/member_created   for the first save (no diffing — every
+     *                            field on the member is "new")
+     *   - unity/member_changing  for subsequent edits, only when at least
+     *                            one tracked field actually changed
+     *
      * @param int $postId The post ID being saved
      * @return void
      */
@@ -87,6 +115,7 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 \TsmlForUnity\Plugin::logError('No original member captured for comparison, post ID: ' . $postId);
             }
+            self::$isNewMember = false;
             return;
         }
 
@@ -95,25 +124,36 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
 
             if (!$updatedMember) {
                 \TsmlForUnity\Plugin::logError('Could not fetch updated member for post ID: ' . $postId);
+                self::$originalMember = null;
+                self::$isNewMember = false;
                 return;
             }
 
-            if ($this->hasMemberChanged(self::$originalMember, $updatedMember)) {
+            // Sync post_title to the (encoded) anonymous name. Needed for both
+            // creation and update — the auto-draft has no title and an edit
+            // may have changed the name — so it sits outside the create/update
+            // branching below.
+            $post = get_post($postId);
+            $encodedName = htmlspecialchars($updatedMember->getAnonymousName(), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            if ($post && $post->post_title !== $encodedName) {
+                wp_update_post([
+                    'ID' => $postId,
+                    'post_title' => $encodedName
+                ]);
+            }
+
+            if (self::$isNewMember) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    \TsmlForUnity\Plugin::logError('New member detected for post ID: ' . $postId . ', firing unity/member_created hook');
+                }
+
+                do_action('unity/member_created', $updatedMember);
+            } elseif ($this->hasMemberChanged(self::$originalMember, $updatedMember)) {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
                     \TsmlForUnity\Plugin::logError('Changes detected in member ID: ' . $postId . ', firing unity/member_changing hook');
                 }
 
-                $post = get_post($postId);
-                $encodedName = htmlspecialchars($updatedMember->getAnonymousName(), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                if ($post && $post->post_title !== $encodedName) {
-                    wp_update_post([
-                        'ID' => $postId,
-                        'post_title' => $encodedName
-                    ]);
-                }
-
                 do_action('unity/member_changing', $updatedMember, self::$originalMember);
-
             } else {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
                     \TsmlForUnity\Plugin::logError('No changes detected in member ID: ' . $postId);
@@ -123,7 +163,10 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
             do_action('unity/member_changed', $postId, $updatedMember, self::$originalMember);
 
             self::$originalMember = null;
+            self::$isNewMember = false;
         } catch (Exception $e) {
+            self::$originalMember = null;
+            self::$isNewMember = false;
             \TsmlForUnity\Plugin::logError('Error checking for member changes: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
         }
     }
