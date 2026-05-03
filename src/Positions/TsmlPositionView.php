@@ -225,4 +225,15 @@ class TsmlPositionView implements PositionView
     {
         return $this->position->getShortDescription();
     }
+
+    /**
+     * Check if a position is the Archivist role (permanent tenure, no rotation)
+     *
+     * @return bool
+     */
+    function isArchivist(): bool
+    {
+        $description = $this->getDescription() ?? '';
+        return strcasecmp(trim($description), 'Archivist') === 0;
+    }
 }
