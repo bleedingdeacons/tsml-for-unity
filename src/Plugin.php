@@ -40,6 +40,9 @@ use TsmlForUnity\Positions\TsmlPositionFields;
 use TsmlForUnity\Positions\TsmlPositionRepository;
 use TsmlForUnity\Positions\TsmlPositionChangeTracker;
 use TsmlForUnity\Positions\TsmlPositionViewFactory;
+use TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicyFactory;
+use TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicyFields;
+use TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicyRepository;
 
 use Unity\Contacts\Interfaces\ContactFactory;
 use Unity\Core\Interfaces\Cache;
@@ -71,6 +74,9 @@ use Unity\Positions\Interfaces\PositionChangeTracker;
 use Unity\Positions\Interfaces\PositionFactory;
 use Unity\Positions\Interfaces\PositionRepository;
 use Unity\Positions\Interfaces\PositionViewFactory;
+use Unity\PrivacyPolicies\Interfaces\PrivacyPolicy;
+use Unity\PrivacyPolicies\Interfaces\PrivacyPolicyFactory;
+use Unity\PrivacyPolicies\Interfaces\PrivacyPolicyRepository;
 
 /**
  * Main Plugin Class
@@ -160,6 +166,18 @@ class Plugin
         return interface_exists(PositionFactory::class)
             && interface_exists(Position::class)
             && interface_exists(PositionRepository::class);
+    }
+
+    /**
+     * Check if Unity's privacy policy interfaces are available
+     *
+     * @return bool
+     */
+    public static function unityPrivacyPoliciesAvailable(): bool
+    {
+        return interface_exists(PrivacyPolicyFactory::class)
+            && interface_exists(PrivacyPolicy::class)
+            && interface_exists(PrivacyPolicyRepository::class);
     }
 
     /**
@@ -477,6 +495,34 @@ class Plugin
 
             // Store the Position Fields
             $config->setConfig(Position::class, self::extractConstants(TsmlPositionFields::class));
+
+        }
+
+        // Register Privacy Policy Dependencies
+        if (self::unityPrivacyPoliciesAvailable()) {
+
+            // Register Privacy Policy Factory
+            $container->register(
+                PrivacyPolicyFactory::class,
+                function (ContainerInterface $container) {
+                    return new TsmlPrivacyPolicyFactory();
+                }
+            );
+
+            // Register Privacy Policy Repository
+            $container->register(
+                PrivacyPolicyRepository::class,
+                function (ContainerInterface $container) {
+                    $privacyPolicyFactory = $container->has(PrivacyPolicyFactory::class)
+                        ? $container->get(PrivacyPolicyFactory::class)
+                        : null;
+
+                    return new TsmlPrivacyPolicyRepository($privacyPolicyFactory);
+                }
+            );
+
+            // Store the Privacy Policy Fields
+            $config->setConfig(PrivacyPolicy::class, self::extractConstants(TsmlPrivacyPolicyFields::class));
 
         }
 
