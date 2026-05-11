@@ -44,6 +44,9 @@ class TsmlMemberTest extends TestCase
         $this->assertNull($member->getMeetingPO());
         $this->assertEquals('', $member->getPersonalEmail());
         $this->assertEquals('', $member->getMobileNumber());
+        $this->assertFalse($member->isTwelfthStepper());
+        $this->assertEquals('', $member->getArea());
+        $this->assertSame([], $member->getAccepts());
         $this->assertFalse($member->isGdprAccepted());
         $this->assertEquals('', $member->getGdprAcceptedAt());
         $this->assertEquals('', $member->getGdprAcceptanceVersion());
@@ -69,6 +72,9 @@ class TsmlMemberTest extends TestCase
             meetingPO: 200,
             personalEmail: 'john.personal@example.com',
             mobileNumber: '+1234567890',
+            twelfthStepper: true,
+            area: 'North London',
+            accepts: ['phone', 'in-person'],
             gdprAccepted: true,
             gdprAcceptedAt: '2026-04-27 15:45:00',
             gdprAcceptanceVersion: '2.1',
@@ -88,6 +94,9 @@ class TsmlMemberTest extends TestCase
         $this->assertEquals(200, $member->getMeetingPO());
         $this->assertEquals('john.personal@example.com', $member->getPersonalEmail());
         $this->assertEquals('+1234567890', $member->getMobileNumber());
+        $this->assertTrue($member->isTwelfthStepper());
+        $this->assertEquals('North London', $member->getArea());
+        $this->assertSame(['phone', 'in-person'], $member->getAccepts());
         $this->assertTrue($member->isGdprAccepted());
         $this->assertEquals('2026-04-27 15:45:00', $member->getGdprAcceptedAt());
         $this->assertEquals('2.1', $member->getGdprAcceptanceVersion());
@@ -188,6 +197,28 @@ class TsmlMemberTest extends TestCase
         $this->assertEquals(200, $withInt->getMeetingPO());
         $this->assertEquals('Some PO', $withString->getMeetingPO());
         $this->assertNull($withNull->getMeetingPO());
+    }
+
+    /**
+     * @test
+     */
+    public function twelfth_stepper_and_contact_fields_are_independent(): void
+    {
+        $stepper = new TsmlMember(
+            id: 1,
+            twelfthStepper: true,
+            area: 'East London',
+            accepts: ['phone', 'email']
+        );
+        $regular = new TsmlMember(id: 2);
+
+        $this->assertTrue($stepper->isTwelfthStepper());
+        $this->assertEquals('East London', $stepper->getArea());
+        $this->assertSame(['phone', 'email'], $stepper->getAccepts());
+
+        $this->assertFalse($regular->isTwelfthStepper());
+        $this->assertEquals('', $regular->getArea());
+        $this->assertSame([], $regular->getAccepts());
     }
 
     /**

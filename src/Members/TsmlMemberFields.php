@@ -27,6 +27,9 @@ final class TsmlMemberFields
     public const FIELD_INTERGROUP_POSITION_ROTATION = 'service-layout-group_intergroup-position-rotation';
     public const FIELD_HOME_GROUP = 'home-layout-group_home-group';
     public const FIELD_HOMEGROUP_GSR = 'home-layout-group_homegroup-gsr';
+    public const FIELD_TWELFTH_STEPPER = 'home-layout-group_is-twelfth-stepper';
+    public const FIELD_AREA = 'home-layout-group_member-area';
+    public const FIELD_ACCEPTS = 'home-layout-group_member-accepts';
     public const FIELD_MEETING_PO = 'home-layout-group_meeting_po';
     public const FIELD_PERSONAL_EMAIL = 'about-layout-group_personal-email';
     public const FIELD_MOBILE_NUMBER = 'about-layout-group_mobile-number';
@@ -39,6 +42,10 @@ final class TsmlMemberFields
 
     public const KEY_PERSONAL_EMAIL = 'field_67d0eabc277cb';
     public const KEY_MOBILE_NUMBER = 'field_67d0eaea7cdea';
+
+    public const KEY_TWELFTH_STEPPER = 'field_6a01f55ebbad1';
+    public const KEY_AREA = 'field_6a01f07243661';
+    public const KEY_ACCEPTS = 'field_6a01f2aff213e';
 
     public const KEY_GDPR_ACCEPTED = 'field_69efda5e524ed';
     public const KEY_GDPR_ACCEPTED_AT = 'field_69efda79524ee';

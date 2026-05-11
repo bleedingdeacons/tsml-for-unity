@@ -104,6 +104,12 @@ class TsmlMemberFactory implements MemberFactory
             get_field(TsmlMemberFields::FIELD_MEETING_PO, $id) ?? null,
             get_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $id) ?? '',
             get_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $id) ?? '',
+            (bool) (get_field(TsmlMemberFields::FIELD_TWELFTH_STEPPER, $id) ?? false),
+            (string) (get_field(TsmlMemberFields::FIELD_AREA, $id) ?? ''),
+            // ACF checkbox fields return array of selected option values,
+            // or null/false when nothing is selected. Normalise to a plain
+            // list of strings so callers get a consistent shape.
+            array_values(array_map('strval', (array) (get_field(TsmlMemberFields::FIELD_ACCEPTS, $id) ?: []))),
             (bool) (get_field(TsmlMemberFields::FIELD_GDPR_ACCEPTED, $id) ?? false),
             $gdprAcceptedAt,
             (string) (get_field(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_VERSION, $id) ?? ''),
@@ -130,9 +136,12 @@ class TsmlMemberFactory implements MemberFactory
      * @param int    $homeGroup                    Home group post ID
      * @param bool   $isGSR                        GSR flag
      * @param mixed  $meetingPO                    Meeting PO reference
-     * @param string $personalEmail                Personal email
-     * @param string $mobileNumber                 Mobile number
-     * @param bool   $gdprAccepted                 GDPR acceptance flag
+     * @param string             $personalEmail   Personal email
+     * @param string             $mobileNumber    Mobile number
+     * @param bool               $twelfthStepper  12th-step availability flag
+     * @param string             $area            Geographic area covered for 12th-step calls
+     * @param array<int, string> $accepts         Forms of contact accepted for 12th-step calls
+     * @param bool               $gdprAccepted    GDPR acceptance flag
      * @param string $gdprAcceptedAt               GDPR acceptance timestamp (Y-m-d H:i:s)
      * @param string $gdprAcceptanceVersion        Privacy policy version accepted
      * @param string $gdprAcceptanceMethod         How acceptance was captured
@@ -153,6 +162,9 @@ class TsmlMemberFactory implements MemberFactory
         mixed $meetingPO = null,
         string $personalEmail = '',
         string $mobileNumber = '',
+        bool $twelfthStepper = false,
+        string $area = '',
+        array $accepts = [],
         bool $gdprAccepted = false,
         string $gdprAcceptedAt = '',
         string $gdprAcceptanceVersion = '',
@@ -173,6 +185,9 @@ class TsmlMemberFactory implements MemberFactory
             $meetingPO,
             $personalEmail,
             $mobileNumber,
+            $twelfthStepper,
+            $area,
+            $accepts,
             $gdprAccepted,
             $gdprAcceptedAt,
             $gdprAcceptanceVersion,

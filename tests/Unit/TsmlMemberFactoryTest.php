@@ -29,6 +29,9 @@ if (!interface_exists('Unity\\Members\\Interfaces\\Member')) {
         public function getMeetingPO(): mixed;
         public function getPersonalEmail(): string;
         public function getMobileNumber(): string;
+        public function isTwelfthStepper(): bool;
+        public function getArea(): string;
+        public function getAccepts(): array;
         public function isGdprAccepted(): bool;
         public function getGdprAcceptedAt(): string;
         public function getGdprAcceptanceVersion(): string;
@@ -55,6 +58,9 @@ if (!interface_exists('Unity\\Members\\Interfaces\\MemberFactory')) {
             mixed $meetingPO = null,
             string $personalEmail = \'\',
             string $mobileNumber = \'\',
+            bool $twelfthStepper = false,
+            string $area = \'\',
+            array $accepts = [],
             bool $gdprAccepted = false,
             string $gdprAcceptedAt = \'\',
             string $gdprAcceptanceVersion = \'\',
@@ -81,6 +87,9 @@ if (!class_exists('Unity\\Members\\Member')) {
         private mixed $meetingPO;
         private string $personalEmail;
         private string $mobileNumber;
+        private bool $twelfthStepper;
+        private string $area;
+        private array $accepts;
         private bool $gdprAccepted;
         private string $gdprAcceptedAt;
         private string $gdprAcceptanceVersion;
@@ -101,6 +110,9 @@ if (!class_exists('Unity\\Members\\Member')) {
             mixed $meetingPO = null,
             string $personalEmail = "",
             string $mobileNumber = "",
+            bool $twelfthStepper = false,
+            string $area = "",
+            array $accepts = [],
             bool $gdprAccepted = false,
             string $gdprAcceptedAt = "",
             string $gdprAcceptanceVersion = "",
@@ -120,6 +132,9 @@ if (!class_exists('Unity\\Members\\Member')) {
             $this->meetingPO = $meetingPO;
             $this->personalEmail = $personalEmail;
             $this->mobileNumber = $mobileNumber;
+            $this->twelfthStepper = $twelfthStepper;
+            $this->area = $area;
+            $this->accepts = $accepts;
             $this->gdprAccepted = $gdprAccepted;
             $this->gdprAcceptedAt = $gdprAcceptedAt;
             $this->gdprAcceptanceVersion = $gdprAcceptanceVersion;
@@ -140,6 +155,9 @@ if (!class_exists('Unity\\Members\\Member')) {
         public function getMeetingPO(): mixed { return $this->meetingPO; }
         public function getPersonalEmail(): string { return $this->personalEmail; }
         public function getMobileNumber(): string { return $this->mobileNumber; }
+        public function isTwelfthStepper(): bool { return $this->twelfthStepper; }
+        public function getArea(): string { return $this->area; }
+        public function getAccepts(): array { return $this->accepts; }
         public function isGdprAccepted(): bool { return $this->gdprAccepted; }
         public function getGdprAcceptedAt(): string { return $this->gdprAcceptedAt; }
         public function getGdprAcceptanceVersion(): string { return $this->gdprAcceptanceVersion; }
@@ -226,6 +244,18 @@ class TsmlMemberFactoryTest extends TestCase
             ->with(TsmlMemberFields::FIELD_MOBILE_NUMBER, $postId)
             ->andReturn('555-1234');
 
+        WP_Mock::userFunction('get_field')
+            ->with(TsmlMemberFields::FIELD_TWELFTH_STEPPER, $postId)
+            ->andReturn(true);
+
+        WP_Mock::userFunction('get_field')
+            ->with(TsmlMemberFields::FIELD_AREA, $postId)
+            ->andReturn('North London');
+
+        WP_Mock::userFunction('get_field')
+            ->with(TsmlMemberFields::FIELD_ACCEPTS, $postId)
+            ->andReturn(['phone', 'email']);
+
         $member = $this->factory->createFromSource($postId);
 
         $this->assertInstanceOf(Member::class, $member);
@@ -241,6 +271,9 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertNull($member->getMeetingPO());
         $this->assertSame('john@example.com', $member->getPersonalEmail());
         $this->assertSame('555-1234', $member->getMobileNumber());
+        $this->assertTrue($member->isTwelfthStepper());
+        $this->assertSame('North London', $member->getArea());
+        $this->assertSame(['phone', 'email'], $member->getAccepts());
     }
 
     /**
@@ -401,6 +434,9 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertNull($member->getMeetingPO());
         $this->assertSame('', $member->getPersonalEmail());
         $this->assertSame('', $member->getMobileNumber());
+        $this->assertFalse($member->isTwelfthStepper());
+        $this->assertSame('', $member->getArea());
+        $this->assertSame([], $member->getAccepts());
     }
 
     /**
@@ -447,5 +483,17 @@ class TsmlMemberFactoryTest extends TestCase
         WP_Mock::userFunction('get_field')
             ->with(TsmlMemberFields::FIELD_MOBILE_NUMBER, $postId)
             ->andReturn('');
+
+        WP_Mock::userFunction('get_field')
+            ->with(TsmlMemberFields::FIELD_TWELFTH_STEPPER, $postId)
+            ->andReturn(false);
+
+        WP_Mock::userFunction('get_field')
+            ->with(TsmlMemberFields::FIELD_AREA, $postId)
+            ->andReturn('');
+
+        WP_Mock::userFunction('get_field')
+            ->with(TsmlMemberFields::FIELD_ACCEPTS, $postId)
+            ->andReturn(null);
     }
 }

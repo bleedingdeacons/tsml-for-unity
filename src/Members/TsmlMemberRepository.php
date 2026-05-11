@@ -285,6 +285,11 @@ class TsmlMemberRepository implements MemberRepository
         update_field(TsmlMemberFields::FIELD_MEETING_PO, $member->getMeetingPO(), $postId);
         update_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $member->getPersonalEmail(), $postId);
         update_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $member->getMobileNumber(), $postId);
+        update_field(TsmlMemberFields::FIELD_TWELFTH_STEPPER, $member->isTwelfthStepper(), $postId);
+        update_field(TsmlMemberFields::FIELD_AREA, $member->getArea(), $postId);
+        // ACF stores checkbox fields as an array of selected option
+        // values, so pass the list straight through.
+        update_field(TsmlMemberFields::FIELD_ACCEPTS, $member->getAccepts(), $postId);
 
         // GDPR compliance fields. ACF stores the date_time_picker value
         // internally as Y-m-d H:i:s regardless of the field's return_format,

@@ -302,6 +302,25 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
             return true;
         }
 
+        if ($originalMember->isTwelfthStepper() !== $updatedMember->isTwelfthStepper()) {
+            return true;
+        }
+
+        if ($originalMember->getArea() !== $updatedMember->getArea()) {
+            return true;
+        }
+
+        // Accepts is an unordered checkbox selection. Sort before
+        // comparing so a reordered-but-equal selection doesn't fire
+        // a spurious change event.
+        $originalAccepts = $originalMember->getAccepts();
+        $updatedAccepts = $updatedMember->getAccepts();
+        sort($originalAccepts);
+        sort($updatedAccepts);
+        if ($originalAccepts !== $updatedAccepts) {
+            return true;
+        }
+
         if ($originalMember->isGdprAccepted() !== $updatedMember->isGdprAccepted()) {
             return true;
         }

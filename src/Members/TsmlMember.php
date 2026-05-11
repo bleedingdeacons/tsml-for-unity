@@ -28,6 +28,10 @@ class TsmlMember implements Member
     private mixed $meetingPO;
     private string $personalEmail;
     private string $mobileNumber;
+    private bool $twelfthStepper;
+    private string $area;
+    /** @var array<int, string> */
+    private array $accepts;
     private bool $gdprAccepted;
     private string $gdprAcceptedAt;
     private string $gdprAcceptanceVersion;
@@ -50,6 +54,9 @@ class TsmlMember implements Member
      * @param mixed $meetingPO Meeting PO reference
      * @param string $personalEmail Personal email address
      * @param string $mobileNumber Mobile phone number
+     * @param bool $twelfthStepper Whether the member is available for 12th-step calls
+     * @param string $area Geographic area covered for 12th-step calls
+     * @param array<int, string> $accepts Forms of contact accepted for 12th-step calls
      * @param bool $gdprAccepted GDPR acceptance flag
      * @param string $gdprAcceptedAt GDPR acceptance timestamp (Y-m-d H:i:s)
      * @param string $gdprAcceptanceVersion Privacy policy version accepted
@@ -70,6 +77,9 @@ class TsmlMember implements Member
         mixed $meetingPO = null, // Need to removed
         string $personalEmail = '',
         string $mobileNumber = '',
+        bool $twelfthStepper = false,
+        string $area = '',
+        array $accepts = [],
         bool $gdprAccepted = false,
         string $gdprAcceptedAt = '',
         string $gdprAcceptanceVersion = '',
@@ -89,6 +99,9 @@ class TsmlMember implements Member
         $this->meetingPO = $meetingPO;
         $this->personalEmail = $personalEmail;
         $this->mobileNumber = $mobileNumber;
+        $this->twelfthStepper = $twelfthStepper;
+        $this->area = $area;
+        $this->accepts = $accepts;
         $this->gdprAccepted = $gdprAccepted;
         $this->gdprAcceptedAt = $gdprAcceptedAt;
         $this->gdprAcceptanceVersion = $gdprAcceptanceVersion;
@@ -155,6 +168,24 @@ class TsmlMember implements Member
     public function getMobileNumber(): string
     {
         return $this->mobileNumber;
+    }
+
+    public function isTwelfthStepper(): bool
+    {
+        return $this->twelfthStepper;
+    }
+
+    public function getArea(): string
+    {
+        return $this->area;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function getAccepts(): array
+    {
+        return $this->accepts;
     }
 
     public function isGdprAccepted(): bool
