@@ -61,4 +61,31 @@ class TsmlPositionFactory implements PositionFactory
             $post->post_modified_gmt ?? ''
         );
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function createNew(
+        int $id,
+        int $minimumSobriety = 6,
+        int $termYears = 1,
+        string $email = '',
+        string $longName = '',
+        string $shortDescription = '',
+        string $summary = ''
+    ): Position {
+        $link = $id > 0 ? (get_permalink($id) ?: '') : '';
+
+        return new TsmlPosition(
+            $id,
+            $minimumSobriety,
+            $termYears,
+            $email,
+            $longName,
+            $shortDescription,
+            $summary,
+            $link,
+            ''
+        );
+    }
 }
