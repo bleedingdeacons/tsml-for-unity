@@ -34,6 +34,7 @@ use TsmlForUnity\Members\TsmlMemberFactory;
 use TsmlForUnity\Members\TsmlMemberFields;
 use TsmlForUnity\Members\TsmlMemberRepository;
 use TsmlForUnity\Members\TsmlMemberChangeTracker;
+use TsmlForUnity\Members\TsmlMemberViewFactory;
 use TsmlForUnity\Positions\TsmlPosition;
 use TsmlForUnity\Positions\TsmlPositionFactory;
 use TsmlForUnity\Positions\TsmlPositionFields;
@@ -69,6 +70,7 @@ use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberChangeTracker;
 use Unity\Members\Interfaces\MemberFactory;
 use Unity\Members\Interfaces\MemberRepository;
+use Unity\Members\Interfaces\MemberViewFactory;
 use Unity\Positions\Interfaces\Position;
 use Unity\Positions\Interfaces\PositionChangeTracker;
 use Unity\Positions\Interfaces\PositionFactory;
@@ -250,6 +252,20 @@ class Plugin
         return interface_exists(GroupViewFactory::class)
             && interface_exists('Unity\\Groups\\Interfaces\\GroupView')
             && self::unityGroupsAvailable();
+    }
+
+    /**
+     * Check if Unity's member view interfaces are available
+     *
+     * @return bool
+     */
+    public static function unityMemberViewsAvailable(): bool
+    {
+        return interface_exists(MemberViewFactory::class)
+            && interface_exists('Unity\\Members\\Interfaces\\MemberView')
+            && self::unityMembersAvailable()
+            && self::unityGroupsAvailable()
+            && self::unityPositionsAvailable();
     }
 
     /**
@@ -629,6 +645,32 @@ class Plugin
                         : null;
 
                     return new TsmlGroupViewFactory($groupRepository, $meetingRepository, $memberRepository);
+                }
+            );
+        }
+
+        // Register MemberViewFactory
+        if (self::unityMemberViewsAvailable()) {
+            $container->register(
+                MemberViewFactory::class,
+                function (ContainerInterface $container) {
+                    $memberRepository = $container->has(MemberRepository::class)
+                        ? $container->get(MemberRepository::class)
+                        : null;
+
+                    $groupRepository = $container->has(GroupRepository::class)
+                        ? $container->get(GroupRepository::class)
+                        : null;
+
+                    $positionRepository = $container->has(PositionRepository::class)
+                        ? $container->get(PositionRepository::class)
+                        : null;
+
+                    return new TsmlMemberViewFactory(
+                        $memberRepository,
+                        $groupRepository,
+                        $positionRepository
+                    );
                 }
             );
         }
