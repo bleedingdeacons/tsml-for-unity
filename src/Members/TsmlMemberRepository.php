@@ -86,6 +86,42 @@ class TsmlMemberRepository implements MemberRepository
     }
 
     /**
+     * Find a member by personal email address
+     *
+     * Delegates to findAll() with a meta_query keyed on the personal
+     * email ACF field. ACF stores field values as post meta under the
+     * field name, so a meta_query on FIELD_PERSONAL_EMAIL matches the
+     * stored value directly. Email addresses are expected to be unique
+     * across members; if more than one match exists, the first is
+     * returned.
+     *
+     * Returns null for empty input rather than running an unbounded
+     * query that would treat the empty string as a valid match.
+     *
+     * @param string $email Email address to search for
+     * @return Member|null The matching member, or null if none found
+     */
+    public function findByEmail(string $email): ?Member
+    {
+        if ($email === '') {
+            return null;
+        }
+
+        $members = $this->findAll([
+            'numberposts' => 1,
+            'meta_query' => [
+                [
+                    'key' => TsmlMemberFields::FIELD_PERSONAL_EMAIL,
+                    'value' => $email,
+                    'compare' => '=',
+                ],
+            ],
+        ]);
+
+        return $members[0] ?? null;
+    }
+
+    /**
      * Get total count of members matching criteria
      *
      * @param array $args Query arguments

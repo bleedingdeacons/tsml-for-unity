@@ -79,6 +79,7 @@ if (!interface_exists('Unity\\Members\\Interfaces\\MemberRepository')) {
     eval('namespace Unity\\Members\\Interfaces;
     interface MemberRepository {
         public function findById(int $id): ?Member;
+        public function findByEmail(string $email): ?Member;
         public function findAll(array $args = []): array;
         public function count(array $args = []): int;
         public function save(Member $member): bool;
@@ -368,5 +369,74 @@ class TsmlMemberRepositoryTest extends TestCase
         $result = $this->repository->save($caller);
 
         $this->assertTrue($result);
+    }
+
+    // ─── findByEmail() ──────────────────────────────────────────────
+
+    /**
+     * @test
+     */
+    public function find_by_email_returns_member_when_acf_field_matches(): void
+    {
+        $postId = 4242;
+        $email  = 'member@example.test';
+
+        // findByEmail() builds a get_posts query that:
+        //  - filters by the members CPT and 'publish' status (defaults)
+        //  - limits to one post (numberposts => 1)
+        //  - meta_query keys on the personal-email ACF field
+        WP_Mock::userFunction('get_posts')
+            ->once()
+            ->withArgs(function ($args) use ($email) {
+                if (!isset($args['meta_query'][0])) {
+                    return false;
+                }
+                $clause = $args['meta_query'][0];
+                return $args['post_type']   === TsmlMemberFields::POST_TYPE
+                    && $args['post_status'] === 'publish'
+                    && $args['numberposts'] === 1
+                    && $clause['key']       === TsmlMemberFields::FIELD_PERSONAL_EMAIL
+                    && $clause['value']     === $email
+                    && $clause['compare']   === '=';
+            })
+            ->andReturn([(object) ['ID' => $postId]]);
+
+        $this->stubExistingPost($postId);
+
+        $expected = new MemberStub($postId, 'Anon', false, false, '', 0, '', 0, false, null, $email);
+        $this->factory->expects($this->once())
+            ->method('createFromSource')
+            ->with($postId)
+            ->willReturn($expected);
+
+        $result = $this->repository->findByEmail($email);
+
+        $this->assertSame($expected, $result);
+    }
+
+    /**
+     * @test
+     */
+    public function find_by_email_returns_null_when_no_member_matches(): void
+    {
+        // No matching posts → findAll() returns [] → findByEmail() returns null.
+        WP_Mock::userFunction('get_posts')->once()->andReturn([]);
+
+        // Factory must not be called when there are no posts.
+        $this->factory->expects($this->never())->method('createFromSource');
+
+        $this->assertNull($this->repository->findByEmail('missing@example.test'));
+    }
+
+    /**
+     * @test
+     */
+    public function find_by_email_returns_null_for_empty_string_without_querying(): void
+    {
+        // Empty input short-circuits before any DB work. No WP_Mock
+        // expectations: a get_posts call would fail the test.
+        $this->factory->expects($this->never())->method('createFromSource');
+
+        $this->assertNull($this->repository->findByEmail(''));
     }
 }

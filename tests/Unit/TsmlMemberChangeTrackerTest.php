@@ -50,6 +50,7 @@ if (!interface_exists('Unity\\Members\\Interfaces\\MemberRepository')) {
     eval('namespace Unity\\Members\\Interfaces;
     interface MemberRepository {
         public function findById(int $id): ?Member;
+        public function findByEmail(string $email): ?Member;
         public function findAll(array $args = []): array;
         public function count(array $args = []): int;
         public function save(Member $member): bool;
