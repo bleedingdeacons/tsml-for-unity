@@ -306,6 +306,10 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
             return true;
         }
 
+        if ($originalMember->isTelephoneResponder() !== $updatedMember->isTelephoneResponder()) {
+            return true;
+        }
+
         if ($originalMember->getArea() !== $updatedMember->getArea()) {
             return true;
         }

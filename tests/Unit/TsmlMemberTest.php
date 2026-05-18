@@ -45,6 +45,7 @@ class TsmlMemberTest extends TestCase
         $this->assertEquals('', $member->getPersonalEmail());
         $this->assertEquals('', $member->getMobileNumber());
         $this->assertFalse($member->isTwelfthStepper());
+        $this->assertFalse($member->isTelephoneResponder());
         $this->assertEquals('', $member->getArea());
         $this->assertSame([], $member->getAccepts());
         $this->assertFalse($member->isGdprAccepted());
@@ -73,6 +74,7 @@ class TsmlMemberTest extends TestCase
             personalEmail: 'john.personal@example.com',
             mobileNumber: '+1234567890',
             twelfthStepper: true,
+            telephoneResponder: true,
             area: 'North London',
             accepts: ['phone', 'in-person'],
             gdprAccepted: true,
@@ -95,6 +97,7 @@ class TsmlMemberTest extends TestCase
         $this->assertEquals('john.personal@example.com', $member->getPersonalEmail());
         $this->assertEquals('+1234567890', $member->getMobileNumber());
         $this->assertTrue($member->isTwelfthStepper());
+        $this->assertTrue($member->isTelephoneResponder());
         $this->assertEquals('North London', $member->getArea());
         $this->assertSame(['phone', 'in-person'], $member->getAccepts());
         $this->assertTrue($member->isGdprAccepted());
@@ -219,6 +222,44 @@ class TsmlMemberTest extends TestCase
         $this->assertFalse($regular->isTwelfthStepper());
         $this->assertEquals('', $regular->getArea());
         $this->assertSame([], $regular->getAccepts());
+    }
+
+    /**
+     * @test
+     */
+    public function telephone_responder_is_independent_of_twelfth_stepper(): void
+    {
+        $responderOnly = new TsmlMember(
+            id: 1,
+            twelfthStepper: false,
+            telephoneResponder: true
+        );
+
+        $stepperOnly = new TsmlMember(
+            id: 2,
+            twelfthStepper: true,
+            telephoneResponder: false
+        );
+
+        $both = new TsmlMember(
+            id: 3,
+            twelfthStepper: true,
+            telephoneResponder: true
+        );
+
+        $neither = new TsmlMember(id: 4);
+
+        $this->assertFalse($responderOnly->isTwelfthStepper());
+        $this->assertTrue($responderOnly->isTelephoneResponder());
+
+        $this->assertTrue($stepperOnly->isTwelfthStepper());
+        $this->assertFalse($stepperOnly->isTelephoneResponder());
+
+        $this->assertTrue($both->isTwelfthStepper());
+        $this->assertTrue($both->isTelephoneResponder());
+
+        $this->assertFalse($neither->isTwelfthStepper());
+        $this->assertFalse($neither->isTelephoneResponder());
     }
 
     /**

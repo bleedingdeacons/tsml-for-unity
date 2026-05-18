@@ -27,6 +27,7 @@ class TsmlMemberView implements MemberView
     private string $positionName;
     private string $rotationDate;
     private bool $twelfthStepper;
+    private bool $telephoneResponder;
     private string $area;
     /** @var array<int, string> */
     private array $accepts;
@@ -45,6 +46,7 @@ class TsmlMemberView implements MemberView
      * @param string             $positionName    Position name (empty if none)
      * @param string             $rotationDate    Rotation date Y-m-d (empty if none)
      * @param bool               $twelfthStepper  12th-step availability flag
+     * @param bool               $telephoneResponder Telephone responder availability flag
      * @param string             $area            Geographic area
      * @param array<int, string> $accepts         Forms of contact accepted
      */
@@ -60,6 +62,7 @@ class TsmlMemberView implements MemberView
         string $positionName = '',
         string $rotationDate = '',
         bool $twelfthStepper = false,
+        bool $telephoneResponder = false,
         string $area = '',
         array $accepts = []
     ) {
@@ -74,6 +77,7 @@ class TsmlMemberView implements MemberView
         $this->positionName = $positionName;
         $this->rotationDate = $rotationDate;
         $this->twelfthStepper = $twelfthStepper;
+        $this->telephoneResponder = $telephoneResponder;
         $this->area = $area;
         $this->accepts = $accepts;
     }
@@ -180,6 +184,14 @@ class TsmlMemberView implements MemberView
     public function isTwelfthStepper(): bool
     {
         return $this->twelfthStepper;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function isTelephoneResponder(): bool
+    {
+        return $this->telephoneResponder;
     }
 
     /**

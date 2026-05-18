@@ -35,6 +35,7 @@ if (!interface_exists('Unity\\Members\\Interfaces\\Member')) {
         public function getPersonalEmail(): string;
         public function getMobileNumber(): string;
         public function isTwelfthStepper(): bool;
+        public function isTelephoneResponder(): bool;
         public function getArea(): string;
         public function getAccepts(): array;
         public function isGdprAccepted(): bool;
@@ -76,6 +77,7 @@ if (!class_exists('Unity\\Members\\Member')) {
             private string $personalEmail = "",
             private string $mobileNumber = "",
             private bool $twelfthStepper = false,
+            private bool $telephoneResponder = false,
             private string $area = "",
             private array $accepts = [],
             private bool $gdprAccepted = false,
@@ -98,6 +100,7 @@ if (!class_exists('Unity\\Members\\Member')) {
         public function getPersonalEmail(): string { return $this->personalEmail; }
         public function getMobileNumber(): string { return $this->mobileNumber; }
         public function isTwelfthStepper(): bool { return $this->twelfthStepper; }
+        public function isTelephoneResponder(): bool { return $this->telephoneResponder; }
         public function getArea(): string { return $this->area; }
         public function getAccepts(): array { return $this->accepts; }
         public function isGdprAccepted(): bool { return $this->gdprAccepted; }
@@ -284,6 +287,39 @@ class TsmlMemberChangeTrackerTest extends TestCase
         $updated = new MemberStub(
             $postId, 'Anon', false, false, '', 0, '', 0, false, null,
             '', 'NEW-MOBILE'
+        );
+
+        $this->stubPostTypeGuard($postId);
+        $this->stubTitleSyncIsNoop($postId, 'Anon');
+
+        $this->repository->expects($this->exactly(2))
+            ->method('findById')
+            ->with($postId)
+            ->willReturnOnConsecutiveCalls($original, $updated);
+
+        WP_Mock::expectActionCalled('unity/member_changing');
+        WP_Mock::expectActionNotCalled('unity/member_created');
+
+        $this->tracker->captureOriginalMember($postId);
+        $this->tracker->checkForChanges($postId);
+    }
+
+    /**
+     * @test
+     */
+    public function toggling_telephone_responder_fires_member_changing(): void
+    {
+        $postId = 5679;
+
+        // Original: not a responder. Updated: is a responder. Everything
+        // else is identical so the only diff lives in the new flag.
+        $original = new MemberStub(
+            $postId, 'Anon', false, false, '', 0, '', 0, false, null,
+            '', '', false, false
+        );
+        $updated = new MemberStub(
+            $postId, 'Anon', false, false, '', 0, '', 0, false, null,
+            '', '', false, true
         );
 
         $this->stubPostTypeGuard($postId);

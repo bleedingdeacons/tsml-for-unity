@@ -29,6 +29,7 @@ class TsmlMember implements Member
     private string $personalEmail;
     private string $mobileNumber;
     private bool $twelfthStepper;
+    private bool $telephoneResponder;
     private string $area;
     /** @var array<int, string> */
     private array $accepts;
@@ -55,6 +56,7 @@ class TsmlMember implements Member
      * @param string $personalEmail Personal email address
      * @param string $mobileNumber Mobile phone number
      * @param bool $twelfthStepper Whether the member is available for 12th-step calls
+     * @param bool $telephoneResponder Whether the member is available as a telephone responder
      * @param string $area Geographic area covered for 12th-step calls
      * @param array<int, string> $accepts Forms of contact accepted for 12th-step calls
      * @param bool $gdprAccepted GDPR acceptance flag
@@ -78,6 +80,7 @@ class TsmlMember implements Member
         string $personalEmail = '',
         string $mobileNumber = '',
         bool $twelfthStepper = false,
+        bool $telephoneResponder = false,
         string $area = '',
         array $accepts = [],
         bool $gdprAccepted = false,
@@ -100,6 +103,7 @@ class TsmlMember implements Member
         $this->personalEmail = $personalEmail;
         $this->mobileNumber = $mobileNumber;
         $this->twelfthStepper = $twelfthStepper;
+        $this->telephoneResponder = $telephoneResponder;
         $this->area = $area;
         $this->accepts = $accepts;
         $this->gdprAccepted = $gdprAccepted;
@@ -173,6 +177,11 @@ class TsmlMember implements Member
     public function isTwelfthStepper(): bool
     {
         return $this->twelfthStepper;
+    }
+
+    public function isTelephoneResponder(): bool
+    {
+        return $this->telephoneResponder;
     }
 
     public function getArea(): string

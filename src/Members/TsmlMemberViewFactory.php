@@ -127,6 +127,7 @@ class TsmlMemberViewFactory implements MemberViewFactory
             $positionName,
             $member->getIntergroupPositionRotation(),
             $member->isTwelfthStepper(),
+            $member->isTelephoneResponder(),
             $member->getArea(),
             $member->getAccepts()
         );

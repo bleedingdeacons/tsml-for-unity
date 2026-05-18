@@ -35,6 +35,7 @@ if (!interface_exists('Unity\\Members\\Interfaces\\Member')) {
         public function getPersonalEmail(): string;
         public function getMobileNumber(): string;
         public function isTwelfthStepper(): bool;
+        public function isTelephoneResponder(): bool;
         public function getArea(): string;
         public function getAccepts(): array;
         public function isGdprAccepted(): bool;
@@ -64,6 +65,7 @@ if (!interface_exists('Unity\\Members\\Interfaces\\MemberFactory')) {
             string $personalEmail = \'\',
             string $mobileNumber = \'\',
             bool $twelfthStepper = false,
+            bool $telephoneResponder = false,
             string $area = \'\',
             array $accepts = [],
             bool $gdprAccepted = false,
@@ -105,6 +107,7 @@ if (!class_exists('Unity\\Members\\Member')) {
             private string $personalEmail = "",
             private string $mobileNumber = "",
             private bool $twelfthStepper = false,
+            private bool $telephoneResponder = false,
             private string $area = "",
             private array $accepts = [],
             private bool $gdprAccepted = false,
@@ -127,6 +130,7 @@ if (!class_exists('Unity\\Members\\Member')) {
         public function getPersonalEmail(): string { return $this->personalEmail; }
         public function getMobileNumber(): string { return $this->mobileNumber; }
         public function isTwelfthStepper(): bool { return $this->twelfthStepper; }
+        public function isTelephoneResponder(): bool { return $this->telephoneResponder; }
         public function getArea(): string { return $this->area; }
         public function getAccepts(): array { return $this->accepts; }
         public function isGdprAccepted(): bool { return $this->gdprAccepted; }

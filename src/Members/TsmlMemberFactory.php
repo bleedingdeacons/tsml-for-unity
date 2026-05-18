@@ -105,6 +105,7 @@ class TsmlMemberFactory implements MemberFactory
             get_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $id) ?? '',
             get_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $id) ?? '',
             (bool) (get_field(TsmlMemberFields::FIELD_TWELFTH_STEPPER, $id) ?? false),
+            (bool) (get_field(TsmlMemberFields::FIELD_TELEPHONE_RESPONDER, $id) ?? false),
             (string) (get_field(TsmlMemberFields::FIELD_AREA, $id) ?? ''),
             // ACF checkbox fields return array of selected option values,
             // or null/false when nothing is selected. Normalise to a plain
@@ -139,6 +140,7 @@ class TsmlMemberFactory implements MemberFactory
      * @param string             $personalEmail   Personal email
      * @param string             $mobileNumber    Mobile number
      * @param bool               $twelfthStepper  12th-step availability flag
+     * @param bool               $telephoneResponder Telephone responder availability flag
      * @param string             $area            Geographic area covered for 12th-step calls
      * @param array<int, string> $accepts         Forms of contact accepted for 12th-step calls
      * @param bool               $gdprAccepted    GDPR acceptance flag
@@ -163,6 +165,7 @@ class TsmlMemberFactory implements MemberFactory
         string $personalEmail = '',
         string $mobileNumber = '',
         bool $twelfthStepper = false,
+        bool $telephoneResponder = false,
         string $area = '',
         array $accepts = [],
         bool $gdprAccepted = false,
@@ -186,6 +189,7 @@ class TsmlMemberFactory implements MemberFactory
             $personalEmail,
             $mobileNumber,
             $twelfthStepper,
+            $telephoneResponder,
             $area,
             $accepts,
             $gdprAccepted,

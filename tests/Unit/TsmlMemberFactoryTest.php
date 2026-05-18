@@ -30,6 +30,7 @@ if (!interface_exists('Unity\\Members\\Interfaces\\Member')) {
         public function getPersonalEmail(): string;
         public function getMobileNumber(): string;
         public function isTwelfthStepper(): bool;
+        public function isTelephoneResponder(): bool;
         public function getArea(): string;
         public function getAccepts(): array;
         public function isGdprAccepted(): bool;
@@ -59,6 +60,7 @@ if (!interface_exists('Unity\\Members\\Interfaces\\MemberFactory')) {
             string $personalEmail = \'\',
             string $mobileNumber = \'\',
             bool $twelfthStepper = false,
+            bool $telephoneResponder = false,
             string $area = \'\',
             array $accepts = [],
             bool $gdprAccepted = false,
@@ -88,6 +90,7 @@ if (!class_exists('Unity\\Members\\Member')) {
         private string $personalEmail;
         private string $mobileNumber;
         private bool $twelfthStepper;
+        private bool $telephoneResponder;
         private string $area;
         private array $accepts;
         private bool $gdprAccepted;
@@ -111,6 +114,7 @@ if (!class_exists('Unity\\Members\\Member')) {
             string $personalEmail = "",
             string $mobileNumber = "",
             bool $twelfthStepper = false,
+            bool $telephoneResponder = false,
             string $area = "",
             array $accepts = [],
             bool $gdprAccepted = false,
@@ -133,6 +137,7 @@ if (!class_exists('Unity\\Members\\Member')) {
             $this->personalEmail = $personalEmail;
             $this->mobileNumber = $mobileNumber;
             $this->twelfthStepper = $twelfthStepper;
+            $this->telephoneResponder = $telephoneResponder;
             $this->area = $area;
             $this->accepts = $accepts;
             $this->gdprAccepted = $gdprAccepted;
@@ -156,6 +161,7 @@ if (!class_exists('Unity\\Members\\Member')) {
         public function getPersonalEmail(): string { return $this->personalEmail; }
         public function getMobileNumber(): string { return $this->mobileNumber; }
         public function isTwelfthStepper(): bool { return $this->twelfthStepper; }
+        public function isTelephoneResponder(): bool { return $this->telephoneResponder; }
         public function getArea(): string { return $this->area; }
         public function getAccepts(): array { return $this->accepts; }
         public function isGdprAccepted(): bool { return $this->gdprAccepted; }
@@ -249,6 +255,10 @@ class TsmlMemberFactoryTest extends TestCase
             ->andReturn(true);
 
         WP_Mock::userFunction('get_field')
+            ->with(TsmlMemberFields::FIELD_TELEPHONE_RESPONDER, $postId)
+            ->andReturn(true);
+
+        WP_Mock::userFunction('get_field')
             ->with(TsmlMemberFields::FIELD_AREA, $postId)
             ->andReturn('North London');
 
@@ -272,6 +282,7 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertSame('john@example.com', $member->getPersonalEmail());
         $this->assertSame('555-1234', $member->getMobileNumber());
         $this->assertTrue($member->isTwelfthStepper());
+        $this->assertTrue($member->isTelephoneResponder());
         $this->assertSame('North London', $member->getArea());
         $this->assertSame(['phone', 'email'], $member->getAccepts());
     }
@@ -435,6 +446,7 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertSame('', $member->getPersonalEmail());
         $this->assertSame('', $member->getMobileNumber());
         $this->assertFalse($member->isTwelfthStepper());
+        $this->assertFalse($member->isTelephoneResponder());
         $this->assertSame('', $member->getArea());
         $this->assertSame([], $member->getAccepts());
     }
@@ -486,6 +498,10 @@ class TsmlMemberFactoryTest extends TestCase
 
         WP_Mock::userFunction('get_field')
             ->with(TsmlMemberFields::FIELD_TWELFTH_STEPPER, $postId)
+            ->andReturn(false);
+
+        WP_Mock::userFunction('get_field')
+            ->with(TsmlMemberFields::FIELD_TELEPHONE_RESPONDER, $postId)
             ->andReturn(false);
 
         WP_Mock::userFunction('get_field')
