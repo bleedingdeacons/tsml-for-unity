@@ -8,7 +8,6 @@ use PHPUnit\Framework\TestCase;
 use TsmlForUnity\TsmlMemberFactory;
 use TsmlForUnity\TsmlMemberFields;
 use Unity\Members\Interfaces\Member;
-use Unity\Members\Member;
 use WP_Mock;
 
 /**
