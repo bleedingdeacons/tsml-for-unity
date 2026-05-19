@@ -28,7 +28,7 @@ final class TsmlMemberFields
     public const FIELD_HOME_GROUP = 'home-layout-group_home-group';
     public const FIELD_HOMEGROUP_GSR = 'home-layout-group_homegroup-gsr';
     public const FIELD_TWELFTH_STEPPER = 'home-layout-group_is-twelfth-stepper';
-    public const FIELD_TELEPHONE_RESPONDER = 'home-layout-group_is-telephone-responder';
+    public const FIELD_TELEPHONE_RESPONDER = 'service-layout-group_is-telephone-responder';
     public const FIELD_AREA = 'home-layout-group_member-area';
     public const FIELD_ACCEPTS = 'home-layout-group_member-accepts';
     public const FIELD_MEETING_PO = 'home-layout-group_meeting_po';
