@@ -10,7 +10,6 @@ declare(strict_types=1);
  * Requires at least: 6.0
  * Requires PHP: 8.1
  * GitHub Plugin URI: https://github.com/thebleedingdeacons/tsml-for-unity
- * GitHub Branch: main
  * Author: The Bleeding Deacons
  * Author URI: https://github.com/bleedingdeacons/tsml-for-unity
  * Contact: thebleedingdeacons@gmail.com
