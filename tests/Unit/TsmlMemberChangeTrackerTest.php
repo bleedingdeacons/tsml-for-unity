@@ -53,6 +53,7 @@ if (!interface_exists('Unity\\Members\\Interfaces\\MemberRepository')) {
         public function findById(int $id): ?Member;
         public function findByEmail(string $email): ?Member;
         public function findAll(array $args = []): array;
+        public function findTelephoneResponders(): array;
         public function count(array $args = []): int;
         public function save(Member $member): bool;
         public function update(Member $member): bool;

@@ -86,6 +86,50 @@ class TsmlMemberRepository implements MemberRepository
     }
 
     /**
+     * Find all members flagged as telephone responders
+     *
+     * Runs a single get_posts query filtered by a meta_query on the
+     * telephone-responder ACF field, so the database does the selection
+     * rather than loading every member and filtering in PHP. ACF stores
+     * a true_false field as the string '1' when checked, so the clause
+     * matches that stored value; members with the flag unset (stored
+     * '0' or absent) are excluded.
+     *
+     * Asks for 'fields' => 'ids' and builds each Member straight from
+     * the factory, avoiding the per-post get_post() round trip that
+     * delegating to findAll() would incur. The post_type filter already
+     * guarantees every returned id is a member, so the findById() type
+     * guard is unnecessary here.
+     *
+     * @return array Array of Member objects
+     */
+    public function findTelephoneResponders(): array
+    {
+        $ids = get_posts([
+            'post_type' => TsmlMemberFields::POST_TYPE,
+            'post_status' => 'publish',
+            'numberposts' => -1,
+            'fields' => 'ids',
+            'meta_query' => [
+                [
+                    'key' => TsmlMemberFields::FIELD_TELEPHONE_RESPONDER,
+                    'value' => '1',
+                    'compare' => '=',
+                ],
+            ],
+        ]);
+
+        if (empty($ids)) {
+            return [];
+        }
+
+        return array_map(
+            fn (int $id): Member => $this->memberFactory->createFromSource($id),
+            $ids
+        );
+    }
+
+    /**
      * Find a member by personal email address
      *
      * Delegates to findAll() with a meta_query keyed on the personal

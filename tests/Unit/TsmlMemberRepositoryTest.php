@@ -83,6 +83,7 @@ if (!interface_exists('Unity\\Members\\Interfaces\\MemberRepository')) {
         public function findById(int $id): ?Member;
         public function findByEmail(string $email): ?Member;
         public function findAll(array $args = []): array;
+        public function findTelephoneResponders(): array;
         public function count(array $args = []): int;
         public function save(Member $member): bool;
         public function update(Member $member): bool;
@@ -442,5 +443,60 @@ class TsmlMemberRepositoryTest extends TestCase
         $this->factory->expects($this->never())->method('createFromSource');
 
         $this->assertNull($this->repository->findByEmail(''));
+    }
+
+    // ─── findTelephoneResponders() ──────────────────────────────────
+
+    /**
+     * @test
+     */
+    public function find_telephone_responders_queries_the_responder_flag_and_returns_members(): void
+    {
+        $postId = 7777;
+
+        // findTelephoneResponders() runs a single get_posts query that:
+        //  - filters by the members CPT and 'publish' status
+        //  - asks for ids only ('fields' => 'ids') so the build path
+        //    goes straight through the factory, no per-post get_post
+        //  - meta_query keys on the telephone-responder ACF field,
+        //    matching the ACF true_false stored value '1'
+        WP_Mock::userFunction('get_posts')
+            ->once()
+            ->withArgs(function ($args) {
+                if (!isset($args['meta_query'][0])) {
+                    return false;
+                }
+                $clause = $args['meta_query'][0];
+                return $args['post_type']   === TsmlMemberFields::POST_TYPE
+                    && $args['post_status'] === 'publish'
+                    && $args['fields']      === 'ids'
+                    && $clause['key']       === TsmlMemberFields::FIELD_TELEPHONE_RESPONDER
+                    && $clause['value']     === '1'
+                    && $clause['compare']   === '=';
+            })
+            ->andReturn([$postId]);
+
+        $expected = new MemberStub($postId, 'Anon', false, false, '', 0, '', 0, false, null, '', '', false, true);
+        $this->factory->expects($this->once())
+            ->method('createFromSource')
+            ->with($postId)
+            ->willReturn($expected);
+
+        $result = $this->repository->findTelephoneResponders();
+
+        $this->assertSame([$expected], $result);
+    }
+
+    /**
+     * @test
+     */
+    public function find_telephone_responders_returns_empty_array_when_none_match(): void
+    {
+        // No matching posts → findAll() returns [] → method returns [].
+        WP_Mock::userFunction('get_posts')->once()->andReturn([]);
+
+        $this->factory->expects($this->never())->method('createFromSource');
+
+        $this->assertSame([], $this->repository->findTelephoneResponders());
     }
 }
