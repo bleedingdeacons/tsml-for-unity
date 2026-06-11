@@ -86,7 +86,14 @@ class PluginBuilder
         // Build script
             'build.php',
 
-        // Vendor (no production dependencies needed)
+        // Vendor — safe to drop entirely.
+        // psr/container is declared as a production require so this plugin
+        // installs/tests standalone, but it is NOT loaded from here at
+        // runtime: this plugin never requires vendor/autoload.php. Unity
+        // (a hard integration dependency, loaded first) pulls in
+        // psr/container via its own autoloader, and Unity passes its
+        // PSR-11 container into Plugin::registerWithUnity(). Do not "fix"
+        // this by keeping vendor — it would just bundle a redundant copy.
             'vendor',
     ];
 
