@@ -131,7 +131,7 @@ class TsmlGroupRepository implements GroupRepository
         if (function_exists('update_field')) {
             update_field(TsmlGroupFields::TITLE, $encodedTitle, $postId);
             update_field(TsmlGroupFields::EMAIL, $group->getEmail(), $postId);
-            update_field(TsmlGroupFields::MEETING, $group->getMeetingIds(), $postId);
+            update_field(TsmlGroupFields::MEETING, $this->getMeetingIds($group), $postId);
         }
 
         return true;
@@ -170,7 +170,7 @@ class TsmlGroupRepository implements GroupRepository
         if (function_exists('update_field')) {
             update_field(TsmlGroupFields::TITLE, $encodedTitle, $postId);
             update_field(TsmlGroupFields::EMAIL, $group->getEmail(), $postId);
-            update_field(TsmlGroupFields::MEETING, $group->getMeetingIds(), $postId);
+            update_field(TsmlGroupFields::MEETING, $this->getMeetingIds($group), $postId);
         }
 
         return true;
@@ -182,5 +182,22 @@ class TsmlGroupRepository implements GroupRepository
     public function delete(int $id): bool
     {
         throw new Exception('Delete is not implemented');
+    }
+
+    /**
+     * Extract meeting IDs from a group's meetings
+     *
+     * The MEETING field stores IDs, while Group exposes Meeting objects.
+     *
+     * @param Group $group The group to extract meeting IDs from
+     * @return int[] Array of meeting IDs
+     */
+    private function getMeetingIds(Group $group): array
+    {
+        $ids = [];
+        foreach ($group->getMeetings() as $meeting) {
+            $ids[] = $meeting->getId();
+        }
+        return $ids;
     }
 }
