@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace TsmlForUnity\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use TsmlForUnity\TsmlLocationFactory;
-use TsmlForUnity\TsmlLocationFields;
-use Unity\Locations\Location;
+use TsmlForUnity\Locations\TsmlLocationFactory;
+use TsmlForUnity\Locations\TsmlLocationFields;
 use Unity\Locations\Interfaces\Location;
 use WP_Mock;
 
 /**
- * @covers \TsmlForUnity\TsmlLocationFactory
+ * @covers \TsmlForUnity\Locations\TsmlLocationFactory
  */
 class TsmlLocationFactoryTest extends TestCase
 {

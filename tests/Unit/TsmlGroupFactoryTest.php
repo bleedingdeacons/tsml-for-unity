@@ -5,73 +5,34 @@ declare(strict_types=1);
 namespace TsmlForUnity\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use TsmlForUnity\TsmlGroupFactory;
-use TsmlForUnity\TsmlGroupFields;
-use Unity\Contact\Interfaces\ContactInterface;
-use Unity\Groups\Group;
+use TsmlForUnity\Groups\TsmlGroupFactory;
+use TsmlForUnity\Groups\TsmlGroupFields;
+use Unity\Contacts\Interfaces\Contact;
 use Unity\Groups\Interfaces\Group;
+use Unity\Meetings\Interfaces\Meeting;
+use Unity\Meetings\Interfaces\MeetingRepository;
 use WP_Mock;
 
 /**
- * Mock Unity TsmlContact interfaces and classes for testing
- */
-if (!interface_exists('Unity\\Contact\\Interfaces\\ContactInterface')) {
-    eval('namespace Unity\\TsmlContact\\Interfaces; interface ContactInterface { public function getName(): string; public function getEmail(): string; public function getPhone(): string; }');
-}
-
-if (!interface_exists('Unity\\Contact\\Interfaces\\ContactFactoryInterface')) {
-    eval('namespace Unity\\TsmlContact\\Interfaces; interface ContactFactoryInterface { public function createFromSource(array $source): ContactInterface; public function create(string $name = "", string $email = "", string $phone = ""): ContactInterface; }');
-}
-
-if (!class_exists('Unity\\TsmlContact\\TsmlContact')) {
-    eval('
-    namespace Unity\\TsmlContact;
-
-    class TsmlContact implements Interfaces\\ContactInterface {
-        private string $name;
-        private string $email;
-        private string $phone;
-
-        public function __construct(string $name = "", string $email = "", string $phone = "") {
-            $this->name = $name;
-            $this->email = $email;
-            $this->phone = $phone;
-        }
-
-        public function getName(): string { return $this->name; }
-        public function getEmail(): string { return $this->email; }
-        public function getPhone(): string { return $this->phone; }
-    }
-    ');
-}
-
-if (!class_exists('Unity\\TsmlContact\\TsmlContactFactory')) {
-    eval('
-    namespace Unity\\TsmlContact;
-
-    class TsmlContactFactory implements Interfaces\\ContactFactoryInterface {
-        public function createFromSource(array $source): Interfaces\\ContactInterface {
-            return new TsmlContact($source["name"] ?? "", $source["email"] ?? "", $source["phone"] ?? "");
-        }
-        public function create(string $name = "", string $email = "", string $phone = ""): Interfaces\\ContactInterface {
-            return new TsmlContact($name, $email, $phone);
-        }
-    }
-    ');
-}
-
-/**
- * @covers \TsmlForUnity\TsmlGroupFactory
+ * @covers \TsmlForUnity\Groups\TsmlGroupFactory
  */
 class TsmlGroupFactoryTest extends TestCase
 {
     private TsmlGroupFactory $factory;
 
+    /** @var MeetingRepository&\PHPUnit\Framework\MockObject\MockObject */
+    private $meetingRepository;
+
     protected function setUp(): void
     {
         parent::setUp();
         WP_Mock::setUp();
-        $this->factory = new TsmlGroupFactory();
+
+        // A group's meetings come from the MeetingRepository, so the factory
+        // needs one to return anything but an empty list. The contact factory
+        // is left to its default on purpose, which exercises that fallback.
+        $this->meetingRepository = $this->createMock(MeetingRepository::class);
+        $this->factory = new TsmlGroupFactory(null, $this->meetingRepository);
     }
 
     protected function tearDown(): void
@@ -157,9 +118,13 @@ class TsmlGroupFactoryTest extends TestCase
                 return $value;
             });
 
-        WP_Mock::userFunction('get_posts')
-            ->once()
-            ->andReturn([200, 201, 202]); // Meeting IDs
+        $this->meetingRepository->method('findByGroupId')
+            ->with($postId)
+            ->willReturn([
+                $this->createMeeting(200),
+                $this->createMeeting(201),
+                $this->createMeeting(202),
+            ]);
 
         WP_Mock::userFunction('get_permalink')
             ->once()
@@ -169,11 +134,13 @@ class TsmlGroupFactoryTest extends TestCase
         $result = $this->factory->createFromSource($postId);
 
         $this->assertInstanceOf(Group::class, $result);
-        $this->assertInstanceOf(Group::class, $result);
         $this->assertEquals($postId, $result->getId());
         $this->assertEquals('Test Group', $result->getTitle());
         $this->assertEquals('group@example.com', $result->getEmail());
-        $this->assertEquals([200, 201, 202], $result->getMeetingIds());
+        $this->assertEquals(
+            [200, 201, 202],
+            array_map(static fn (Meeting $meeting): int => $meeting->getId(), $result->getMeetings())
+        );
         $this->assertEquals('https://example.com/group/test-group', $result->getLink());
         $this->assertEquals('Some notes about the group', $result->getGroupNotes());
         $this->assertEquals('https://testgroup.org', $result->getWebsite());
@@ -223,10 +190,6 @@ class TsmlGroupFactoryTest extends TestCase
                 return $value;
             });
 
-        WP_Mock::userFunction('get_posts')
-            ->once()
-            ->andReturn([]);
-
         WP_Mock::userFunction('get_permalink')
             ->once()
             ->with($postId)
@@ -239,17 +202,17 @@ class TsmlGroupFactoryTest extends TestCase
         $contacts = $result->getContacts();
         $this->assertCount(3, $contacts);
         
-        $this->assertInstanceOf(ContactInterface::class, $contacts[0]);
+        $this->assertInstanceOf(Contact::class, $contacts[0]);
         $this->assertEquals('John Doe', $contacts[0]->getName());
         $this->assertEquals('john@example.com', $contacts[0]->getEmail());
         $this->assertEquals('555-1111', $contacts[0]->getPhone());
         
-        $this->assertInstanceOf(ContactInterface::class, $contacts[1]);
+        $this->assertInstanceOf(Contact::class, $contacts[1]);
         $this->assertEquals('Jane Smith', $contacts[1]->getName());
         $this->assertEquals('jane@example.com', $contacts[1]->getEmail());
         $this->assertEquals('555-2222', $contacts[1]->getPhone());
         
-        $this->assertInstanceOf(ContactInterface::class, $contacts[2]);
+        $this->assertInstanceOf(Contact::class, $contacts[2]);
         $this->assertEquals('Bob Wilson', $contacts[2]->getName());
         $this->assertEquals('bob@example.com', $contacts[2]->getEmail());
         $this->assertEquals('555-3333', $contacts[2]->getPhone());
@@ -277,10 +240,6 @@ class TsmlGroupFactoryTest extends TestCase
             ->with($postId)
             ->andReturn([]);
 
-        WP_Mock::userFunction('get_posts')
-            ->once()
-            ->andReturn([]);
-
         WP_Mock::userFunction('get_permalink')
             ->once()
             ->with($postId)
@@ -292,7 +251,7 @@ class TsmlGroupFactoryTest extends TestCase
         $this->assertEquals($postId, $result->getId());
         $this->assertEquals('Minimal Group', $result->getTitle());
         $this->assertEquals('', $result->getEmail());
-        $this->assertEquals([], $result->getMeetingIds());
+        $this->assertEquals([], $result->getMeetings());
         $this->assertEquals('', $result->getGroupNotes());
         $this->assertNull($result->getDistrictId());
         $this->assertEquals([], $result->getContacts());
@@ -332,10 +291,6 @@ class TsmlGroupFactoryTest extends TestCase
                 return $value;
             });
 
-        WP_Mock::userFunction('get_posts')
-            ->once()
-            ->andReturn([]);
-
         WP_Mock::userFunction('get_permalink')
             ->once()
             ->with($postId)
@@ -347,13 +302,13 @@ class TsmlGroupFactoryTest extends TestCase
         $this->assertCount(2, $contacts);
         
         // First contact has name only
-        $this->assertInstanceOf(ContactInterface::class, $contacts[0]);
+        $this->assertInstanceOf(Contact::class, $contacts[0]);
         $this->assertEquals('John Doe', $contacts[0]->getName());
         $this->assertEquals('', $contacts[0]->getEmail());
         $this->assertEquals('', $contacts[0]->getPhone());
         
         // Second contact has email only
-        $this->assertInstanceOf(ContactInterface::class, $contacts[1]);
+        $this->assertInstanceOf(Contact::class, $contacts[1]);
         $this->assertEquals('', $contacts[1]->getName());
         $this->assertEquals('jane@example.com', $contacts[1]->getEmail());
         $this->assertEquals('', $contacts[1]->getPhone());
@@ -381,10 +336,6 @@ class TsmlGroupFactoryTest extends TestCase
             ->with($postId)
             ->andReturn([]);
 
-        WP_Mock::userFunction('get_posts')
-            ->once()
-            ->andReturn([]);
-
         WP_Mock::userFunction('get_permalink')
             ->once()
             ->with($postId)
@@ -394,6 +345,21 @@ class TsmlGroupFactoryTest extends TestCase
 
         $this->assertInstanceOf(Group::class, $result);
         $this->assertEquals('', $result->getLink());
+    }
+
+    /**
+     * Create a Meeting that reports the given ID and carries no contacts.
+     *
+     * @param int $id Meeting ID.
+     * @return Meeting&\PHPUnit\Framework\MockObject\MockObject
+     */
+    private function createMeeting(int $id)
+    {
+        $meeting = $this->createMock(Meeting::class);
+        $meeting->method('getId')->willReturn($id);
+        $meeting->method('getContacts')->willReturn([]);
+
+        return $meeting;
     }
 
     /**

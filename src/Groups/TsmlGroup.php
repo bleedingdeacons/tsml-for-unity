@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
 }
 
 use Unity\Groups\Interfaces\Group;
-use Unity\Contact\Interfaces\ContactInterface;
+use Unity\Contacts\Interfaces\Contact;
 use Unity\Meetings\Interfaces\Meeting;
 
 /**
@@ -52,7 +52,7 @@ class TsmlGroup implements Group
      * @param string $square Square Cash App cashtag for contributions
      * @param int|null $districtId District ID
      * @param string|null $lastContact Last contact timestamp
-     * @param ContactInterface[] $contacts Array of TsmlContact objects
+     * @param Contact[] $contacts Array of TsmlContact objects
      * @param string $updated Last updated datetime string
      */
     public function __construct(

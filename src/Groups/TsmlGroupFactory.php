@@ -9,6 +9,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use TsmlForUnity\Contacts\TsmlContactFactory;
 use Unity\Contacts\Interfaces\ContactFactory;
 use Unity\Contacts\Interfaces\Contact;
 use Unity\Groups\Interfaces\GroupFactory;

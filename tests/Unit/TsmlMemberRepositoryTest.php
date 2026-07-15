@@ -7,141 +7,10 @@ namespace TsmlForUnity\Tests\Unit;
 use PHPUnit\Framework\TestCase;
 use TsmlForUnity\Members\TsmlMemberFields;
 use TsmlForUnity\Members\TsmlMemberRepository;
+use TsmlForUnity\Tests\Fixtures\MemberStub;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberFactory;
-use Unity\Members\Member as MemberStub;
 use WP_Mock;
-
-/**
- * Mock Unity Member interfaces and stub class.
- *
- * Guarded so this file can be loaded after TsmlMemberFactoryTest, which
- * declares the same symbols. The first file to load wins; later loads
- * are no-ops.
- */
-if (!interface_exists('Unity\\Members\\Interfaces\\Member')) {
-    eval('namespace Unity\\Members\\Interfaces;
-    interface Member {
-        public function getId(): int;
-        public function getAnonymousName(): string;
-        public function showAnonymousName(): bool;
-        public function showMemberProfile(): bool;
-        public function getAnonymousProfile(): string;
-        public function getIntergroupPosition(): int;
-        public function getIntergroupPositionRotation(): string;
-        public function getHomeGroup(): int;
-        public function isGSR(): bool;
-        public function getMeetingPO(): mixed;
-        public function getPersonalEmail(): string;
-        public function getMobileNumber(): string;
-        public function isTwelfthStepper(): bool;
-        public function isTelephoneResponder(): bool;
-        public function getArea(): string;
-        public function getAccepts(): array;
-        public function isGdprAccepted(): bool;
-        public function getGdprAcceptedAt(): string;
-        public function getGdprAcceptanceVersion(): string;
-        public function getGdprAcceptanceMethod(): string;
-        public function getGdprAcceptanceStatement(): string;
-        public function getUpdated(): string;
-    }');
-}
-
-if (!interface_exists('Unity\\Members\\Interfaces\\MemberFactory')) {
-    eval('namespace Unity\\Members\\Interfaces;
-    interface MemberFactory {
-        public function createFromSource(int $id): Member;
-        public function createNew(
-            int $id,
-            string $anonymousName = \'\',
-            bool $showAnonymousName = false,
-            bool $showMemberProfile = false,
-            string $anonymousProfile = \'\',
-            int $intergroupPosition = 0,
-            string $intergroupPositionRotation = \'\',
-            int $homeGroup = 0,
-            bool $isGSR = false,
-            mixed $meetingPO = null,
-            string $personalEmail = \'\',
-            string $mobileNumber = \'\',
-            bool $twelfthStepper = false,
-            bool $telephoneResponder = false,
-            string $area = \'\',
-            array $accepts = [],
-            bool $gdprAccepted = false,
-            string $gdprAcceptedAt = \'\',
-            string $gdprAcceptanceVersion = \'\',
-            string $gdprAcceptanceMethod = \'\',
-            string $gdprAcceptanceStatement = \'\'
-        ): Member;
-    }');
-}
-
-if (!interface_exists('Unity\\Members\\Interfaces\\MemberRepository')) {
-    eval('namespace Unity\\Members\\Interfaces;
-    interface MemberRepository {
-        public function findById(int $id): ?Member;
-        public function findByEmail(string $email): ?Member;
-        public function findAll(array $args = []): array;
-        public function findTelephoneResponders(): array;
-        public function count(array $args = []): int;
-        public function save(Member $member): bool;
-        public function update(Member $member): bool;
-        public function delete(int $id): bool;
-    }');
-}
-
-if (!class_exists('Unity\\Members\\Member')) {
-    eval('namespace Unity\\Members;
-    class Member implements Interfaces\\Member {
-        public function __construct(
-            private int $id,
-            private string $anonymousName = "",
-            private bool $showAnonymousName = false,
-            private bool $showMemberProfile = false,
-            private string $anonymousProfile = "",
-            private int $intergroupPosition = 0,
-            private string $intergroupPositionRotation = "",
-            private int $homeGroup = 0,
-            private bool $isGSR = false,
-            private mixed $meetingPO = null,
-            private string $personalEmail = "",
-            private string $mobileNumber = "",
-            private bool $twelfthStepper = false,
-            private bool $telephoneResponder = false,
-            private string $area = "",
-            private array $accepts = [],
-            private bool $gdprAccepted = false,
-            private string $gdprAcceptedAt = "",
-            private string $gdprAcceptanceVersion = "",
-            private string $gdprAcceptanceMethod = "",
-            private string $gdprAcceptanceStatement = "",
-            private string $updated = ""
-        ) {}
-        public function getId(): int { return $this->id; }
-        public function getAnonymousName(): string { return $this->anonymousName; }
-        public function showAnonymousName(): bool { return $this->showAnonymousName; }
-        public function showMemberProfile(): bool { return $this->showMemberProfile; }
-        public function getAnonymousProfile(): string { return $this->anonymousProfile; }
-        public function getIntergroupPosition(): int { return $this->intergroupPosition; }
-        public function getIntergroupPositionRotation(): string { return $this->intergroupPositionRotation; }
-        public function getHomeGroup(): int { return $this->homeGroup; }
-        public function isGSR(): bool { return $this->isGSR; }
-        public function getMeetingPO(): mixed { return $this->meetingPO; }
-        public function getPersonalEmail(): string { return $this->personalEmail; }
-        public function getMobileNumber(): string { return $this->mobileNumber; }
-        public function isTwelfthStepper(): bool { return $this->twelfthStepper; }
-        public function isTelephoneResponder(): bool { return $this->telephoneResponder; }
-        public function getArea(): string { return $this->area; }
-        public function getAccepts(): array { return $this->accepts; }
-        public function isGdprAccepted(): bool { return $this->gdprAccepted; }
-        public function getGdprAcceptedAt(): string { return $this->gdprAcceptedAt; }
-        public function getGdprAcceptanceVersion(): string { return $this->gdprAcceptanceVersion; }
-        public function getGdprAcceptanceMethod(): string { return $this->gdprAcceptanceMethod; }
-        public function getGdprAcceptanceStatement(): string { return $this->gdprAcceptanceStatement; }
-        public function getUpdated(): string { return $this->updated; }
-    }');
-}
 
 /**
  * Tests for TsmlMemberRepository's domain event firing.
@@ -230,7 +99,7 @@ class TsmlMemberRepositoryTest extends TestCase
         WP_Mock::userFunction('is_wp_error')->andReturn(false);
         $this->allowAnyUpdateFieldCalls();
 
-        WP_Mock::expectActionCalled('unity/member_changing');
+        WP_Mock::expectAction('unity/member_changing', $updated, $original);
 
         $caller = new MemberStub($postId, 'Anon', false, false, '', 0, '', 0, false, null, '', 'NEW-MOBILE');
         $result = $this->repository->update($caller);
@@ -318,7 +187,7 @@ class TsmlMemberRepositoryTest extends TestCase
             ->with($newPostId)
             ->willReturn($persisted);
 
-        WP_Mock::expectActionCalled('unity/member_created');
+        WP_Mock::expectAction('unity/member_created', $persisted);
 
         $result = $this->repository->save($caller);
 
@@ -368,7 +237,7 @@ class TsmlMemberRepositoryTest extends TestCase
         WP_Mock::userFunction('is_wp_error')->andReturn(false);
         $this->allowAnyUpdateFieldCalls();
 
-        WP_Mock::expectActionCalled('unity/member_changing');
+        WP_Mock::expectAction('unity/member_changing', $updated, $original);
 
         $caller = new MemberStub($postId, 'New Anon');
         $result = $this->repository->save($caller);
