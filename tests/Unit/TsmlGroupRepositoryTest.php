@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TsmlForUnity\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use TsmlForUnity\Groups\TsmlGroup;
 use TsmlForUnity\Groups\TsmlGroupFields;
 use TsmlForUnity\Groups\TsmlGroupRepository;
 use Unity\Groups\Interfaces\Group;
@@ -62,11 +63,10 @@ class TsmlGroupRepositoryTest extends TestCase
     /**
      * Helper: a Group carrying the given Meeting objects.
      *
-     * isValid() is set independently of the ID rather than mirroring
-     * TsmlGroup's own rule ($id > 0 && title). The repository is typed
-     * against the Group interface, where the two are separate parts of
-     * the contract, and coupling them here would make the insert path
-     * untestable — see the note on save_insert_writes_meeting_ids().
+     * isValid() is stubbed independently of the ID: the repository is typed
+     * against the Group interface, where identity and validity are separate
+     * parts of the contract, so both combinations stay reachable here
+     * regardless of what any one implementation ties together.
      *
      * @param Meeting[] $meetings
      * @return Group&\PHPUnit\Framework\MockObject\MockObject
@@ -107,10 +107,8 @@ class TsmlGroupRepositoryTest extends TestCase
     // ─── save() insert path writes meeting IDs ──────────────────────
 
     /**
-     * Reaching the insert branch needs getId() === 0 (or save() delegates
-     * to update()) *and* isValid() === true. TsmlGroup cannot satisfy both
-     * at once — its isValid() requires id > 0 — so this covers the Group
-     * contract the repository is typed against, not TsmlGroup specifically.
+     * Reaching the insert branch needs getId() === 0 — otherwise save()
+     * delegates to update() — *and* isValid() === true.
      *
      * @test
      */
@@ -158,8 +156,6 @@ class TsmlGroupRepositoryTest extends TestCase
     public function save_returns_false_for_invalid_group_without_inserting(): void
     {
         // No wp_insert_post expectation: a call would fail the test.
-        // This is the branch a real TsmlGroup with id = 0 always takes,
-        // because its isValid() requires id > 0.
         $group = $this->groupWith(0, [$this->meetingWithId(200)], false);
 
         $this->assertFalse($this->repository->save($group));
@@ -179,6 +175,41 @@ class TsmlGroupRepositoryTest extends TestCase
         // No update_field expectation: the failure returns before any writes.
 
         $this->assertFalse($this->repository->save($group));
+    }
+
+    // ─── save() insert path accepts a real, unsaved TsmlGroup ───────
+
+    /**
+     * The insert tests above stub isValid() independently of the ID, so
+     * they stayed green while no real TsmlGroup could reach the insert
+     * branch at all: validity demanded id > 0, the branch demanded id 0.
+     * These two pin the concrete class to the reachable combination.
+     *
+     * @test
+     */
+    public function save_inserts_a_new_unsaved_tsml_group(): void
+    {
+        $group = new TsmlGroup(0, 'Brand New Group');
+
+        $this->assertTrue($group->isValid(), 'A titled, unsaved group must be valid');
+
+        WP_Mock::userFunction('wp_insert_post')->once()->andReturn(4242);
+        WP_Mock::userFunction('is_wp_error')->andReturn(false);
+
+        $written = null;
+        $this->captureUpdateField(TsmlGroupFields::TITLE, $written);
+
+        $this->assertTrue($this->repository->save($group));
+        $this->assertSame('Brand New Group', $written);
+    }
+
+    /**
+     * @test
+     */
+    public function save_rejects_a_new_tsml_group_with_no_title(): void
+    {
+        // No wp_insert_post expectation: a titleless group must not insert.
+        $this->assertFalse($this->repository->save(new TsmlGroup(0, '')));
     }
 
     // ─── update() path writes meeting IDs ───────────────────────────
