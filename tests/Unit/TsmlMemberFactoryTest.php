@@ -5,176 +5,13 @@ declare(strict_types=1);
 namespace TsmlForUnity\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use TsmlForUnity\TsmlMemberFactory;
-use TsmlForUnity\TsmlMemberFields;
+use TsmlForUnity\Members\TsmlMemberFactory;
+use TsmlForUnity\Members\TsmlMemberFields;
 use Unity\Members\Interfaces\Member;
 use WP_Mock;
 
 /**
- * Mock Unity Member interfaces and classes for testing
- */
-if (!interface_exists('Unity\\Members\\Interfaces\\Member')) {
-    eval('namespace Unity\\Members\\Interfaces; 
-    interface Member { 
-        public function getId(): int;
-        public function getAnonymousName(): string;        
-        public function showAnonymousName(): bool;
-        public function showMemberProfile(): bool;
-        public function getAnonymousProfile(): string;
-        public function getIntergroupPosition(): int;
-        public function getIntergroupPositionRotation(): string;
-        public function getHomeGroup(): int;
-        public function isGSR(): bool;
-        public function getMeetingPO(): mixed;
-        public function getPersonalEmail(): string;
-        public function getMobileNumber(): string;
-        public function isTwelfthStepper(): bool;
-        public function isTelephoneResponder(): bool;
-        public function getArea(): string;
-        public function getAccepts(): array;
-        public function isGdprAccepted(): bool;
-        public function getGdprAcceptedAt(): string;
-        public function getGdprAcceptanceVersion(): string;
-        public function getGdprAcceptanceMethod(): string;
-        public function getGdprAcceptanceStatement(): string;
-        public function getUpdated(): string;
-    }');
-}
-
-if (!interface_exists('Unity\\Members\\Interfaces\\MemberFactory')) {
-    eval('namespace Unity\\Members\\Interfaces; 
-    interface MemberFactory { 
-        public function createFromSource(int $id): Member;
-        public function createNew(
-            int $id,
-            string $anonymousName = \'\',
-            bool $showAnonymousName = false,
-            bool $showMemberProfile = false,
-            string $anonymousProfile = \'\',
-            int $intergroupPosition = 0,
-            string $intergroupPositionRotation = \'\',
-            int $homeGroup = 0,
-            bool $isGSR = false,
-            mixed $meetingPO = null,
-            string $personalEmail = \'\',
-            string $mobileNumber = \'\',
-            bool $twelfthStepper = false,
-            bool $telephoneResponder = false,
-            string $area = \'\',
-            array $accepts = [],
-            bool $gdprAccepted = false,
-            string $gdprAcceptedAt = \'\',
-            string $gdprAcceptanceVersion = \'\',
-            string $gdprAcceptanceMethod = \'\',
-            string $gdprAcceptanceStatement = \'\'
-        ): Member;
-    }');
-}
-
-if (!class_exists('Unity\\Members\\Member')) {
-    eval('
-    namespace Unity\\Members;
-
-    class Member implements Interfaces\\Member {
-        private int $id;
-        private string $anonymousName;        
-        private bool $showAnonymousName;
-        private bool $showMemberProfile;
-        private string $anonymousProfile;
-        private int $intergroupPosition;
-        private string $intergroupPositionRotation;
-        private int $homeGroup;
-        private bool $isGSR;
-        private mixed $meetingPO;
-        private string $personalEmail;
-        private string $mobileNumber;
-        private bool $twelfthStepper;
-        private bool $telephoneResponder;
-        private string $area;
-        private array $accepts;
-        private bool $gdprAccepted;
-        private string $gdprAcceptedAt;
-        private string $gdprAcceptanceVersion;
-        private string $gdprAcceptanceMethod;
-        private string $gdprAcceptanceStatement;
-        private string $updated;
-
-        public function __construct(
-            int $id,
-            string $anonymousName = "",            
-            bool $showAnonymousName = false,
-            bool $showMemberProfile = false,
-            string $anonymousProfile = "",
-            int $intergroupPosition = 0,
-            string $intergroupPositionRotation = "",
-            int $homeGroup = 0,
-            bool $isGSR = false,
-            mixed $meetingPO = null,
-            string $personalEmail = "",
-            string $mobileNumber = "",
-            bool $twelfthStepper = false,
-            bool $telephoneResponder = false,
-            string $area = "",
-            array $accepts = [],
-            bool $gdprAccepted = false,
-            string $gdprAcceptedAt = "",
-            string $gdprAcceptanceVersion = "",
-            string $gdprAcceptanceMethod = "",
-            string $gdprAcceptanceStatement = "",
-            string $updated = ""
-        ) {
-            $this->id = $id;
-            $this->anonymousName = $anonymousName;
-            $this->showAnonymousName = $showAnonymousName;
-            $this->showMemberProfile = $showMemberProfile;
-            $this->anonymousProfile = $anonymousProfile;
-            $this->intergroupPosition = $intergroupPosition;
-            $this->intergroupPositionRotation = $intergroupPositionRotation;
-            $this->homeGroup = $homeGroup;
-            $this->isGSR = $isGSR;
-            $this->meetingPO = $meetingPO;
-            $this->personalEmail = $personalEmail;
-            $this->mobileNumber = $mobileNumber;
-            $this->twelfthStepper = $twelfthStepper;
-            $this->telephoneResponder = $telephoneResponder;
-            $this->area = $area;
-            $this->accepts = $accepts;
-            $this->gdprAccepted = $gdprAccepted;
-            $this->gdprAcceptedAt = $gdprAcceptedAt;
-            $this->gdprAcceptanceVersion = $gdprAcceptanceVersion;
-            $this->gdprAcceptanceMethod = $gdprAcceptanceMethod;
-            $this->gdprAcceptanceStatement = $gdprAcceptanceStatement;
-            $this->updated = $updated;
-        }
-
-        public function getId(): int { return $this->id; }
-        public function getAnonymousName(): string { return $this->anonymousName; }        
-        public function showAnonymousName(): bool { return $this->showAnonymousName; }
-        public function showMemberProfile(): bool { return $this->showMemberProfile; }
-        public function getAnonymousProfile(): string { return $this->anonymousProfile; }
-        public function getIntergroupPosition(): int { return $this->intergroupPosition; }
-        public function getIntergroupPositionRotation(): string { return $this->intergroupPositionRotation; }
-        public function getHomeGroup(): int { return $this->homeGroup; }
-        public function isGSR(): bool { return $this->isGSR; }
-        public function getMeetingPO(): mixed { return $this->meetingPO; }
-        public function getPersonalEmail(): string { return $this->personalEmail; }
-        public function getMobileNumber(): string { return $this->mobileNumber; }
-        public function isTwelfthStepper(): bool { return $this->twelfthStepper; }
-        public function isTelephoneResponder(): bool { return $this->telephoneResponder; }
-        public function getArea(): string { return $this->area; }
-        public function getAccepts(): array { return $this->accepts; }
-        public function isGdprAccepted(): bool { return $this->gdprAccepted; }
-        public function getGdprAcceptedAt(): string { return $this->gdprAcceptedAt; }
-        public function getGdprAcceptanceVersion(): string { return $this->gdprAcceptanceVersion; }
-        public function getGdprAcceptanceMethod(): string { return $this->gdprAcceptanceMethod; }
-        public function getGdprAcceptanceStatement(): string { return $this->gdprAcceptanceStatement; }
-        public function getUpdated(): string { return $this->updated; }
-    }
-    ');
-}
-
-/**
- * @covers \TsmlForUnity\TsmlMemberFactory
+ * @covers \TsmlForUnity\Members\TsmlMemberFactory
  */
 class TsmlMemberFactoryTest extends TestCase
 {
@@ -185,6 +22,11 @@ class TsmlMemberFactoryTest extends TestCase
         parent::setUp();
         WP_Mock::setUp();
         $this->factory = new TsmlMemberFactory();
+
+        // Every createFromSource reads post_modified_gmt for the updated
+        // timestamp; no test here asserts on it.
+        WP_Mock::userFunction('get_post')
+            ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
     }
 
     protected function tearDown(): void
@@ -199,11 +41,6 @@ class TsmlMemberFactoryTest extends TestCase
     public function it_creates_member_with_basic_fields(): void
     {
         $postId = 123;
-
-        WP_Mock::userFunction('get_the_title')
-            ->once()
-            ->with($postId)
-            ->andReturn('John Doe');
 
         WP_Mock::userFunction('get_field')
             ->with(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $postId)
@@ -265,6 +102,8 @@ class TsmlMemberFactoryTest extends TestCase
             ->with(TsmlMemberFields::FIELD_ACCEPTS, $postId)
             ->andReturn(['phone', 'email']);
 
+        $this->mockGdprFields($postId);
+
         $member = $this->factory->createFromSource($postId);
 
         $this->assertInstanceOf(Member::class, $member);
@@ -293,14 +132,10 @@ class TsmlMemberFactoryTest extends TestCase
     {
         $postId = 124;
 
-        WP_Mock::userFunction('get_the_title')
-            ->once()
-            ->with($postId)
-            ->andReturn('Jane Doe');
-
-        // Create mock WP_Post objects
-        $wpPost1 = (object) ['ID' => 99, 'post_type' => 'tsml_group'];
-        $wpPost2 = (object) ['ID' => 100, 'post_type' => 'tsml_group'];
+        // ACF hands back real WP_Post objects, and the factory type-checks for
+        // them, so a stdClass would silently fall through to the ID default.
+        $wpPost1 = new \WP_Post(['ID' => 99, 'post_type' => 'tsml_group']);
+        $wpPost2 = new \WP_Post(['ID' => 100, 'post_type' => 'tsml_group']);
 
         WP_Mock::userFunction('get_field')
             ->with(TsmlMemberFields::FIELD_HOME_GROUP, $postId)
@@ -321,13 +156,7 @@ class TsmlMemberFactoryTest extends TestCase
     {
         $postId = 127;
 
-        WP_Mock::userFunction('get_the_title')
-            ->once()
-            ->with($postId)
-            ->andReturn('Alice Smith');
-
-        // Create mock WP_Post object
-        $wpPost = (object) ['ID' => 42, 'post_type' => 'tsml_group', 'post_title' => 'Test Group'];
+        $wpPost = new \WP_Post(['ID' => 42, 'post_type' => 'tsml_group', 'post_title' => 'Test Group']);
 
         WP_Mock::userFunction('get_field')
             ->with(TsmlMemberFields::FIELD_HOME_GROUP, $postId)
@@ -348,11 +177,6 @@ class TsmlMemberFactoryTest extends TestCase
     {
         $postId = 128;
 
-        WP_Mock::userFunction('get_the_title')
-            ->once()
-            ->with($postId)
-            ->andReturn('Bob Jones');
-
         WP_Mock::userFunction('get_field')
             ->with(TsmlMemberFields::FIELD_HOME_GROUP, $postId)
             ->andReturn([55, 56]); // Array of numeric IDs (legacy format)
@@ -371,11 +195,6 @@ class TsmlMemberFactoryTest extends TestCase
     public function it_handles_empty_home_group_array(): void
     {
         $postId = 125;
-
-        WP_Mock::userFunction('get_the_title')
-            ->once()
-            ->with($postId)
-            ->andReturn('Bob Smith');
 
         WP_Mock::userFunction('get_field')
             ->with(TsmlMemberFields::FIELD_HOME_GROUP, $postId)
@@ -396,11 +215,6 @@ class TsmlMemberFactoryTest extends TestCase
     {
         $postId = 129;
 
-        WP_Mock::userFunction('get_the_title')
-            ->once()
-            ->with($postId)
-            ->andReturn('Carol White');
-
         WP_Mock::userFunction('get_field')
             ->with(TsmlMemberFields::FIELD_HOME_GROUP, $postId)
             ->andReturn(null); // get_field returns null
@@ -419,11 +233,6 @@ class TsmlMemberFactoryTest extends TestCase
     public function it_handles_null_fields_with_defaults(): void
     {
         $postId = 126;
-
-        WP_Mock::userFunction('get_the_title')
-            ->once()
-            ->with($postId)
-            ->andReturn(null);
 
         // Mock all fields returning null
         WP_Mock::userFunction('get_field')
@@ -510,5 +319,39 @@ class TsmlMemberFactoryTest extends TestCase
         WP_Mock::userFunction('get_field')
             ->with(TsmlMemberFields::FIELD_ACCEPTS, $postId)
             ->andReturn(null);
+
+        $this->mockGdprFields($postId);
+    }
+
+    /**
+     * Mock the GDPR acceptance fields as unset.
+     *
+     * The factory reads all five on every createFromSource, so they need a
+     * handler even for tests that say nothing about GDPR.
+     *
+     * @param int $postId Member post ID.
+     * @return void
+     */
+    private function mockGdprFields(int $postId): void
+    {
+        WP_Mock::userFunction('get_field')
+            ->with(TsmlMemberFields::FIELD_GDPR_ACCEPTED, $postId)
+            ->andReturn(false);
+
+        WP_Mock::userFunction('get_field')
+            ->with(TsmlMemberFields::FIELD_GDPR_ACCEPTED_AT, $postId)
+            ->andReturn('');
+
+        WP_Mock::userFunction('get_field')
+            ->with(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_VERSION, $postId)
+            ->andReturn('');
+
+        WP_Mock::userFunction('get_field')
+            ->with(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_METHOD, $postId)
+            ->andReturn('');
+
+        WP_Mock::userFunction('get_field')
+            ->with(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_STATEMENT, $postId)
+            ->andReturn('');
     }
 }

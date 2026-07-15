@@ -5,101 +5,13 @@ declare(strict_types=1);
 namespace TsmlForUnity\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use TsmlForUnity\TsmlMeetingFactory;
+use TsmlForUnity\Meetings\TsmlMeeting;
+use TsmlForUnity\Meetings\TsmlMeetingFactory;
+use Unity\Contacts\Interfaces\Contact;
 use WP_Mock;
 
 /**
- * Mock Unity interfaces and classes for testing
- */
-// Define mock Unity Meeting interfaces if they don't exist
-if (!interface_exists('Unity\\Meetings\\Interfaces\\MeetingFactory')) {
-    eval('namespace Unity\\Meetings\\Interfaces; interface MeetingFactory { public function createFromSource(array $source); }');
-}
-
-if (!interface_exists('Unity\\Meetings\\Interfaces\\Meeting')) {
-    eval('namespace Unity\\Meetings\\Interfaces; interface Meeting {}');
-}
-
-if (!class_exists('Unity\\Meetings\\Meeting')) {
-    eval('
-    namespace Unity\\Meetings;
-
-    class Meeting implements Interfaces\\Meeting {
-        private int $id;
-        private string $name;
-        private string $slug;
-        private string $location;
-        private string $url;
-        private int $day;
-        private string $dayOfWeek;
-        private string $time;
-        private string $endTime;
-        private array $types;
-        private string $state;
-        private bool $online;
-        private array $contacts;
-        private array $meta;
-        private string $onlineLink;
-        private string $onlineNotes;
-
-        public function __construct(
-            int $id,
-            string $name,
-            string $slug,
-            string $location,
-            string $url,
-            int $day,
-            string $dayOfWeek,
-            string $time,
-            string $endTime,
-            array $types,
-            string $state,
-            bool $online,
-            array $contacts,
-            array $meta,
-            string $onlineLink = "",
-            string $onlineNotes = ""
-        ) {
-            $this->id = $id;
-            $this->name = $name;
-            $this->slug = $slug;
-            $this->location = $location;
-            $this->url = $url;
-            $this->day = $day;
-            $this->dayOfWeek = $dayOfWeek;
-            $this->time = $time;
-            $this->endTime = $endTime;
-            $this->types = $types;
-            $this->state = $state;
-            $this->online = $online;
-            $this->contacts = $contacts;
-            $this->meta = $meta;
-            $this->onlineLink = $onlineLink;
-            $this->onlineNotes = $onlineNotes;
-        }
-
-        public function getId(): int { return $this->id; }
-        public function getName(): string { return $this->name; }
-        public function getSlug(): string { return $this->slug; }
-        public function getLocation(): string { return $this->location; }
-        public function getUrl(): string { return $this->url; }
-        public function getDay(): int { return $this->day; }
-        public function getDayOfWeek(): string { return $this->dayOfWeek; }
-        public function getTime(): string { return $this->time; }
-        public function getEndTime(): string { return $this->endTime; }
-        public function getTypes(): array { return $this->types; }
-        public function getState(): string { return $this->state; }
-        public function isOnline(): bool { return $this->online; }
-        public function getContacts(): array { return $this->contacts; }
-        public function getMeta(): array { return $this->meta; }
-        public function getOnlineLink(): string { return $this->onlineLink; }
-        public function getOnlineNotes(): string { return $this->onlineNotes; }
-    }
-    ');
-}
-
-/**
- * @covers \TsmlForUnity\TsmlMeetingFactory
+ * @covers \TsmlForUnity\Meetings\TsmlMeetingFactory
  */
 class TsmlMeetingFactoryTest extends TestCase
 {
@@ -169,13 +81,15 @@ class TsmlMeetingFactoryTest extends TestCase
         WP_Mock::userFunction('is_serialized')
             ->andReturn(false);
 
+        $this->stubPostLookups(123);
+
         $result = $this->factory->createFromSource($source);
 
-        $this->assertInstanceOf(\Unity\Meetings\Meeting::class, $result);
+        $this->assertInstanceOf(TsmlMeeting::class, $result);
         $this->assertEquals(123, $result->getId());
         $this->assertEquals('Morning Serenity', $result->getName());
         $this->assertEquals('morning-serenity', $result->getSlug());
-        $this->assertEquals('Community Center', $result->getLocation());
+        $this->assertSame('Community Center', $result->getLocation()->getName());
         $this->assertEquals('Monday', $result->getDayOfWeek());
         $this->assertEquals('07:00', $result->getTime());
         $this->assertEquals('08:00', $result->getEndTime());
@@ -218,9 +132,11 @@ class TsmlMeetingFactoryTest extends TestCase
         WP_Mock::userFunction('is_serialized')
             ->andReturn(false);
 
+        $this->stubPostLookups(456);
+
         $result = $this->factory->createFromSource($source);
 
-        $this->assertInstanceOf(\Unity\Meetings\Meeting::class, $result);
+        $this->assertInstanceOf(TsmlMeeting::class, $result);
         $this->assertTrue($result->isOnline());
         $this->assertEquals('https://zoom.us/j/123456789', $result->getOnlineLink());
         $this->assertEquals('Password: 12345', $result->getOnlineNotes());
@@ -315,19 +231,44 @@ class TsmlMeetingFactoryTest extends TestCase
         WP_Mock::userFunction('is_serialized')
             ->andReturn(false);
 
+        $this->stubPostLookups(789);
+
         $result = $this->factory->createFromSource($source);
 
-        $this->assertInstanceOf(\Unity\Meetings\Meeting::class, $result);
+        $this->assertInstanceOf(TsmlMeeting::class, $result);
 
         $contacts = $result->getContacts();
         $this->assertCount(2, $contacts);
 
-        $this->assertInstanceOf(\Unity\Contact\Interfaces\ContactInterface::class, $contacts[0]);
+        $this->assertInstanceOf(Contact::class, $contacts[0]);
         $this->assertEquals('John Doe', $contacts[0]->getName());
         $this->assertEquals('john@example.com', $contacts[0]->getEmail());
         $this->assertEquals('555-1234', $contacts[0]->getPhone());
 
-        $this->assertInstanceOf(\Unity\Contact\Interfaces\ContactInterface::class, $contacts[1]);
+        $this->assertInstanceOf(Contact::class, $contacts[1]);
         $this->assertEquals('Jane Smith', $contacts[1]->getName());
+    }
+
+    /**
+     * Stub the lookups createFromSource needs beyond the per-test ones.
+     *
+     * The factory guards on is_wp_error and get_post_meta existing before it
+     * will build anything, and reads post_modified_gmt off get_post, so a
+     * source that should succeed still yields null without these.
+     *
+     * @param int $id Meeting post ID.
+     * @return void
+     */
+    private function stubPostLookups(int $id): void
+    {
+        WP_Mock::userFunction('get_post')
+            ->with($id)
+            ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
+
+        WP_Mock::userFunction('is_wp_error')
+            ->andReturn(false);
+
+        WP_Mock::userFunction('get_post_meta')
+            ->andReturn('');
     }
 }

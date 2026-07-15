@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.6/phpunit.xsd"
     bootstrap="tests/bootstrap.php"
     colors="true"
-    displayDetailsOnTestsThatTriggerWarnings="true"
     failOnRisky="true"
     failOnWarning="true"
 >
@@ -13,9 +12,15 @@
             <directory suffix="Test.php">tests/Unit</directory>
         </testsuite>
     </testsuites>
-    <source>
+    <!--
+        Coverage is only computed when a run asks for it (composer test:coverage,
+        which needs pcov or xdebug). Declaring the filter here rather than in a
+        <source> block keeps it valid for PHPUnit 9, which is the only major
+        version wp_mock's ^9.6 constraint allows.
+    -->
+    <coverage>
         <include>
             <directory suffix=".php">src</directory>
         </include>
-    </source>
+    </coverage>
 </phpunit>
