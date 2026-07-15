@@ -251,7 +251,8 @@ class Plugin
     {
         return interface_exists(GroupViewFactory::class)
             && interface_exists('Unity\\Groups\\Interfaces\\GroupView')
-            && self::unityGroupsAvailable();
+            && self::unityGroupsAvailable()
+            && self::unityMembersAvailable();
     }
 
     /**
@@ -632,15 +633,10 @@ class Plugin
             $container->register(
                 GroupViewFactory::class,
                 function (ContainerInterface $container) {
-                    $groupRepository = $container->has(GroupRepository::class)
-                        ? $container->get(GroupRepository::class)
-                        : null;
-
-                    $memberRepository = $container->has(MemberRepository::class)
-                        ? $container->get(MemberRepository::class)
-                        : null;
-
-                    return new TsmlGroupViewFactory($groupRepository, $memberRepository);
+                    return new TsmlGroupViewFactory(
+                        $container->get(GroupRepository::class),
+                        $container->get(MemberRepository::class)
+                    );
                 }
             );
         }
