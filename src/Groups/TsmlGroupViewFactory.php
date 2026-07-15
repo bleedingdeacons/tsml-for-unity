@@ -12,14 +12,11 @@ if (!defined('ABSPATH')) {
 use TsmlForUnity\Meetings\TsmlMeetingFields;
 use TsmlForUnity\Meetings\TsmlMeetingViewFactory;
 use TsmlForUnity\Members\TsmlMemberFields;
-use Unity\Groups\Interfaces\Group;
 use Unity\Groups\Interfaces\GroupRepository;
 use Unity\Groups\Interfaces\GroupViewFactory;
-use Unity\Meetings\Interfaces\MeetingRepository;
 use Unity\Groups\Interfaces\GroupView;
 
 use Unity\Members\Interfaces\MemberRepository;
-use function get_post;
 
 /**
  * Concrete TSML Group View Factory class
@@ -27,22 +24,19 @@ use function get_post;
 class TsmlGroupViewFactory implements GroupViewFactory
 {
     private GroupRepository $groupRepository;
-    private MeetingRepository $meetingRepository;
     private MemberRepository $memberRepository;
 
     /**
      * TsmlGroupViewFactory constructor
-     * 
+     *
      * @param GroupRepository $groupRepository The group repository
-     * @param MeetingRepository $meetingRepository The meeting repository
+     * @param MemberRepository $memberRepository The member repository
      */
     public function __construct(
         GroupRepository $groupRepository,
-        MeetingRepository $meetingRepository,
         MemberRepository $memberRepository
     ) {
         $this->groupRepository = $groupRepository;
-        $this->meetingRepository = $meetingRepository;
         $this->memberRepository = $memberRepository;
     }
 
@@ -88,29 +82,5 @@ class TsmlGroupViewFactory implements GroupViewFactory
             $group->getContacts(),
             $members
         );
-    }
-
-    /**
-     * Get meeting objects for a group
-     * 
-     * @param Group $group The group entity
-     * @return array Array of Meeting objects
-     */
-    private function getMeetingsForGroup(Group $group): array
-    {
-        $meetingIds = $group->getMeetingIds();
-        $meetings = [];
-
-        foreach ($meetingIds as $meetingId) {
-            $meeting = get_post($meetingId);
-            if ($meeting && $meeting->post_type === 'tsml_meeting') {
-                $meetingObj = $this->meetingRepository->findById((int)$meetingId);
-                if ($meetingObj) {
-                    $meetings[] = $meetingObj;
-                }
-            }
-        }
-
-        return $meetings;
     }
 }

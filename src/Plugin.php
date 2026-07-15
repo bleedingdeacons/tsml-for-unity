@@ -636,15 +636,11 @@ class Plugin
                         ? $container->get(GroupRepository::class)
                         : null;
 
-                    $meetingRepository = $container->has(MeetingRepository::class)
-                        ? $container->get(MeetingRepository::class)
-                        : null;
-
                     $memberRepository = $container->has(MemberRepository::class)
                         ? $container->get(MemberRepository::class)
                         : null;
 
-                    return new TsmlGroupViewFactory($groupRepository, $meetingRepository, $memberRepository);
+                    return new TsmlGroupViewFactory($groupRepository, $memberRepository);
                 }
             );
         }
