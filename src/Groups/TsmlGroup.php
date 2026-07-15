@@ -134,8 +134,10 @@ class TsmlGroup implements Group
      */
     public function isValid(): bool
     {
-        // A group is considered valid if it has an ID and a title
-        return $this->id > 0 && !empty($this->title);
+        // Validity covers the data a group carries, not whether it has been
+        // persisted — a group built for insertion has id 0 and must be able
+        // to pass. Callers needing a saved group test the ID separately.
+        return !empty($this->title);
     }
 
     /**
