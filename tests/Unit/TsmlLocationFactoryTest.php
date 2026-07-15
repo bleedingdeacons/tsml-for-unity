@@ -7,7 +7,6 @@ namespace TsmlForUnity\Tests\Unit;
 use PHPUnit\Framework\TestCase;
 use TsmlForUnity\TsmlLocationFactory;
 use TsmlForUnity\TsmlLocationFields;
-use Unity\Locations\Location;
 use Unity\Locations\Interfaces\Location;
 use WP_Mock;
 

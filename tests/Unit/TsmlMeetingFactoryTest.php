@@ -11,52 +11,6 @@ use WP_Mock;
 /**
  * Mock Unity interfaces and classes for testing
  */
-// Define mock Unity TsmlContact interfaces if they don't exist
-if (!interface_exists('Unity\\Contact\\Interfaces\\ContactInterface')) {
-    eval('namespace Unity\\TsmlContact\\Interfaces; interface ContactInterface { public function getName(): string; public function getEmail(): string; public function getPhone(): string; }');
-}
-
-if (!interface_exists('Unity\\Contact\\Interfaces\\ContactFactoryInterface')) {
-    eval('namespace Unity\\TsmlContact\\Interfaces; interface ContactFactoryInterface { public function createFromSource(array $source): ContactInterface; public function create(string $name = "", string $email = "", string $phone = ""): ContactInterface; }');
-}
-
-if (!class_exists('Unity\\TsmlContact\\TsmlContact')) {
-    eval('
-    namespace Unity\\TsmlContact;
-
-    class TsmlContact implements Interfaces\\ContactInterface {
-        private string $name;
-        private string $email;
-        private string $phone;
-
-        public function __construct(string $name = "", string $email = "", string $phone = "") {
-            $this->name = $name;
-            $this->email = $email;
-            $this->phone = $phone;
-        }
-
-        public function getName(): string { return $this->name; }
-        public function getEmail(): string { return $this->email; }
-        public function getPhone(): string { return $this->phone; }
-    }
-    ');
-}
-
-if (!class_exists('Unity\\TsmlContact\\TsmlContactFactory')) {
-    eval('
-    namespace Unity\\TsmlContact;
-
-    class TsmlContactFactory implements Interfaces\\ContactFactoryInterface {
-        public function createFromSource(array $source): Interfaces\\ContactInterface {
-            return new TsmlContact($source["name"] ?? "", $source["email"] ?? "", $source["phone"] ?? "");
-        }
-        public function create(string $name = "", string $email = "", string $phone = ""): Interfaces\\ContactInterface {
-            return new TsmlContact($name, $email, $phone);
-        }
-    }
-    ');
-}
-
 // Define mock Unity Meeting interfaces if they don't exist
 if (!interface_exists('Unity\\Meetings\\Interfaces\\MeetingFactory')) {
     eval('namespace Unity\\Meetings\\Interfaces; interface MeetingFactory { public function createFromSource(array $source); }');

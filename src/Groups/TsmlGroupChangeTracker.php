@@ -9,7 +9,6 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-use Unity\Core\Interfaces\ConfigurationInterface;
 use Unity\Groups\Interfaces\GroupChangeTracker;
 use Unity\Groups\Interfaces\Group;
 use Unity\Groups\Interfaces\GroupRepository;

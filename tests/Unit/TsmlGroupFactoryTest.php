@@ -8,7 +8,6 @@ use PHPUnit\Framework\TestCase;
 use TsmlForUnity\TsmlGroupFactory;
 use TsmlForUnity\TsmlGroupFields;
 use Unity\Contact\Interfaces\ContactInterface;
-use Unity\Groups\Group;
 use Unity\Groups\Interfaces\Group;
 use WP_Mock;
 
