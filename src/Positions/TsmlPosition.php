@@ -130,8 +130,10 @@ class TsmlPosition implements Position
      */
     public function isValid(): bool
     {
-        return $this->id > 0
-            && !empty($this->email)
+        // Validity covers the data a position carries, not whether it has been
+        // persisted — a position built for insertion has id 0 and must be able
+        // to pass. Callers needing a saved position test the ID separately.
+        return !empty($this->email)
             && !empty($this->longName)
             && !empty($this->shortDescription)
             && !empty($this->summary)
