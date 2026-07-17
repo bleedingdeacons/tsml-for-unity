@@ -13,105 +13,123 @@ use Unity\Members\Interfaces\Member;
 
 /**
  * Member Class
+ *
+ * Immutable: properties are `readonly` rather than merely private, so a
+ * maintainer who adds a setter by mistake gets a runtime error instead of a
+ * silent state mutation. Build a modified copy with {@see with()}.
+ *
+ * Constructor parameters mirror {@see \Unity\Members\Interfaces\MemberFactory::createNew()}
+ * exactly — same names, order and defaults. The names are part of the
+ * contract: every construction site passes named arguments, because the
+ * signature is long enough that a parameter inserted mid-list silently
+ * rebinds every positional argument after it. That has happened, and it
+ * shipped two unconditional 500s and a GDPR consent eraser.
  */
 class TsmlMember implements Member
 {
-    private int $id;
-    private string $anonymousName;
-    private bool $showAnonymousName;
-    private bool $showMemberProfile;
-    private string $anonymousProfile;
-    private int $intergroupPosition;
-    private string $intergroupPositionRotation;
-    private int $homeGroup;
-    private bool $isGSR;
-    private mixed $meetingPO;
-    private string $personalEmail;
-    private string $mobileNumber;
-    private bool $twelfthStepper;
-    private bool $telephoneResponder;
-    private string $area;
-    /** @var array<int, string> */
-    private array $accepts;
-    private bool $gdprAccepted;
-    private string $gdprAcceptedAt;
-    private string $gdprAcceptanceVersion;
-    private string $gdprAcceptanceMethod;
-    private string $gdprAcceptanceStatement;
-    private string $updated;
-
     /**
-     * Member constructor
-     *
-     * @param int $id Post ID
-     * @param string $anonymousName Anonymous name
-     * @param bool $showAnonymousName Show anonymous name flag
-     * @param bool $showMemberProfile Show member profile flag
-     * @param string $anonymousProfile Anonymous profile text
-     * @param int $intergroupPosition Intergroup position ID
-     * @param string $intergroupPositionRotation Intergroup position rotation info
-     * @param int $homeGroup Home group ID
-     * @param bool $isGSR GSR flag
-     * @param mixed $meetingPO Meeting PO reference
-     * @param string $personalEmail Personal email address
-     * @param string $mobileNumber Mobile phone number
-     * @param bool $twelfthStepper Whether the member is available for 12th-step calls
-     * @param bool $telephoneResponder Whether the member is available as a telephone responder
-     * @param string $area Geographic area covered for 12th-step calls
-     * @param array<int, string> $accepts Forms of contact accepted for 12th-step calls
-     * @param bool $gdprAccepted GDPR acceptance flag
-     * @param string $gdprAcceptedAt GDPR acceptance timestamp (Y-m-d H:i:s)
-     * @param string $gdprAcceptanceVersion Privacy policy version accepted
-     * @param string $gdprAcceptanceMethod How acceptance was captured
-     * @param string $gdprAcceptanceStatement The exact statement that was accepted
-     * @param string $updated Last updated datetime string
+     * @param int                $id                       Post ID
+     * @param string             $anonymousName            Anonymous name
+     * @param bool               $showAnonymousName        Show anonymous name flag
+     * @param bool               $showMemberProfile        Show member profile flag
+     * @param string             $anonymousProfile         Anonymous profile text
+     * @param int                $intergroupPosition       Intergroup position ID
+     * @param string             $intergroupPositionRotation Rotation date (Y-m-d)
+     * @param int                $homeGroup                Home group ID
+     * @param bool               $isGSR                    GSR flag
+     * @param mixed              $meetingPO                Meeting PO reference
+     * @param string             $personalEmail            Personal email address
+     * @param string             $mobileNumber             Mobile phone number
+     * @param bool               $twelfthStepper           Available for 12th-step calls
+     * @param bool               $telephoneResponder       Available as a telephone responder
+     * @param string             $area                     Geographic area covered
+     * @param array<int, string> $accepts                  Forms of contact accepted
+     * @param bool               $gdprAccepted             GDPR acceptance flag
+     * @param string             $gdprAcceptedAt           Acceptance timestamp (Y-m-d H:i:s)
+     * @param string             $gdprAcceptanceVersion    Policy version accepted
+     * @param string             $gdprAcceptanceMethod     How acceptance was captured
+     * @param string             $gdprAcceptanceStatement  The exact statement accepted
+     * @param string             $updated                  Last updated datetime
      */
     public function __construct(
-        int $id,
-        string $anonymousName = '',
-        bool $showAnonymousName = false,
-        bool $showMemberProfile = false,
-        string $anonymousProfile = '',
-        int $intergroupPosition = 0,
-        string $intergroupPositionRotation = '',
-        int $homeGroup = 0,
-        bool $isGSR = false,
-        mixed $meetingPO = null, // Need to removed
-        string $personalEmail = '',
-        string $mobileNumber = '',
-        bool $twelfthStepper = false,
-        bool $telephoneResponder = false,
-        string $area = '',
-        array $accepts = [],
-        bool $gdprAccepted = false,
-        string $gdprAcceptedAt = '',
-        string $gdprAcceptanceVersion = '',
-        string $gdprAcceptanceMethod = '',
-        string $gdprAcceptanceStatement = '',
-        string $updated = ''
+        private readonly int $id,
+        private readonly string $anonymousName = '',
+        private readonly bool $showAnonymousName = false,
+        private readonly bool $showMemberProfile = false,
+        private readonly string $anonymousProfile = '',
+        private readonly int $intergroupPosition = 0,
+        private readonly string $intergroupPositionRotation = '',
+        private readonly int $homeGroup = 0,
+        private readonly bool $isGSR = false,
+        private readonly mixed $meetingPO = null, // Need to removed
+        private readonly string $personalEmail = '',
+        private readonly string $mobileNumber = '',
+        private readonly bool $twelfthStepper = false,
+        private readonly bool $telephoneResponder = false,
+        private readonly string $area = '',
+        private readonly array $accepts = [],
+        private readonly bool $gdprAccepted = false,
+        private readonly string $gdprAcceptedAt = '',
+        private readonly string $gdprAcceptanceVersion = '',
+        private readonly string $gdprAcceptanceMethod = '',
+        private readonly string $gdprAcceptanceStatement = '',
+        private readonly string $updated = ''
     ) {
-        $this->id = $id;
-        $this->anonymousName = $anonymousName;
-        $this->showAnonymousName = $showAnonymousName;
-        $this->showMemberProfile = $showMemberProfile;
-        $this->anonymousProfile = $anonymousProfile;
-        $this->intergroupPosition = $intergroupPosition;
-        $this->intergroupPositionRotation = $intergroupPositionRotation;
-        $this->homeGroup = $homeGroup;
-        $this->isGSR = $isGSR;
-        $this->meetingPO = $meetingPO;
-        $this->personalEmail = $personalEmail;
-        $this->mobileNumber = $mobileNumber;
-        $this->twelfthStepper = $twelfthStepper;
-        $this->telephoneResponder = $telephoneResponder;
-        $this->area = $area;
-        $this->accepts = $accepts;
-        $this->gdprAccepted = $gdprAccepted;
-        $this->gdprAcceptedAt = $gdprAcceptedAt;
-        $this->gdprAcceptanceVersion = $gdprAcceptanceVersion;
-        $this->gdprAcceptanceMethod = $gdprAcceptanceMethod;
-        $this->gdprAcceptanceStatement = $gdprAcceptanceStatement;
-        $this->updated = $updated;
+    }
+
+    /**
+     * Every field, keyed by constructor parameter name.
+     *
+     * The keys must stay identical to the constructor's parameter names:
+     * {@see with()} spreads this array as named arguments.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(): array
+    {
+        return [
+            'id'                         => $this->id,
+            'anonymousName'              => $this->anonymousName,
+            'showAnonymousName'          => $this->showAnonymousName,
+            'showMemberProfile'          => $this->showMemberProfile,
+            'anonymousProfile'           => $this->anonymousProfile,
+            'intergroupPosition'         => $this->intergroupPosition,
+            'intergroupPositionRotation' => $this->intergroupPositionRotation,
+            'homeGroup'                  => $this->homeGroup,
+            'isGSR'                      => $this->isGSR,
+            'meetingPO'                  => $this->meetingPO,
+            'personalEmail'              => $this->personalEmail,
+            'mobileNumber'               => $this->mobileNumber,
+            'twelfthStepper'             => $this->twelfthStepper,
+            'telephoneResponder'         => $this->telephoneResponder,
+            'area'                       => $this->area,
+            'accepts'                    => $this->accepts,
+            'gdprAccepted'               => $this->gdprAccepted,
+            'gdprAcceptedAt'             => $this->gdprAcceptedAt,
+            'gdprAcceptanceVersion'      => $this->gdprAcceptanceVersion,
+            'gdprAcceptanceMethod'       => $this->gdprAcceptanceMethod,
+            'gdprAcceptanceStatement'    => $this->gdprAcceptanceStatement,
+            'updated'                    => $this->updated,
+        ];
+    }
+
+    /**
+     * A copy of this member with the named fields replaced.
+     *
+     * Fields you do not name are carried over unchanged — the inverse of
+     * MemberFactory::createNew(), where an omitted parameter silently means
+     * "reset to the default" and, because the repository writes every field
+     * unconditionally, is persisted as a deletion.
+     *
+     * `new self()` rather than clone-and-assign: readonly properties cannot be
+     * reassigned outside the declaring scope until PHP 8.5's clone-with, and
+     * this plugin's floor is 8.1.
+     *
+     * @param array<string, mixed> $changes Keyed by constructor parameter name
+     */
+    public function with(array $changes): self
+    {
+        return new self(...array_merge($this->toArray(), $changes));
     }
 
     public function getId(): int

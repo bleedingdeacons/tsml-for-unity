@@ -290,4 +290,151 @@ class TsmlMemberTest extends TestCase
         $this->assertEquals('', $notAccepted->getGdprAcceptanceMethod());
         $this->assertEquals('', $notAccepted->getGdprAcceptanceStatement());
     }
+
+    // ── toArray() / with() ─────────────────────────────────────────────
+
+    /**
+     * toArray()'s keys must stay identical to the constructor's parameter
+     * names, because with() spreads the array as named arguments. If they
+     * drift, with() throws "Unknown named parameter" — so pin them here.
+     *
+     * @test
+     */
+    public function to_array_keys_match_the_constructor_parameter_names(): void
+    {
+        $member = new TsmlMember(id: 1);
+
+        $constructorParams = array_map(
+            static fn (\ReflectionParameter $p): string => $p->getName(),
+            (new \ReflectionMethod(TsmlMember::class, '__construct'))->getParameters()
+        );
+
+        $this->assertSame(
+            $constructorParams,
+            array_keys($member->toArray()),
+            'toArray() keys must match the constructor parameter names, in order.'
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function to_array_round_trips_through_the_constructor(): void
+    {
+        $original = $this->fullyPopulatedMember();
+
+        $rebuilt = new TsmlMember(...$original->toArray());
+
+        $this->assertEquals($original->toArray(), $rebuilt->toArray());
+    }
+
+    /**
+     * @test
+     */
+    public function with_replaces_only_the_named_field(): void
+    {
+        $original = $this->fullyPopulatedMember();
+
+        $updated = $original->with(['mobileNumber' => '07999999999']);
+
+        $this->assertEquals('07999999999', $updated->getMobileNumber());
+
+        // Everything else carried over untouched. This is the whole point:
+        // createNew() would have reset every field not passed.
+        $expected = $original->toArray();
+        $expected['mobileNumber'] = '07999999999';
+        $this->assertEquals($expected, $updated->toArray());
+    }
+
+    /**
+     * The failure mode this class exists to prevent: a partial update must
+     * not silently erase the GDPR consent record.
+     *
+     * @test
+     */
+    public function with_preserves_gdpr_consent_when_changing_an_unrelated_field(): void
+    {
+        $member = $this->fullyPopulatedMember();
+
+        $updated = $member->with(['mobileNumber' => '07999999999']);
+
+        $this->assertTrue($updated->isGdprAccepted());
+        $this->assertEquals('2026-04-27 15:45:00', $updated->getGdprAcceptedAt());
+        $this->assertEquals('2.1', $updated->getGdprAcceptanceVersion());
+        $this->assertEquals('web-form', $updated->getGdprAcceptanceMethod());
+        $this->assertEquals('I agree to the privacy policy.', $updated->getGdprAcceptanceStatement());
+        $this->assertTrue($updated->isTelephoneResponder());
+        $this->assertEquals('North', $updated->getArea());
+        $this->assertEquals(['accepts-male'], $updated->getAccepts());
+    }
+
+    /**
+     * @test
+     */
+    public function with_can_replace_several_fields_at_once(): void
+    {
+        $member = $this->fullyPopulatedMember();
+
+        $updated = $member->with([
+            'anonymousName' => 'Jane B.',
+            'homeGroup'     => 99,
+            'gdprAccepted'  => false,
+        ]);
+
+        $this->assertEquals('Jane B.', $updated->getAnonymousName());
+        $this->assertEquals(99, $updated->getHomeGroup());
+        $this->assertFalse($updated->isGdprAccepted());
+        $this->assertEquals('john@example.com', $updated->getPersonalEmail());
+    }
+
+    /**
+     * @test
+     */
+    public function with_leaves_the_original_untouched(): void
+    {
+        $original = $this->fullyPopulatedMember();
+        $before   = $original->toArray();
+
+        $original->with(['mobileNumber' => 'changed']);
+
+        $this->assertEquals($before, $original->toArray(), 'with() must not mutate the receiver.');
+    }
+
+    /**
+     * @test
+     */
+    public function with_no_changes_returns_an_equal_member(): void
+    {
+        $original = $this->fullyPopulatedMember();
+
+        $this->assertEquals($original->toArray(), $original->with([])->toArray());
+    }
+
+    private function fullyPopulatedMember(): TsmlMember
+    {
+        return new TsmlMember(
+            id: 42,
+            anonymousName: 'John D.',
+            showAnonymousName: true,
+            showMemberProfile: true,
+            anonymousProfile: 'A profile',
+            intergroupPosition: 7,
+            intergroupPositionRotation: '2026-01-01',
+            homeGroup: 9,
+            isGSR: true,
+            meetingPO: null,
+            personalEmail: 'john@example.com',
+            mobileNumber: '07700900000',
+            twelfthStepper: true,
+            telephoneResponder: true,
+            area: 'North',
+            accepts: ['accepts-male'],
+            gdprAccepted: true,
+            gdprAcceptedAt: '2026-04-27 15:45:00',
+            gdprAcceptanceVersion: '2.1',
+            gdprAcceptanceMethod: 'web-form',
+            gdprAcceptanceStatement: 'I agree to the privacy policy.',
+            updated: '2026-04-27 15:45:00'
+        );
+    }
 }

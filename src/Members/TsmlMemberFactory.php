@@ -91,32 +91,35 @@ class TsmlMemberFactory implements MemberFactory
         $post = get_post($id);
         $updated = ($post && isset($post->post_modified_gmt)) ? $post->post_modified_gmt : '';
 
+        // Named arguments: the constructor takes 22 parameters, so a positional
+        // call silently rebinds every argument after any parameter later
+        // inserted into the middle of the signature. That has happened before.
         return new TsmlMember(
-            $id,
-            html_entity_decode(get_field(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $id) ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8'),
-            (bool) (get_field(TsmlMemberFields::FIELD_SHOW_ANONYMOUS_NAME, $id) ?? false),
-            (bool) (get_field(TsmlMemberFields::FIELD_SHOW_MEMBER_PROFILE, $id) ?? false),
-            get_field(TsmlMemberFields::FIELD_ANONYMOUS_PROFILE, $id) ?? '',
-            $intergroupPositionId,
-            $rotation,
-            $homeGroupId,
-            (bool) (get_field(TsmlMemberFields::FIELD_HOMEGROUP_GSR, $id) ?? false),
-            get_field(TsmlMemberFields::FIELD_MEETING_PO, $id) ?? null,
-            get_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $id) ?? '',
-            get_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $id) ?? '',
-            (bool) (get_field(TsmlMemberFields::FIELD_TWELFTH_STEPPER, $id) ?? false),
-            (bool) (get_field(TsmlMemberFields::FIELD_TELEPHONE_RESPONDER, $id) ?? false),
-            (string) (get_field(TsmlMemberFields::FIELD_AREA, $id) ?? ''),
+            id: $id,
+            anonymousName: html_entity_decode(get_field(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $id) ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+            showAnonymousName: (bool) (get_field(TsmlMemberFields::FIELD_SHOW_ANONYMOUS_NAME, $id) ?? false),
+            showMemberProfile: (bool) (get_field(TsmlMemberFields::FIELD_SHOW_MEMBER_PROFILE, $id) ?? false),
+            anonymousProfile: get_field(TsmlMemberFields::FIELD_ANONYMOUS_PROFILE, $id) ?? '',
+            intergroupPosition: $intergroupPositionId,
+            intergroupPositionRotation: $rotation,
+            homeGroup: $homeGroupId,
+            isGSR: (bool) (get_field(TsmlMemberFields::FIELD_HOMEGROUP_GSR, $id) ?? false),
+            meetingPO: get_field(TsmlMemberFields::FIELD_MEETING_PO, $id) ?? null,
+            personalEmail: get_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $id) ?? '',
+            mobileNumber: get_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $id) ?? '',
+            twelfthStepper: (bool) (get_field(TsmlMemberFields::FIELD_TWELFTH_STEPPER, $id) ?? false),
+            telephoneResponder: (bool) (get_field(TsmlMemberFields::FIELD_TELEPHONE_RESPONDER, $id) ?? false),
+            area: (string) (get_field(TsmlMemberFields::FIELD_AREA, $id) ?? ''),
             // ACF checkbox fields return array of selected option values,
             // or null/false when nothing is selected. Normalise to a plain
             // list of strings so callers get a consistent shape.
-            array_values(array_map('strval', (array) (get_field(TsmlMemberFields::FIELD_ACCEPTS, $id) ?: []))),
-            (bool) (get_field(TsmlMemberFields::FIELD_GDPR_ACCEPTED, $id) ?? false),
-            $gdprAcceptedAt,
-            (string) (get_field(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_VERSION, $id) ?? ''),
-            (string) (get_field(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_METHOD, $id) ?? ''),
-            (string) (get_field(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_STATEMENT, $id) ?? ''),
-            $updated
+            accepts: array_values(array_map('strval', (array) (get_field(TsmlMemberFields::FIELD_ACCEPTS, $id) ?: []))),
+            gdprAccepted: (bool) (get_field(TsmlMemberFields::FIELD_GDPR_ACCEPTED, $id) ?? false),
+            gdprAcceptedAt: $gdprAcceptedAt,
+            gdprAcceptanceVersion: (string) (get_field(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_VERSION, $id) ?? ''),
+            gdprAcceptanceMethod: (string) (get_field(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_METHOD, $id) ?? ''),
+            gdprAcceptanceStatement: (string) (get_field(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_STATEMENT, $id) ?? ''),
+            updated: $updated
         );
     }
 
@@ -175,29 +178,30 @@ class TsmlMemberFactory implements MemberFactory
         string $gdprAcceptanceStatement = '',
         string $updated = ''
     ): Member {
+        // Named arguments — see createFromSource() above.
         return new TsmlMember(
-            $id,
-            $anonymousName,
-            $showAnonymousName,
-            $showMemberProfile,
-            $anonymousProfile,
-            $intergroupPosition,
-            $intergroupPositionRotation,
-            $homeGroup,
-            $isGSR,
-            $meetingPO,
-            $personalEmail,
-            $mobileNumber,
-            $twelfthStepper,
-            $telephoneResponder,
-            $area,
-            $accepts,
-            $gdprAccepted,
-            $gdprAcceptedAt,
-            $gdprAcceptanceVersion,
-            $gdprAcceptanceMethod,
-            $gdprAcceptanceStatement,
-            $updated
+            id: $id,
+            anonymousName: $anonymousName,
+            showAnonymousName: $showAnonymousName,
+            showMemberProfile: $showMemberProfile,
+            anonymousProfile: $anonymousProfile,
+            intergroupPosition: $intergroupPosition,
+            intergroupPositionRotation: $intergroupPositionRotation,
+            homeGroup: $homeGroup,
+            isGSR: $isGSR,
+            meetingPO: $meetingPO,
+            personalEmail: $personalEmail,
+            mobileNumber: $mobileNumber,
+            twelfthStepper: $twelfthStepper,
+            telephoneResponder: $telephoneResponder,
+            area: $area,
+            accepts: $accepts,
+            gdprAccepted: $gdprAccepted,
+            gdprAcceptedAt: $gdprAcceptedAt,
+            gdprAcceptanceVersion: $gdprAcceptanceVersion,
+            gdprAcceptanceMethod: $gdprAcceptanceMethod,
+            gdprAcceptanceStatement: $gdprAcceptanceStatement,
+            updated: $updated
         );
     }
 
