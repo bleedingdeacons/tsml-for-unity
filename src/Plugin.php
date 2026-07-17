@@ -31,6 +31,7 @@ use TsmlForUnity\Meetings\TsmlMeetingFactory;
 use TsmlForUnity\Meetings\TsmlMeetingFields;
 use TsmlForUnity\Meetings\TsmlMeetingRepository;
 use TsmlForUnity\Members\TsmlMemberFactory;
+use TsmlForUnity\Members\TsmlMemberRevisor;
 use TsmlForUnity\Members\TsmlMemberFields;
 use TsmlForUnity\Members\TsmlMemberRepository;
 use TsmlForUnity\Members\TsmlMemberChangeTracker;
@@ -69,6 +70,7 @@ use Unity\Meetings\Interfaces\MeetingRepository;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberChangeTracker;
 use Unity\Members\Interfaces\MemberFactory;
+use Unity\Members\Interfaces\MemberRevisor;
 use Unity\Members\Interfaces\MemberRepository;
 use Unity\Members\Interfaces\MemberViewFactory;
 use Unity\Positions\Interfaces\Position;
@@ -449,6 +451,16 @@ class Plugin
                         : null;
 
                     return new TsmlMemberChangeTracker($memberRepository);
+                }
+            );
+
+            // Register MemberRevisor — the safe way to build a modified copy
+            // of an existing member. See the interface for why it exists
+            // alongside MemberFactory rather than replacing it.
+            $container->register(
+                MemberRevisor::class,
+                function (ContainerInterface $container) {
+                    return new TsmlMemberRevisor();
                 }
             );
 
