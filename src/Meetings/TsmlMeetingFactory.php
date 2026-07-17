@@ -297,24 +297,28 @@ class TsmlMeetingFactory implements MeetingFactory
             $onlineLink = $this->getMetaField($meta, 'conference_url', '');
             $onlineNotes = $this->getMetaField($meta, 'conference_url_notes', '');
 
+            // Named arguments: TsmlMeeting's constructor takes 17 parameters,
+            // twelve of them required and several adjacent same-typed strings.
+            // A positional call would silently rebind on any future mid-list
+            // parameter insertion, and PHPStan cannot catch a same-typed swap.
             return new TsmlMeeting(
-                $id,
-                $name,
-                $slug,
-                $location,
-                $url,
-                (int)$day,
-                $dayOfWeek,
-                $time,
-                $endTime,
-                $types,
-                $state,
-                $online,
-                $contacts,
-                $processedMeta,
-                $onlineLink,
-                $onlineNotes,
-                get_post($id)->post_modified_gmt ?? ''
+                id: $id,
+                name: $name,
+                slug: $slug,
+                location: $location,
+                url: $url,
+                day: (int)$day,
+                dayOfWeek: $dayOfWeek,
+                time: $time,
+                endTime: $endTime,
+                types: $types,
+                state: $state,
+                online: $online,
+                contacts: $contacts,
+                meta: $processedMeta,
+                onlineLink: $onlineLink,
+                onlineNotes: $onlineNotes,
+                updated: get_post($id)->post_modified_gmt ?? ''
             );
         } catch (Exception $e) {
             $this->logError('Error creating Meeting: ' . $e->getMessage(), [
