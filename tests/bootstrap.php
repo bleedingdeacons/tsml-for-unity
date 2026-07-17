@@ -25,9 +25,15 @@ if (!defined('TSML_FOR_UNITY_URL')) {
     define('TSML_FOR_UNITY_URL', 'https://example.com/wp-content/plugins/tsml-for-unity/');
 }
 
-// Unity ships as a sibling WordPress plugin rather than a Composer package, so
-// its interfaces are not autoloadable here. Declare them once for the suite.
-require_once __DIR__ . '/stubs/unity-interfaces.php';
+// Unity's interfaces come from the real plugin, pulled in as a require-dev
+// Composer path repository (see composer.json), so they autoload through
+// vendor/autoload.php above.
+//
+// They were previously hand-copied into tests/stubs/unity-interfaces.php --
+// 550 lines, 44 declarations, kept in sync by discipline alone. That meant the
+// suite validated this plugin against a *duplicate* of the contract rather
+// than the contract itself: Unity could change a signature and these tests
+// would stay green while production fataled.
 require_once __DIR__ . '/stubs/wordpress.php';
 
 // The error-logging paths reach for wp_json_encode, so any test that exercises
