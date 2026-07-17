@@ -16,84 +16,61 @@ use Unity\Locations\Interfaces\Location;
  * Class Meeting
  *
  * Implementation of Meeting.
+ *
+ * Immutable: properties are `readonly`, so a maintainer who adds a setter by
+ * mistake gets a runtime error rather than a silent mutation. Meetings are
+ * read-only in this suite anyway — they are owned by the TSML plugin and Unity
+ * only reads them, so there is no revisor and no `with()`.
+ *
+ * The constructor has twelve required positional parameters, several of them
+ * adjacent same-typed strings (dayOfWeek/time/endTime, onlineLink/onlineNotes/
+ * updated). Its one construction site — TsmlMeetingFactory::createFromSource —
+ * passes named arguments precisely because a positional call there would
+ * silently rebind on any future mid-list parameter insertion, and PHPStan
+ * cannot catch a same-typed swap.
  */
 class TsmlMeeting implements Meeting
 {
-    private int $id;
-    private string $name;
-    private string $slug;
-    private ?Location $location;
-    private string $url;
-    private int $day;
-    private string $dayOfWeek;
-    private string $time;
-    private string $endTime;
-    private array $types;
-    private string $state;
-    private bool $online;
-    private array $contacts;
-    private array $meta;
-    private string $onlineLink;
-    private string $onlineNotes;
-    private string $updated;
-
     /**
      * Constructor.
      *
-     * @param int $id Meeting ID
-     * @param string $name Meeting name
-     * @param string $slug Meeting slug
-     * @param Location|null $location Meeting location
-     * @param string $url Meeting URL
-     * @param int $day Meeting day
-     * @param string $dayOfWeek Day of the week
-     * @param string $time Meeting time
-     * @param string $endTime Meeting end time
-     * @param array $types Meeting types
-     * @param string $state Meeting state
-     * @param bool $online Whether meeting is online
-     * @param array $contacts Array of TsmlContact objects
-     * @param array $meta Meta data
-     * @param string $onlineLink Online meeting link
-     * @param string $onlineNotes Online meeting notes
-     * @param string $updated Last updated datetime string
+     * @param int           $id          Meeting ID
+     * @param string        $name        Meeting name
+     * @param string        $slug        Meeting slug
+     * @param Location|null $location    Meeting location
+     * @param string        $url         Meeting URL
+     * @param int           $day         Meeting day
+     * @param string        $dayOfWeek   Day of the week
+     * @param string        $time        Meeting start time
+     * @param string        $endTime     Meeting end time
+     * @param array         $types       Meeting types
+     * @param string        $state       Meeting state
+     * @param bool          $online      Whether meeting is online
+     * @param array         $contacts    Array of Contact objects
+     * @param array         $meta        Meta data
+     * @param string        $onlineLink  Online meeting link
+     * @param string        $onlineNotes Online meeting notes
+     * @param string        $updated     Last updated datetime string
      */
     public function __construct(
-        int $id,
-        string $name,
-        string $slug,
-        ?Location $location,
-        string $url,
-        int $day,
-        string $dayOfWeek,
-        string $time,
-        string $endTime,
-        array $types,
-        string $state,
-        bool $online,
-        array $contacts = [],
-        array $meta = [],
-        string $onlineLink = '',
-        string $onlineNotes = '',
-        string $updated = ''
+        private readonly int $id,
+        private readonly string $name,
+        private readonly string $slug,
+        private readonly ?Location $location,
+        private readonly string $url,
+        private readonly int $day,
+        private readonly string $dayOfWeek,
+        private readonly string $time,
+        private readonly string $endTime,
+        private readonly array $types,
+        private readonly string $state,
+        private readonly bool $online,
+        private readonly array $contacts = [],
+        private readonly array $meta = [],
+        private readonly string $onlineLink = '',
+        private readonly string $onlineNotes = '',
+        private readonly string $updated = ''
     ) {
-        $this->id = $id;
-        $this->name = $name;
-        $this->slug = $slug;
-        $this->location = $location;
-        $this->url = $url;
-        $this->day = $day;
-        $this->dayOfWeek = $dayOfWeek;
-        $this->time = $time;
-        $this->endTime = $endTime;
-        $this->types = $types;
-        $this->state = $state;
-        $this->online = $online;
-        $this->contacts = $contacts;
-        $this->meta = $meta;
-        $this->onlineLink = $onlineLink;
-        $this->onlineNotes = $onlineNotes;
-        $this->updated = $updated;
     }
 
     /**

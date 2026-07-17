@@ -96,6 +96,17 @@ class TsmlMeetingFactoryTest extends TestCase
         $this->assertContains('Open', $result->getTypes());
         $this->assertContains('Discussion', $result->getTypes());
         $this->assertFalse($result->isOnline());
+
+        // Pin the fields that map to the constructor's remaining positional
+        // slots. Without these, a mid-list parameter insertion could rebind
+        // url/state/day/meta/updated to the wrong value and still pass:
+        // PHPStan cannot catch a same-typed swap, and these getters were
+        // previously unasserted.
+        $this->assertSame('https://example.com/meetings/morning-serenity/', $result->getUrl());
+        $this->assertSame('publish', $result->getState());
+        $this->assertSame(1, $result->getDay());
+        $this->assertSame([], $result->getMeta());
+        $this->assertSame('2024-01-01 00:00:00', $result->getUpdated());
     }
 
     public function testCreateFromSourceHandlesOnlineMeeting(): void
