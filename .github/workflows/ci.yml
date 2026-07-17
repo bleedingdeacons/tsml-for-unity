@@ -15,9 +15,28 @@ jobs:
     name: PHP 8.1
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        # Both plugins are checked out side by side, mirroring a WordPress
+        # plugins/ directory, so run everything from inside this one.
+        working-directory: tsml-for-unity
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          path: tsml-for-unity
+
+      - name: Checkout Unity
+        # This plugin implements Unity's interfaces and is meaningless without
+        # them: composer.json declares a path repository at ../unity, and the
+        # test suite asserts against the real contract rather than a copy.
+        # Public repo, so no token is required.
+        uses: actions/checkout@v4
+        with:
+          repository: bleedingdeacons/unity
+          ref: main
+          path: unity
 
       - name: Setup PHP 8.1
         uses: shivammathur/setup-php@v2
@@ -37,8 +56,10 @@ jobs:
         with:
           # Keyed on composer.json: composer.lock is untracked in several of
           # these repos, so it is not a reliable cache key across the suite.
+          # Scoped to this plugin's file — Unity is checked out alongside, and
+          # a '**' glob would fold its composer.json into the key too.
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-php8.1-composer-${{ hashFiles('**/composer.json') }}
+          key: ${{ runner.os }}-php8.1-composer-${{ hashFiles('tsml-for-unity/composer.json') }}
           restore-keys: |
             ${{ runner.os }}-php8.1-composer-
 
@@ -73,19 +94,28 @@ jobs:
         # The build is what /bump ships, so a broken build must fail the PR.
         run: composer build:production
 
+      - name: PHPUnit
+        # A gate, not advisory. The suite is green (120 tests) and now asserts
+        # against Unity's real interfaces via the ../unity path repository
+        # rather than a hand-copied stub, so a breaking change to Unity's
+        # contract fails here instead of reaching production. That is the
+        # whole point of checking Unity out above — leaving this advisory
+        # would throw the signal away.
+        run: composer test
+
       # --- Advisory --------------------------------------------------------
       # Reported but not yet enforced. Promote to a gate once a repo is green.
 
       - name: PHPStan (advisory)
+        # Still advisory: 52 pre-existing errors. Note phpstan.neon is
+        # gitignored in this repo, so CI runs without a config — committing a
+        # phpstan.neon.dist plus a baseline is what this needs before it can
+        # become a gate.
         run: composer phpstan
         continue-on-error: true
 
       - name: PHPCS (advisory)
         run: composer cs
-        continue-on-error: true
-
-      - name: PHPUnit (advisory)
-        run: composer test
         continue-on-error: true
 
       - name: composer.lock up to date (advisory)
