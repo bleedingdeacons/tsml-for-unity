@@ -47,6 +47,29 @@ class TsmlMeetingViewFactory implements MeetingViewFactory
         $this->groupRepository = $groupRepository;
     }
 
-    public function createFrom(int $meetingId): ?MeetingView {}
+    /**
+     * Not implemented.
+     *
+     * This class satisfies Unity's MeetingViewFactory contract but has never
+     * been finished: the body was empty, so any call fell off the end of a
+     * method declared to return ?MeetingView and died with a bare TypeError
+     * ("Return value must be of type ... none returned"). Nothing registers
+     * this factory in the container and nothing calls it, so that has never
+     * fired — but the next person to wire it up deserves to be told why it
+     * does not work, rather than to debug a type error.
+     *
+     * Implement it or delete the class; do not leave it silently returning
+     * nothing.
+     *
+     * @throws \LogicException Always.
+     */
+    public function createFrom(int $meetingId): ?MeetingView
+    {
+        throw new \LogicException(
+            self::class . '::createFrom() is not implemented. '
+            . 'This factory is not registered in Unity\'s container; '
+            . 'implement it before wiring it up, or remove the class.'
+        );
+    }
 
 }

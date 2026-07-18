@@ -1,0 +1,196 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Property WP_Post\\:\\:\\$post_modified_gmt \\(string\\) on left side of \\?\\? is not nullable\\.$#"
+			count: 1
+			path: src/Groups/TsmlGroupFactory.php
+
+		-
+			message: "#^Property WP_Post\\:\\:\\$post_title \\(string\\) on left side of \\?\\? is not nullable\\.$#"
+			count: 1
+			path: src/Groups/TsmlGroupFactory.php
+
+		-
+			message: "#^Variable \\$context in empty\\(\\) always exists and is not falsy\\.$#"
+			count: 1
+			path: src/Groups/TsmlGroupFactory.php
+
+		-
+			message: "#^Else branch is unreachable because ternary operator condition is always true\\.$#"
+			count: 1
+			path: src/Groups/TsmlGroupRepository.php
+
+		-
+			message: "#^Used function update_field not found\\.$#"
+			count: 1
+			path: src/Groups/TsmlGroupRepository.php
+
+		-
+			message: "#^Else branch is unreachable because ternary operator condition is always true\\.$#"
+			count: 1
+			path: src/IntergroupMeetings/TsmlIntergroupMeetingFactory.php
+
+		-
+			message: "#^Property WP_Post\\:\\:\\$post_modified_gmt \\(string\\) in isset\\(\\) is not nullable\\.$#"
+			count: 1
+			path: src/IntergroupMeetings/TsmlIntergroupMeetingFactory.php
+
+		-
+			message: "#^Used function get_field not found\\.$#"
+			count: 1
+			path: src/IntergroupMeetings/TsmlIntergroupMeetingFactory.php
+
+		-
+			message: "#^Else branch is unreachable because ternary operator condition is always true\\.$#"
+			count: 1
+			path: src/IntergroupMeetings/TsmlIntergroupMeetingRepository.php
+
+		-
+			message: "#^Used function update_field not found\\.$#"
+			count: 1
+			path: src/IntergroupMeetings/TsmlIntergroupMeetingRepository.php
+
+		-
+			message: "#^Else branch is unreachable because ternary operator condition is always true\\.$#"
+			count: 1
+			path: src/Locations/TsmlLocationFactory.php
+
+		-
+			message: "#^Property WP_Post\\:\\:\\$post_modified_gmt \\(string\\) on left side of \\?\\? is not nullable\\.$#"
+			count: 1
+			path: src/Locations/TsmlLocationFactory.php
+
+		-
+			message: "#^Property WP_Post\\:\\:\\$post_title \\(string\\) on left side of \\?\\? is not nullable\\.$#"
+			count: 1
+			path: src/Locations/TsmlLocationFactory.php
+
+		-
+			message: "#^Variable \\$context in empty\\(\\) always exists and is not falsy\\.$#"
+			count: 1
+			path: src/Locations/TsmlLocationFactory.php
+
+		-
+			message: "#^Variable \\$context in empty\\(\\) always exists and is not falsy\\.$#"
+			count: 1
+			path: src/Meetings/TsmlMeetingFactory.php
+
+		-
+			message: "#^Call to an undefined method Unity\\\\Members\\\\Interfaces\\\\Member\\:\\:getGsrName\\(\\)\\.$#"
+			count: 1
+			path: src/Meetings/TsmlMeetingView.php
+
+		-
+			message: "#^Property TsmlForUnity\\\\Meetings\\\\TsmlMeetingViewFactory\\:\\:\\$groupRepository is never read, only written\\.$#"
+			count: 1
+			path: src/Meetings/TsmlMeetingViewFactory.php
+
+		-
+			message: "#^Property TsmlForUnity\\\\Meetings\\\\TsmlMeetingViewFactory\\:\\:\\$meetingRepository is never read, only written\\.$#"
+			count: 1
+			path: src/Meetings/TsmlMeetingViewFactory.php
+
+		-
+			message: "#^Property TsmlForUnity\\\\Meetings\\\\TsmlMeetingViewFactory\\:\\:\\$memberRepository is never read, only written\\.$#"
+			count: 1
+			path: src/Meetings/TsmlMeetingViewFactory.php
+
+		-
+			message: "#^Property WP_Post\\:\\:\\$post_type \\(string\\) on left side of \\?\\? is not nullable\\.$#"
+			count: 1
+			path: src/Members/TsmlMemberChangeTracker.php
+
+		-
+			message: "#^Property WP_Post\\:\\:\\$post_modified_gmt \\(string\\) in isset\\(\\) is not nullable\\.$#"
+			count: 1
+			path: src/Members/TsmlMemberFactory.php
+
+		-
+			message: "#^Used function get_field not found\\.$#"
+			count: 1
+			path: src/Members/TsmlMemberFactory.php
+
+		-
+			message: "#^Else branch is unreachable because ternary operator condition is always true\\.$#"
+			count: 1
+			path: src/Members/TsmlMemberRepository.php
+
+		-
+			message: "#^Used function update_field not found\\.$#"
+			count: 1
+			path: src/Members/TsmlMemberRepository.php
+
+		-
+			message: "#^Static property TsmlForUnity\\\\Plugin\\:\\:\\$contactFactory is never read, only written\\.$#"
+			count: 1
+			path: src/Plugin.php
+
+		-
+			message: "#^Static property TsmlForUnity\\\\Plugin\\:\\:\\$groupFactory is never read, only written\\.$#"
+			count: 1
+			path: src/Plugin.php
+
+		-
+			message: "#^Static property TsmlForUnity\\\\Plugin\\:\\:\\$intergroupMeetingFactory is never read, only written\\.$#"
+			count: 1
+			path: src/Plugin.php
+
+		-
+			message: "#^Static property TsmlForUnity\\\\Plugin\\:\\:\\$locationFactory is never read, only written\\.$#"
+			count: 1
+			path: src/Plugin.php
+
+		-
+			message: "#^Static property TsmlForUnity\\\\Plugin\\:\\:\\$meetingFactory is never read, only written\\.$#"
+			count: 1
+			path: src/Plugin.php
+
+		-
+			message: "#^Static property TsmlForUnity\\\\Plugin\\:\\:\\$memberFactory is never read, only written\\.$#"
+			count: 1
+			path: src/Plugin.php
+
+		-
+			message: "#^Property WP_Post\\:\\:\\$post_modified_gmt \\(string\\) on left side of \\?\\? is not nullable\\.$#"
+			count: 1
+			path: src/Positions/TsmlPositionFactory.php
+
+		-
+			message: "#^Used function get_fields not found\\.$#"
+			count: 1
+			path: src/Positions/TsmlPositionFactory.php
+
+		-
+			message: "#^Else branch is unreachable because ternary operator condition is always true\\.$#"
+			count: 1
+			path: src/Positions/TsmlPositionRepository.php
+
+		-
+			message: "#^Used function update_field not found\\.$#"
+			count: 1
+			path: src/Positions/TsmlPositionRepository.php
+
+		-
+			message: "#^Property WP_Post\\:\\:\\$post_modified_gmt \\(string\\) in isset\\(\\) is not nullable\\.$#"
+			count: 1
+			path: src/PrivacyPolicies/TsmlPrivacyPolicyFactory.php
+
+		-
+			message: "#^Property WP_Post\\:\\:\\$post_title \\(string\\) in isset\\(\\) is not nullable\\.$#"
+			count: 1
+			path: src/PrivacyPolicies/TsmlPrivacyPolicyFactory.php
+
+		-
+			message: "#^Used function get_field not found\\.$#"
+			count: 1
+			path: src/PrivacyPolicies/TsmlPrivacyPolicyFactory.php
+
+		-
+			message: "#^Else branch is unreachable because ternary operator condition is always true\\.$#"
+			count: 1
+			path: src/PrivacyPolicies/TsmlPrivacyPolicyRepository.php
+
+		-
+			message: "#^Used function update_field not found\\.$#"
+			count: 1
+			path: src/PrivacyPolicies/TsmlPrivacyPolicyRepository.php

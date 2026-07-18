@@ -38,6 +38,14 @@ jobs:
           ref: main
           path: unity
 
+      - name: Checkout Sentinel
+        # Scanned by phpstan.neon.dist so cross-plugin symbols resolve.
+        uses: actions/checkout@v4
+        with:
+          repository: bleedingdeacons/sentinel
+          ref: main
+          path: sentinel
+
       - name: Setup PHP 8.1
         uses: shivammathur/setup-php@v2
         with:
@@ -106,13 +114,12 @@ jobs:
       # --- Advisory --------------------------------------------------------
       # Reported but not yet enforced. Promote to a gate once a repo is green.
 
-      - name: PHPStan (advisory)
-        # Still advisory: 52 pre-existing errors. Note phpstan.neon is
-        # gitignored in this repo, so CI runs without a config — committing a
-        # phpstan.neon.dist plus a baseline is what this needs before it can
-        # become a gate.
+      - name: PHPStan
+        # A gate. phpstan.neon.dist is committed so CI actually has a config
+        # — it previously ran with none at all, analysing nothing. Existing
+        # findings are grandfathered in phpstan-baseline.neon, so this fails
+        # only on new ones.
         run: composer phpstan
-        continue-on-error: true
 
       - name: PHPCS (advisory)
         run: composer cs
