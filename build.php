@@ -94,7 +94,13 @@ class PluginBuilder
         // psr/container via its own autoloader, and Unity passes its
         // PSR-11 container into Plugin::registerWithUnity(). Do not "fix"
         // this by keeping vendor — it would just bundle a redundant copy.
-            'vendor',
+            'vendor',
+
+            // Dev artefacts that must never ship
+            '.phpunit.result.cache',
+            '.phpunit.cache',
+            'phpstan-baseline.neon',
+            '.claude',
     ];
 
     // Files and directories to exclude in dev builds
