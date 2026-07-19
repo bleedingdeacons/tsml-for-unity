@@ -237,7 +237,7 @@ composer install
 | `composer test` | Run the full PHPUnit test suite |
 | `composer test:unit` | Run unit tests only |
 | `composer test:coverage` | Generate an HTML coverage report |
-| `composer stan` | Run PHPStan static analysis (level 5) |
+| `composer phpstan` | Run PHPStan static analysis (level 5) |
 | `composer cs` | Check WordPress coding standards |
 | `composer cs:fix` | Auto-fix coding standard violations |
 | `composer check` | Run CS + PHPStan + tests in sequence |
