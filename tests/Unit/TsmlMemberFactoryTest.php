@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use TsmlForUnity\Members\TsmlMemberFactory;
 use TsmlForUnity\Members\TsmlMemberFields;
 use Unity\Members\Interfaces\Member;
+use Unity\Members\ResponderCertification;
 use WP_Mock;
 
 /**
@@ -95,6 +96,10 @@ class TsmlMemberFactoryTest extends TestCase
             ->andReturn(true);
 
         WP_Mock::userFunction('get_field')
+            ->with(TsmlMemberFields::FIELD_RESPONDER_CERTIFICATION, $postId)
+            ->andReturn('Certified');
+
+        WP_Mock::userFunction('get_field')
             ->with(TsmlMemberFields::FIELD_AREA, $postId)
             ->andReturn('North London');
 
@@ -121,6 +126,7 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertSame('555-1234', $member->getMobileNumber());
         $this->assertTrue($member->isTwelfthStepper());
         $this->assertTrue($member->isTelephoneResponder());
+        $this->assertSame(ResponderCertification::Certified, $member->getResponderCertification());
         $this->assertSame('North London', $member->getArea());
         $this->assertSame(['phone', 'email'], $member->getAccepts());
     }
@@ -255,6 +261,7 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertSame('', $member->getMobileNumber());
         $this->assertFalse($member->isTwelfthStepper());
         $this->assertFalse($member->isTelephoneResponder());
+        $this->assertSame(ResponderCertification::None, $member->getResponderCertification());
         $this->assertSame('', $member->getArea());
         $this->assertSame([], $member->getAccepts());
     }
@@ -311,6 +318,12 @@ class TsmlMemberFactoryTest extends TestCase
         WP_Mock::userFunction('get_field')
             ->with(TsmlMemberFields::FIELD_TELEPHONE_RESPONDER, $postId)
             ->andReturn(false);
+
+        // Conditional logic hides this field for a non-responder, so ACF
+        // returns nothing for it.
+        WP_Mock::userFunction('get_field')
+            ->with(TsmlMemberFields::FIELD_RESPONDER_CERTIFICATION, $postId)
+            ->andReturn(null);
 
         WP_Mock::userFunction('get_field')
             ->with(TsmlMemberFields::FIELD_AREA, $postId)

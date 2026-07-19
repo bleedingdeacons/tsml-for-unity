@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TsmlForUnity\Tests\Fixtures;
 
 use Unity\Members\Interfaces\Member;
+use Unity\Members\ResponderCertification;
 
 /**
  * An inert Member value object for tests.
@@ -31,6 +32,7 @@ class MemberStub implements Member
         private string $mobileNumber = '',
         private bool $twelfthStepper = false,
         private bool $telephoneResponder = false,
+        private ResponderCertification $responderCertification = ResponderCertification::None,
         private string $area = '',
         private array $accepts = [],
         private bool $gdprAccepted = false,
@@ -110,6 +112,11 @@ class MemberStub implements Member
     public function isTelephoneResponder(): bool
     {
         return $this->telephoneResponder;
+    }
+
+    public function getResponderCertification(): ResponderCertification
+    {
+        return $this->responderCertification;
     }
 
     public function getArea(): string

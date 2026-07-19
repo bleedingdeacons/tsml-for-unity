@@ -10,6 +10,7 @@ if (!defined('ABSPATH')) {
 }
 
 use Unity\Members\Interfaces\Member;
+use Unity\Members\ResponderCertification;
 
 /**
  * Member Class
@@ -42,6 +43,7 @@ class TsmlMember implements Member
      * @param string             $mobileNumber             Mobile phone number
      * @param bool               $twelfthStepper           Available for 12th-step calls
      * @param bool               $telephoneResponder       Available as a telephone responder
+     * @param ResponderCertification $responderCertification Certification stage; None unless a responder
      * @param string             $area                     Geographic area covered
      * @param array<int, string> $accepts                  Forms of contact accepted
      * @param bool               $gdprAccepted             GDPR acceptance flag
@@ -66,6 +68,7 @@ class TsmlMember implements Member
         private readonly string $mobileNumber = '',
         private readonly bool $twelfthStepper = false,
         private readonly bool $telephoneResponder = false,
+        private readonly ResponderCertification $responderCertification = ResponderCertification::None,
         private readonly string $area = '',
         private readonly array $accepts = [],
         private readonly bool $gdprAccepted = false,
@@ -102,6 +105,7 @@ class TsmlMember implements Member
             'mobileNumber'               => $this->mobileNumber,
             'twelfthStepper'             => $this->twelfthStepper,
             'telephoneResponder'         => $this->telephoneResponder,
+            'responderCertification'     => $this->responderCertification,
             'area'                       => $this->area,
             'accepts'                    => $this->accepts,
             'gdprAccepted'               => $this->gdprAccepted,
@@ -200,6 +204,11 @@ class TsmlMember implements Member
     public function isTelephoneResponder(): bool
     {
         return $this->telephoneResponder;
+    }
+
+    public function getResponderCertification(): ResponderCertification
+    {
+        return $this->responderCertification;
     }
 
     public function getArea(): string

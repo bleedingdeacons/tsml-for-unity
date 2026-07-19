@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
 use InvalidArgumentException;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberRevisor;
+use Unity\Members\ResponderCertification;
 
 /**
  * TSML Member Revisor Implementation
@@ -19,7 +20,7 @@ use Unity\Members\Interfaces\MemberRevisor;
  * Turns "keep unless named" into the collected changes, then hands them to
  * {@see TsmlMember::with()}.
  *
- * Delegating to with() rather than assembling a 22-argument createNew() call
+ * Delegating to with() rather than assembling a 23-argument createNew() call
  * here is the whole point. A hand-written argument list would reintroduce
  * exactly the bug this class exists to prevent: add a field to Member, forget
  * to add it to that list, and every revised member silently loses it. with()
@@ -48,6 +49,7 @@ class TsmlMemberRevisor implements MemberRevisor
         ?string $mobileNumber = null,
         ?bool $twelfthStepper = null,
         ?bool $telephoneResponder = null,
+        ?ResponderCertification $responderCertification = null,
         ?string $area = null,
         ?array $accepts = null,
         ?bool $gdprAccepted = null,
@@ -84,6 +86,7 @@ class TsmlMemberRevisor implements MemberRevisor
             'mobileNumber'               => $mobileNumber,
             'twelfthStepper'             => $twelfthStepper,
             'telephoneResponder'         => $telephoneResponder,
+            'responderCertification'     => $responderCertification,
             'area'                       => $area,
             'accepts'                    => $accepts,
             'gdprAccepted'               => $gdprAccepted,
