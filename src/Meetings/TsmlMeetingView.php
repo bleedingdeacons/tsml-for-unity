@@ -25,7 +25,8 @@ class TsmlMeetingView implements MeetingView
     /**
      * @var Member|Member[]|null
      */
-    private Member|array|null $members;
+    /** @var Member[] */
+    private array $members;
 
     /**
      * Constructor

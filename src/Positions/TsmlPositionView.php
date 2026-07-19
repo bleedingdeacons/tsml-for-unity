@@ -29,7 +29,7 @@ class TsmlPositionView implements PositionView
     private ?DateTime $rotationDate;
     private ?string $personalEmail;
     private ?string $mobileNumber;
-    private ?string $title;
+    private string $title;
 
     /**
      * Constructor

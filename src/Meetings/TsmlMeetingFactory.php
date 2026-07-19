@@ -198,7 +198,7 @@ class TsmlMeetingFactory implements MeetingFactory
      */
     public function createFromSource(array $source): ?Meeting
     {
-        if (empty($source) || !is_array($source)) {
+        if (empty($source)) {
             return null;
         }
 

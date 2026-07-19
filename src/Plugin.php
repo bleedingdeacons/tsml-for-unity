@@ -96,13 +96,6 @@ class Plugin
         return 'tsml-for-unity';
     }
 
-    private static ?TsmlMeetingFactory $meetingFactory = null;
-    private static ?TsmlGroupFactory $groupFactory = null;
-    private static ?TsmlLocationFactory $locationFactory = null;
-    private static ?TsmlMemberFactory $memberFactory = null;
-    private static ?TsmlIntergroupMeetingFactory $intergroupMeetingFactory = null;
-    private static ?ContactFactory $contactFactory = null;
-
     /**
      * Check if Unity plugin is active and has required meeting interfaces
      *
