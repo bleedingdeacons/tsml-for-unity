@@ -10,6 +10,7 @@ if (!defined('ABSPATH')) {
 }
 
 use Unity\Members\Interfaces\MemberView;
+use Unity\Members\ResponderCertification;
 
 /**
  * Concrete TSML Member View class
@@ -28,6 +29,7 @@ class TsmlMemberView implements MemberView
     private string $rotationDate;
     private bool $twelfthStepper;
     private bool $telephoneResponder;
+    private ResponderCertification $responderCertification;
     private string $area;
     /** @var array<int, string> */
     private array $accepts;
@@ -47,6 +49,7 @@ class TsmlMemberView implements MemberView
      * @param string             $rotationDate    Rotation date Y-m-d (empty if none)
      * @param bool               $twelfthStepper  12th-step availability flag
      * @param bool               $telephoneResponder Telephone responder availability flag
+     * @param ResponderCertification $responderCertification Certification stage
      * @param string             $area            Geographic area
      * @param array<int, string> $accepts         Forms of contact accepted
      */
@@ -63,6 +66,7 @@ class TsmlMemberView implements MemberView
         string $rotationDate = '',
         bool $twelfthStepper = false,
         bool $telephoneResponder = false,
+        ResponderCertification $responderCertification = ResponderCertification::None,
         string $area = '',
         array $accepts = []
     ) {
@@ -78,6 +82,7 @@ class TsmlMemberView implements MemberView
         $this->rotationDate = $rotationDate;
         $this->twelfthStepper = $twelfthStepper;
         $this->telephoneResponder = $telephoneResponder;
+        $this->responderCertification = $responderCertification;
         $this->area = $area;
         $this->accepts = $accepts;
     }
@@ -192,6 +197,14 @@ class TsmlMemberView implements MemberView
     public function isTelephoneResponder(): bool
     {
         return $this->telephoneResponder;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getResponderCertification(): ResponderCertification
+    {
+        return $this->responderCertification;
     }
 
     /**

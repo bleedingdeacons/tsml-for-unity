@@ -11,6 +11,7 @@ if (!defined('ABSPATH')) {
 
 use Unity\Members\Interfaces\MemberFactory;
 use Unity\Members\Interfaces\Member;
+use Unity\Members\ResponderCertification;
 use function get_field;
 use function get_the_title;
 
@@ -91,7 +92,7 @@ class TsmlMemberFactory implements MemberFactory
         $post = get_post($id);
         $updated = ($post && isset($post->post_modified_gmt)) ? $post->post_modified_gmt : '';
 
-        // Named arguments: the constructor takes 22 parameters, so a positional
+        // Named arguments: the constructor takes 23 parameters, so a positional
         // call silently rebinds every argument after any parameter later
         // inserted into the middle of the signature. That has happened before.
         return new TsmlMember(
@@ -109,6 +110,11 @@ class TsmlMemberFactory implements MemberFactory
             mobileNumber: get_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $id) ?? '',
             twelfthStepper: (bool) (get_field(TsmlMemberFields::FIELD_TWELFTH_STEPPER, $id) ?? false),
             telephoneResponder: (bool) (get_field(TsmlMemberFields::FIELD_TELEPHONE_RESPONDER, $id) ?? false),
+            // Radio field hidden by conditional logic unless the member is a
+            // telephone responder, so a non-responder reads back as None.
+            responderCertification: ResponderCertification::fromAcfValue(
+                get_field(TsmlMemberFields::FIELD_RESPONDER_CERTIFICATION, $id)
+            ),
             area: (string) (get_field(TsmlMemberFields::FIELD_AREA, $id) ?? ''),
             // ACF checkbox fields return array of selected option values,
             // or null/false when nothing is selected. Normalise to a plain
@@ -144,6 +150,7 @@ class TsmlMemberFactory implements MemberFactory
      * @param string             $mobileNumber    Mobile number
      * @param bool               $twelfthStepper  12th-step availability flag
      * @param bool               $telephoneResponder Telephone responder availability flag
+     * @param ResponderCertification $responderCertification Certification stage; None unless a responder
      * @param string             $area            Geographic area covered for 12th-step calls
      * @param array<int, string> $accepts         Forms of contact accepted for 12th-step calls
      * @param bool               $gdprAccepted    GDPR acceptance flag
@@ -169,6 +176,7 @@ class TsmlMemberFactory implements MemberFactory
         string $mobileNumber = '',
         bool $twelfthStepper = false,
         bool $telephoneResponder = false,
+        ResponderCertification $responderCertification = ResponderCertification::None,
         string $area = '',
         array $accepts = [],
         bool $gdprAccepted = false,
@@ -194,6 +202,7 @@ class TsmlMemberFactory implements MemberFactory
             mobileNumber: $mobileNumber,
             twelfthStepper: $twelfthStepper,
             telephoneResponder: $telephoneResponder,
+            responderCertification: $responderCertification,
             area: $area,
             accepts: $accepts,
             gdprAccepted: $gdprAccepted,

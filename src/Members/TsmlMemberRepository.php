@@ -367,6 +367,12 @@ class TsmlMemberRepository implements MemberRepository
         update_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $member->getMobileNumber(), $postId);
         update_field(TsmlMemberFields::FIELD_TWELFTH_STEPPER, $member->isTwelfthStepper(), $postId);
         update_field(TsmlMemberFields::FIELD_TELEPHONE_RESPONDER, $member->isTelephoneResponder(), $postId);
+        // ACF stores the radio field's choice value, not the enum case.
+        update_field(
+            TsmlMemberFields::FIELD_RESPONDER_CERTIFICATION,
+            $member->getResponderCertification()->value,
+            $postId
+        );
         update_field(TsmlMemberFields::FIELD_AREA, $member->getArea(), $postId);
         // ACF stores checkbox fields as an array of selected option
         // values, so pass the list straight through.

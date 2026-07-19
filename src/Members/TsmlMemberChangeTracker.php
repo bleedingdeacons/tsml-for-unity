@@ -310,6 +310,10 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
             return true;
         }
 
+        if ($originalMember->getResponderCertification() !== $updatedMember->getResponderCertification()) {
+            return true;
+        }
+
         if ($originalMember->getArea() !== $updatedMember->getArea()) {
             return true;
         }
