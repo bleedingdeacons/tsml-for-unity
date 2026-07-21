@@ -53,7 +53,9 @@ jobs:
           # zip: build.php assembles the release archive with ZipArchive.
           extensions: mbstring, intl, json, zip
           tools: composer:v2
-          coverage: none
+          # pcov drives PHPUnit's line coverage for the Coveralls upload
+          # below. Much faster than xdebug for coverage-only runs.
+          coverage: pcov
 
       - name: Get Composer cache directory
         id: composer-cache
@@ -109,7 +111,7 @@ jobs:
         # contract fails here instead of reaching production. That is the
         # whole point of checking Unity out above — leaving this advisory
         # would throw the signal away.
-        run: composer test
+        run: composer test -- --coverage-clover build/logs/clover.xml
 
       # --- Advisory --------------------------------------------------------
       # Reported but not yet enforced. Promote to a gate once a repo is green.
@@ -124,6 +126,20 @@ jobs:
       - name: PHPCS (advisory)
         run: composer cs
         continue-on-error: true
+
+      - name: Upload coverage to Coveralls (advisory)
+        # Reports a coverage number; does not gate the build. The Clover report
+        # is produced by the PHPUnit step above. This action runs from the repo
+        # root (defaults.run.working-directory does not apply to `uses:` steps),
+        # so the file is under tsml-for-unity/ and base-path strips that prefix back off
+        # the paths inside the report to match the repository layout.
+        uses: coverallsapp/github-action@v2
+        continue-on-error: true
+        with:
+          file: tsml-for-unity/build/logs/clover.xml
+          format: clover
+          base-path: tsml-for-unity
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: composer.lock up to date (advisory)
         run: composer validate
