@@ -259,6 +259,9 @@ composer build:clean        # Remove build artifacts
 - **PHPStan** (level 5) with the WordPress extension for static analysis
 - **PHP_CodeSniffer** with the WordPress standard
 
+Line coverage is reported to [Coveralls](https://coveralls.io/github/bleedingdeacons/tsml-for-unity?branch=main)
+on every CI run — see the coverage badge at the top of this file.
+
 ---
 
 ## Troubleshooting
