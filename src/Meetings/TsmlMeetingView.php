@@ -59,10 +59,9 @@ class TsmlMeetingView implements MeetingView
         $names = [];
 
         foreach ($this->members as $member) {
-            $names[] = $member->getGsrName();
+            $names[] = $member->getAnonymousName();
         }
 
         return $names;
-
     }
 }

@@ -6,7 +6,6 @@ namespace TsmlForUnity\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 use TsmlForUnity\Meetings\TsmlMeetingView;
-use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingGroupAttendance;
 use Unity\Meetings\Interfaces\Meeting;
 use Unity\Meetings\Interfaces\MeetingView;
 use Unity\Members\Interfaces\Member;
@@ -44,18 +43,17 @@ class TsmlMeetingViewTest extends TestCase
     }
 
     /**
-     * getGsrNames() calls getGsrName() on each entry. That method lives on
-     * IntergroupMeetingGroupAttendance rather than Member (see the note in
-     * the view), so the collaborators here expose it.
+     * getGsrNames() maps each associated member to its name via the Member
+     * contract (getAnonymousName()).
      *
      * @test
      */
-    public function gsr_names_collects_each_members_gsr_name(): void
+    public function gsr_names_collects_each_members_name(): void
     {
-        $memberA = $this->createMock(IntergroupMeetingGroupAttendance::class);
-        $memberA->method('getGsrName')->willReturn('Alice A.');
-        $memberB = $this->createMock(IntergroupMeetingGroupAttendance::class);
-        $memberB->method('getGsrName')->willReturn('Bob B.');
+        $memberA = $this->createMock(Member::class);
+        $memberA->method('getAnonymousName')->willReturn('Alice A.');
+        $memberB = $this->createMock(Member::class);
+        $memberB->method('getAnonymousName')->willReturn('Bob B.');
 
         $view = new TsmlMeetingView($this->createMock(Meeting::class), [$memberA, $memberB]);
 
