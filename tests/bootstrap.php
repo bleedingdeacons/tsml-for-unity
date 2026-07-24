@@ -46,6 +46,16 @@ if (!defined('TSML_FOR_UNITY_VERSION')) {
     define('TSML_FOR_UNITY_VERSION', '1.0.0');
 }
 
+// The change trackers guard their diagnostic logging behind
+// `defined('WP_DEBUG') && WP_DEBUG`. Leaving it undefined meant those
+// branches never ran under test, so a fault in one — a bad string
+// concatenation, say — would only ever surface on a debug-enabled site.
+// Turning it on exercises them. Plugin::logError() degrades to a no-op when
+// the logger is absent, so this adds coverage without adding noise.
+if (!defined('WP_DEBUG')) {
+    define('WP_DEBUG', true);
+}
+
 // $wpdb output-format constants. The custom-table repositories pass ARRAY_A
 // to get_row()/get_results(); undefined constants are fatal on PHP 8, so the
 // values are declared here rather than in each test.

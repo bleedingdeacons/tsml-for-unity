@@ -162,6 +162,38 @@ class TsmlMeetingFactoryMetaTest extends TestCase
         $this->assertNotNull($this->meetingWithMeta(['tree' => [serialize($nested)]]));
     }
 
+    /**
+     * The recursive reducer tries the same strategies as the top-level one,
+     * in the same order, so each is driven through a nested structure too.
+     *
+     * @test
+     * @dataProvider nestedObjectProvider
+     */
+    public function each_identifier_strategy_works_on_a_nested_object(object $nestedObject): void
+    {
+        $this->assertNotNull($this->meetingWithMeta([
+            'tree' => [serialize(['branch' => [$nestedObject]])],
+        ]));
+    }
+
+    /** @return array<string, array{0: object}> */
+    public static function nestedObjectProvider(): array
+    {
+        $upper = new \stdClass();
+        $upper->ID = 5;
+
+        $lower = new \stdClass();
+        $lower->id = 6;
+
+        return [
+            'uppercase ID property' => [$upper],
+            'lowercase id property' => [$lower],
+            'getId accessor'        => [new MetaObjectWithGetId()],
+            'get_id accessor'       => [new MetaObjectWithSnakeGetId()],
+            'no identifier at all'  => [new MetaObjectWithNothing()],
+        ];
+    }
+
     /** @test */
     public function meta_survives_when_serialization_helpers_are_missing(): void
     {
