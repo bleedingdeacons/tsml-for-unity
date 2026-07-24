@@ -8,13 +8,55 @@ require_once __DIR__ . '/../vendor/autoload.php';
 // Initialize WP_Mock
 WP_Mock::bootstrap();
 
-// Define WordPress constants if not defined
+// Define WordPress constants if not defined.
+//
+// ABSPATH is a real, writable temp directory rather than a fictional
+// '/var/www/html/'. The custom-table installers do a hard
+// require_once ABSPATH . 'wp-admin/includes/upgrade.php' before calling
+// dbDelta(); a require cannot be stubbed, so a minimal stand-in is written
+// at that path below and the DDL paths become testable.
 if (!defined('ABSPATH')) {
-    define('ABSPATH', '/var/www/html/');
+    $tsmlTestRoot = sys_get_temp_dir() . '/tsml-test-abspath-' . getmypid() . '/';
+    if (!is_dir($tsmlTestRoot)) {
+        mkdir($tsmlTestRoot, 0777, true);
+    }
+    define('ABSPATH', $tsmlTestRoot);
 }
+
+$tsmlUpgradeDir = ABSPATH . 'wp-admin/includes/';
+if (!is_dir($tsmlUpgradeDir)) {
+    mkdir($tsmlUpgradeDir, 0777, true);
+}
+if (!file_exists($tsmlUpgradeDir . 'upgrade.php')) {
+    file_put_contents(
+        $tsmlUpgradeDir . 'upgrade.php',
+        "<?php\n"
+        . "// Test stand-in for WordPress's upgrade.php.\n"
+        . "if (!function_exists('dbDelta')) {\n"
+        . "    function dbDelta(\$queries = '', \$execute = true) {\n"
+        . "        \$GLOBALS['tsml_test_dbdelta'][] = \$queries;\n"
+        . "        return [];\n"
+        . "    }\n"
+        . "}\n"
+    );
+}
+$GLOBALS['tsml_test_dbdelta'] = [];
 
 if (!defined('TSML_FOR_UNITY_VERSION')) {
     define('TSML_FOR_UNITY_VERSION', '1.0.0');
+}
+
+// $wpdb output-format constants. The custom-table repositories pass ARRAY_A
+// to get_row()/get_results(); undefined constants are fatal on PHP 8, so the
+// values are declared here rather than in each test.
+if (!defined('OBJECT')) {
+    define('OBJECT', 'OBJECT');
+}
+if (!defined('ARRAY_A')) {
+    define('ARRAY_A', 'ARRAY_A');
+}
+if (!defined('ARRAY_N')) {
+    define('ARRAY_N', 'ARRAY_N');
 }
 
 if (!defined('TSML_FOR_UNITY_PATH')) {
