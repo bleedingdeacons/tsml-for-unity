@@ -267,11 +267,16 @@ class TsmlMeetingFactory implements MeetingFactory
             // Also check if types are in the source array (for compatibility)
             if (isset($source['types']) && is_array($source['types'])) {
                 $types = array_merge($types, $source['types']);
-                $types = array_unique($types);
             }
 
             if (!empty($types)) {
-                $types = $this->formatMeetingTypes($types);
+                // Expand codes to names *before* deduplicating. The meta list
+                // above arrives already expanded ('Open') while the source
+                // list is still codes ('O'), so deduplicating first compares
+                // the two representations of the same type, finds them
+                // different, and keeps both — leaving the meeting listing
+                // "Open" twice once they are expanded.
+                $types = array_values(array_unique($this->formatMeetingTypes($types)));
             }
 
             // Check if 'Online' type exists (before we remove it from the array)
