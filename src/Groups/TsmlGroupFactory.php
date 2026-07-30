@@ -134,7 +134,7 @@ class TsmlGroupFactory implements GroupFactory
      * Get post meta for a post ID
      *
      * @param int $postId The post ID
-     * @return array Post meta data
+     * @return array<string, mixed> Post meta data
      */
     private function getPostMeta(int $postId): array
     {
@@ -149,7 +149,7 @@ class TsmlGroupFactory implements GroupFactory
     /**
      * Get a meta field value with a default
      *
-     * @param array  $meta    Meta data array
+     * @param array<string, mixed>  $meta    Meta data array
      * @param string $field   Field name
      * @param mixed  $default Default value if field not found
      * @return mixed Field value or default
@@ -173,7 +173,7 @@ class TsmlGroupFactory implements GroupFactory
     /**
      * Get the district ID from meta
      *
-     * @param array $meta Meta data array
+     * @param array<string, mixed> $meta Meta data array
      * @return int|null District ID or null
      */
     private function getDistrictId(array $meta): ?int
@@ -193,7 +193,7 @@ class TsmlGroupFactory implements GroupFactory
      * Reads contacts stored on the group post meta and collects contacts
      * from all meetings in the group, deduplicating by name+email+phone.
      *
-     * @param array $meta Group post meta data
+     * @param array<string, mixed> $meta Group post meta data
      * @param Meeting[] $meetings Array of Meeting objects
      * @return Contact[] Array of unique Contact objects
      */
@@ -295,7 +295,7 @@ class TsmlGroupFactory implements GroupFactory
      * Log an error message
      *
      * @param string $message The error message
-     * @param array  $context Additional context
+     * @param array<string, mixed>  $context Additional context
      */
     private function logError(string $message, array $context = []): void
     {

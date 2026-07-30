@@ -271,8 +271,8 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
     /**
      * Check if contacts have changed by comparing arrays of Contact objects
      *
-     * @param array $originalContacts Original contacts
-     * @param array $updatedContacts Updated contacts
+     * @param array<int, mixed> $originalContacts Original contacts
+     * @param array<int, mixed> $updatedContacts Updated contacts
      * @return bool True if contacts have changed
      */
     private function haveContactsChanged(array $originalContacts, array $updatedContacts): bool

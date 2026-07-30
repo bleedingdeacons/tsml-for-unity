@@ -72,7 +72,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepository implements IntergroupMeetin
      *  - orderby               (string) Column to order by (default 'id')
      *  - order                 (string) ASC or DESC (default 'ASC')
      *
-     * @param array $args Query arguments
+     * @param array<string, mixed> $args Query arguments
      * @return array<IntergroupMeetingGroupAttendance>
      */
     public function findAll(array $args = []): array
@@ -172,7 +172,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepository implements IntergroupMeetin
      *
      * Accepts the same filter keys as findAll() (excluding pagination).
      *
-     * @param array $args Query arguments
+     * @param array<string, mixed> $args Query arguments
      * @return int
      */
     public function count(array $args = []): int

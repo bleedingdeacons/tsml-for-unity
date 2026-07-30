@@ -55,7 +55,7 @@ class TsmlIntergroupMeetingRepository implements IntergroupMeetingRepository
     /**
      * Find all intergroup meetings with optional filtering
      *
-     * @param array $args Optional get_posts arguments
+     * @param array<string, mixed> $args Optional get_posts arguments
      * @return array<IntergroupMeeting>
      */
     public function findAll(array $args = []): array
@@ -79,7 +79,7 @@ class TsmlIntergroupMeetingRepository implements IntergroupMeetingRepository
     /**
      * Get total count of intergroup meetings matching criteria
      *
-     * @param array $args Query arguments
+     * @param array<string, mixed> $args Query arguments
      * @return int Total count
      */
     public function count(array $args = []): int
@@ -99,8 +99,8 @@ class TsmlIntergroupMeetingRepository implements IntergroupMeetingRepository
     /**
      * Build query arguments for get_posts
      *
-     * @param array $args Input arguments
-     * @return array Query arguments for get_posts
+     * @param array<string, mixed> $args Input arguments
+     * @return array<string, mixed> Query arguments for get_posts
      */
     private function buildQueryArgs(array $args): array
     {

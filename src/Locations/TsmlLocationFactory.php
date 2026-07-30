@@ -67,7 +67,7 @@ class TsmlLocationFactory implements LocationFactory
      * Get post meta for a post ID
      *
      * @param int $postId The post ID
-     * @return array Post meta data
+     * @return array<string, mixed> Post meta data
      */
     private function getPostMeta(int $postId): array
     {
@@ -82,7 +82,7 @@ class TsmlLocationFactory implements LocationFactory
     /**
      * Get a meta field value with a default
      *
-     * @param array  $meta    Meta data array
+     * @param array<string, mixed>  $meta    Meta data array
      * @param string $field   Field name
      * @param mixed  $default Default value if field not found
      * @return mixed Field value or default
@@ -130,7 +130,7 @@ class TsmlLocationFactory implements LocationFactory
      * In TSML, meetings reference their location via the location_id post_meta field.
      *
      * @param int $locationId The location post ID
-     * @return array Array of meeting post IDs
+     * @return array<int, int> Array of meeting post IDs
      */
     private function getMeetingIdsForLocation(int $locationId): array
     {
@@ -194,7 +194,7 @@ class TsmlLocationFactory implements LocationFactory
      * Log an error message
      *
      * @param string $message The error message
-     * @param array  $context Additional context
+     * @param array<string, mixed>  $context Additional context
      */
     private function logError(string $message, array $context = []): void
     {

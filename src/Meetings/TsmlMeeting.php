@@ -43,11 +43,11 @@ class TsmlMeeting implements Meeting
      * @param string        $dayOfWeek   Day of the week
      * @param string        $time        Meeting start time
      * @param string        $endTime     Meeting end time
-     * @param array         $types       Meeting types
+     * @param array<int, string>         $types       Meeting types
      * @param string        $state       Meeting state
      * @param bool          $online      Whether meeting is online
-     * @param array         $contacts    Array of Contact objects
-     * @param array         $meta        Meta data
+     * @param array<int, \Unity\Contacts\Interfaces\Contact>         $contacts    Array of Contact objects
+     * @param array<string, mixed>         $meta        Meta data
      * @param string        $onlineLink  Online meeting link
      * @param string        $onlineNotes Online meeting notes
      * @param string        $updated     Last updated datetime string

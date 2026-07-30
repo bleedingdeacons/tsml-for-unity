@@ -47,7 +47,7 @@ class TsmlIntergroupMeetingOfficerAttendanceFactory implements IntergroupMeeting
     /**
      * Hydrate an officer attendance object from a database row array
      *
-     * @param array $row Associative array of column values
+     * @param array<string, mixed> $row Associative array of column values
      * @return TsmlIntergroupMeetingOfficerAttendance
      */
     public function hydrateFromRow(array $row): TsmlIntergroupMeetingOfficerAttendance

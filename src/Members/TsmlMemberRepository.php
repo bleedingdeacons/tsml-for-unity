@@ -58,8 +58,8 @@ class TsmlMemberRepository implements MemberRepository
     /**
      * Find all members with optional filtering
      *
-     * @param array $args Optional get_posts arguments
-     * @return array Array of Member objects
+     * @param array<string, mixed> $args Optional get_posts arguments
+     * @return array<int, Member> Array of Member objects
      */
     public function findAll(array $args = []): array
     {
@@ -101,7 +101,7 @@ class TsmlMemberRepository implements MemberRepository
      * guarantees every returned id is a member, so the findById() type
      * guard is unnecessary here.
      *
-     * @return array Array of Member objects
+     * @return array<int, Member> Array of Member objects
      */
     public function findTelephoneResponders(): array
     {
@@ -168,7 +168,7 @@ class TsmlMemberRepository implements MemberRepository
     /**
      * Get total count of members matching criteria
      *
-     * @param array $args Query arguments
+     * @param array<string, mixed> $args Query arguments
      * @return int Total count
      */
     public function count(array $args = []): int
