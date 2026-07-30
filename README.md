@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/bleedingdeacons/tsml-for-unity/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bleedingdeacons/tsml-for-unity/actions/workflows/ci.yml)
 [![Coverage Status](https://coveralls.io/repos/github/bleedingdeacons/tsml-for-unity/badge.svg?branch=main)](https://coveralls.io/github/bleedingdeacons/tsml-for-unity?branch=main)
-![PHPStan](https://img.shields.io/badge/PHPStan-level%206-brightgreen)
+![PHPStan](https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fbleedingdeacons%2Ftsml-for-unity%2Fmain%2Fphpstan.neon.dist&query=%24.parameters.level&label=PHPStan&prefix=level%20&color=brightgreen)
 ![Version](https://img.shields.io/badge/version-1.18.11-blue)
 ![PHP](https://img.shields.io/badge/php-8.1%2B-777bb4)
 ![Licence](https://img.shields.io/badge/licence-MIT%20(Modified)-green)
@@ -238,7 +238,7 @@ composer install
 | `composer test` | Run the full PHPUnit test suite |
 | `composer test:unit` | Run unit tests only |
 | `composer test:coverage` | Generate an HTML coverage report |
-| `composer phpstan` | Run PHPStan static analysis (level 6) |
+| `composer phpstan` | Run PHPStan static analysis |
 | `composer cs` | Check WordPress coding standards |
 | `composer cs:fix` | Auto-fix coding standard violations |
 | `composer check` | Run CS + PHPStan + tests in sequence |
@@ -256,7 +256,7 @@ composer build:clean        # Remove build artifacts
 - **PHPUnit** 10 for unit tests
 - **WP_Mock** 1.0 for WordPress function mocking
 - **Mockery** for general mocking
-- **PHPStan** (level 6) with the WordPress extension for static analysis
+- **PHPStan** with the WordPress extension for static analysis
 - **PHP_CodeSniffer** with the WordPress standard
 
 The unit suite covers the domain value objects (group, location, meeting,
@@ -293,7 +293,7 @@ The group, member, and position change trackers hook into `acf/save_post`. Ensur
 3. Ensure `composer check` passes (coding standards, static analysis, and tests).
 4. Submit a pull request with a clear description of the change.
 
-All implementations must conform to the corresponding Unity interface. PHPStan level 6 compliance is required.
+All implementations must conform to the corresponding Unity interface. PHPStan compliance at the level set in `phpstan.neon.dist` is required.
 
 ---
 
