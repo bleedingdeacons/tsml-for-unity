@@ -265,8 +265,8 @@ class Plugin
     }
 
     /**
-     * @param $class
-     * @return array
+     * @param class-string $class
+     * @return array<string, mixed>
      * @throws \ReflectionException
      */
     private static function extractConstants($class): array
