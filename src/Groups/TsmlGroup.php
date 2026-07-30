@@ -23,6 +23,7 @@ class TsmlGroup implements Group
     private int $id;
     private string $title;
     private string $email;
+    /** @var array<int, Meeting> */
     private array $meetings;
     private string $link;
     private string $groupNotes;
@@ -33,6 +34,7 @@ class TsmlGroup implements Group
     private string $square;
     private ?int $districtId;
     private ?string $lastContact;
+    /** @var array<int, Contact> */
     private array $contacts;
     private string $updated;
 

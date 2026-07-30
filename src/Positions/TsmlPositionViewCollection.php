@@ -18,12 +18,13 @@ use Unity\Positions\Interfaces\PositionView;
  */
 class TsmlPositionViewCollection
 {
+    /** @var array<int, PositionView> */
     private array $views;
 
     /**
      * Constructor
      * 
-     * @param array $views Array of PositionView objects
+     * @param array<int, PositionView> $views Array of PositionView objects
      */
     public function __construct(array $views = [])
     {
@@ -190,7 +191,7 @@ class TsmlPositionViewCollection
     /**
      * Get all position views in the collection
      * 
-     * @return array Array of PositionView objects
+     * @return array<int, PositionView> Array of PositionView objects
      */
     public function getAll(): array
     {

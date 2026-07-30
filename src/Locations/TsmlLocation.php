@@ -32,6 +32,7 @@ class TsmlLocation implements Location
     private ?float $latitude;
     private ?float $longitude;
     private string $timezone;
+    /** @var array<int, int> */
     private array $meetingIds;
     private string $updated;
 
@@ -51,7 +52,7 @@ class TsmlLocation implements Location
      * @param float|null $latitude   Latitude coordinate
      * @param float|null $longitude  Longitude coordinate
      * @param string     $timezone   Timezone identifier
-     * @param array      $meetingIds Associated meeting post IDs
+     * @param array<int, int>      $meetingIds Associated meeting post IDs
      * @param string     $updated    Last updated datetime string
      */
     public function __construct(

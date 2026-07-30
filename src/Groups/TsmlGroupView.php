@@ -19,9 +19,12 @@ class TsmlGroupView implements GroupView
     private int $id;
     private string $title;
     private string $email;
+    /** @var array<int, \Unity\Meetings\Interfaces\Meeting> */
     private array $meetings;
     private string $link;
+    /** @var array<int, \Unity\Contacts\Interfaces\Contact> */
     private array $contacts;
+    /** @var array<int, \Unity\Members\Interfaces\Member> */
     private array $members;
     /**
      * TsmlGroupView constructor
@@ -29,10 +32,10 @@ class TsmlGroupView implements GroupView
      * @param int    $id       Post ID
      * @param string $title    Group title
      * @param string $email    Email address
-     * @param array  $meetings Array of Meeting objects
+     * @param array<int, \Unity\Meetings\Interfaces\Meeting>  $meetings Array of Meeting objects
      * @param string $link     Link URL
-     * @param array  $contacts Array of Contact objects
-     * @param array  $members  Array of Member objects
+     * @param array<int, \Unity\Contacts\Interfaces\Contact>  $contacts Array of Contact objects
+     * @param array<int, \Unity\Members\Interfaces\Member>  $members  Array of Member objects
      */
     public function __construct(
         int $id = 0,
