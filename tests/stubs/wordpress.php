@@ -5,8 +5,13 @@ declare(strict_types=1);
 /**
  * Stand-ins for WordPress classes the plugin type-checks against.
  *
- * WP_Mock supplies functions, not classes, so code guarded by
- * `instanceof \WP_Post` can never match a plain stdClass built in a test.
+ * Code guarded by `instanceof \WP_Post` can never match a plain stdClass built
+ * in a test, so the classes have to exist for real.
+ *
+ * These are loaded *before* bleedingdeacons/wp-mocks in tests/bootstrap.php, so
+ * they win its class_exists() guards. That matters for Sentinel_Log_Channel in
+ * particular: the shared `sentinel` group records in a different shape from the
+ * level/message pairs HasLoggerTest asserts on.
  */
 
 if (!class_exists('Sentinel_Log_Channel')) {
@@ -80,6 +85,10 @@ if (!class_exists('WP_Post')) {
         public string $post_name = '';
         public string $post_content = '';
         public string $post_modified_gmt = '';
+        public int $post_parent = 0;
+        public int $post_author = 0;
+        public string $post_date = '';
+        public string $post_excerpt = '';
 
         /**
          * @param object|array<string, mixed> $post Raw post data.

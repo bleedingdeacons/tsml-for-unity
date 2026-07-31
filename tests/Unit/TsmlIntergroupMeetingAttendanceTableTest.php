@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceTable;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceTable;
-use WP_Mock;
+use TsmlForUnity\Tests\TestCase;
 
 /**
  * Tests for the two attendance table managers (name resolution, upgrade
@@ -25,7 +25,6 @@ class TsmlIntergroupMeetingAttendanceTableTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
         $this->previousWpdb = $GLOBALS['wpdb'] ?? null;
 
         $GLOBALS['wpdb'] = new class {
@@ -40,7 +39,6 @@ class TsmlIntergroupMeetingAttendanceTableTest extends TestCase
     protected function tearDown(): void
     {
         $GLOBALS['wpdb'] = $this->previousWpdb;
-        WP_Mock::tearDown();
         parent::tearDown();
     }
 
@@ -71,7 +69,7 @@ class TsmlIntergroupMeetingAttendanceTableTest extends TestCase
      */
     public function maybe_upgrade_does_nothing_when_the_installed_version_matches(): void
     {
-        WP_Mock::userFunction('get_option')
+        Functions\expect('get_option')
             ->with(TsmlIntergroupMeetingGroupAttendanceTable::DB_VERSION_OPTION)
             ->andReturn(TsmlIntergroupMeetingGroupAttendanceTable::DB_VERSION);
 
@@ -87,8 +85,8 @@ class TsmlIntergroupMeetingAttendanceTableTest extends TestCase
      */
     public function group_drop_table_issues_a_drop_and_clears_the_version_option(): void
     {
-        WP_Mock::userFunction('esc_sql')->andReturnUsing(fn ($v) => $v);
-        WP_Mock::userFunction('delete_option')
+        Functions\expect('esc_sql')->andReturnUsing(fn ($v) => $v);
+        Functions\expect('delete_option')
             ->once()
             ->with(TsmlIntergroupMeetingGroupAttendanceTable::DB_VERSION_OPTION)
             ->andReturn(true);
@@ -103,8 +101,8 @@ class TsmlIntergroupMeetingAttendanceTableTest extends TestCase
      */
     public function officer_drop_table_issues_a_drop_and_clears_the_version_option(): void
     {
-        WP_Mock::userFunction('esc_sql')->andReturnUsing(fn ($v) => $v);
-        WP_Mock::userFunction('delete_option')
+        Functions\expect('esc_sql')->andReturnUsing(fn ($v) => $v);
+        Functions\expect('delete_option')
             ->once()
             ->with(TsmlIntergroupMeetingOfficerAttendanceTable::DB_VERSION_OPTION)
             ->andReturn(true);

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Meetings\TsmlMeeting;
 use TsmlForUnity\Meetings\TsmlMeetingFactory;
+use TsmlForUnity\Tests\TestCase;
 use Unity\Contacts\Interfaces\Contact;
-use WP_Mock;
 
 /**
  * @covers \TsmlForUnity\Meetings\TsmlMeetingFactory
@@ -20,14 +20,7 @@ class TsmlMeetingFactoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
         $this->factory = new TsmlMeetingFactory();
-    }
-
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
     }
 
     public function testCreateFromSourceReturnsNullForEmptySource(): void
@@ -63,22 +56,22 @@ class TsmlMeetingFactoryTest extends TestCase
         ];
 
         // Mock WordPress functions
-        WP_Mock::userFunction('get_permalink')
+        Functions\expect('get_permalink')
             ->once()
             ->with(123)
             ->andReturn('https://example.com/meetings/morning-serenity/');
 
-        WP_Mock::userFunction('get_post_status')
+        Functions\expect('get_post_status')
             ->once()
             ->with(123)
             ->andReturn('publish');
 
-        WP_Mock::userFunction('get_post_custom')
+        Functions\expect('get_post_custom')
             ->once()
             ->with(123)
             ->andReturn([]);
 
-        WP_Mock::userFunction('is_serialized')
+        Functions\expect('is_serialized')
             ->andReturn(false);
 
         $this->stubPostLookups(123);
@@ -122,17 +115,17 @@ class TsmlMeetingFactoryTest extends TestCase
             'attendance_option' => 'online',
         ];
 
-        WP_Mock::userFunction('get_permalink')
+        Functions\expect('get_permalink')
             ->once()
             ->with(456)
             ->andReturn('https://example.com/meetings/online-meeting/');
 
-        WP_Mock::userFunction('get_post_status')
+        Functions\expect('get_post_status')
             ->once()
             ->with(456)
             ->andReturn('publish');
 
-        WP_Mock::userFunction('get_post_custom')
+        Functions\expect('get_post_custom')
             ->once()
             ->with(456)
             ->andReturn([
@@ -140,7 +133,7 @@ class TsmlMeetingFactoryTest extends TestCase
                 'conference_url_notes' => ['Password: 12345'],
             ]);
 
-        WP_Mock::userFunction('is_serialized')
+        Functions\expect('is_serialized')
             ->andReturn(false);
 
         $this->stubPostLookups(456);
@@ -217,17 +210,17 @@ class TsmlMeetingFactoryTest extends TestCase
             'location' => 'Test Location',
         ];
 
-        WP_Mock::userFunction('get_permalink')
+        Functions\expect('get_permalink')
             ->once()
             ->with(789)
             ->andReturn('https://example.com/meetings/test-meeting/');
 
-        WP_Mock::userFunction('get_post_status')
+        Functions\expect('get_post_status')
             ->once()
             ->with(789)
             ->andReturn('publish');
 
-        WP_Mock::userFunction('get_post_custom')
+        Functions\expect('get_post_custom')
             ->once()
             ->with(789)
             ->andReturn([
@@ -239,7 +232,7 @@ class TsmlMeetingFactoryTest extends TestCase
                 'contact_2_phone' => ['555-5678'],
             ]);
 
-        WP_Mock::userFunction('is_serialized')
+        Functions\expect('is_serialized')
             ->andReturn(false);
 
         $this->stubPostLookups(789);
@@ -272,14 +265,12 @@ class TsmlMeetingFactoryTest extends TestCase
      */
     private function stubPostLookups(int $id): void
     {
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->with($id)
             ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
 
-        WP_Mock::userFunction('is_wp_error')
-            ->andReturn(false);
 
-        WP_Mock::userFunction('get_post_meta')
+        Functions\expect('get_post_meta')
             ->andReturn('');
     }
 }

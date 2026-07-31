@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Positions\TsmlPosition;
 use TsmlForUnity\Positions\TsmlPositionFields;
 use TsmlForUnity\Positions\TsmlPositionRepository;
+use TsmlForUnity\Tests\TestCase;
 use Unity\Positions\Interfaces\Position;
 use Unity\Positions\Interfaces\PositionFactory;
-use WP_Mock;
 
 /**
  * Tests for TsmlPositionRepository's write paths.
@@ -35,16 +35,9 @@ class TsmlPositionRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
         $this->factory = $this->createMock(PositionFactory::class);
         $this->repository = new TsmlPositionRepository($this->factory);
-    }
-
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
     }
 
     /**
@@ -73,7 +66,7 @@ class TsmlPositionRepositoryTest extends TestCase
      */
     private function captureUpdateField(string $field, &$captured): void
     {
-        WP_Mock::userFunction('update_field')
+        Functions\expect('update_field')
             ->withArgs(function ($key) use ($field) {
                 return $key === $field;
             })
@@ -83,7 +76,7 @@ class TsmlPositionRepositoryTest extends TestCase
             });
 
         // The other fields in the same save are not under test.
-        WP_Mock::userFunction('update_field')->andReturn(true);
+        Functions\expect('update_field')->andReturn(true);
     }
 
     // ─── save() insert path accepts a real, unsaved TsmlPosition ─────
@@ -97,8 +90,7 @@ class TsmlPositionRepositoryTest extends TestCase
 
         $this->assertTrue($position->isValid(), 'A fully populated, unsaved position must be valid');
 
-        WP_Mock::userFunction('wp_insert_post')->once()->andReturn(4242);
-        WP_Mock::userFunction('is_wp_error')->andReturn(false);
+        Functions\expect('wp_insert_post')->once()->andReturn(4242);
 
         $written = null;
         $this->captureUpdateField(TsmlPositionFields::LONG_NAME, $written);
@@ -134,7 +126,7 @@ class TsmlPositionRepositoryTest extends TestCase
     /**
      * @return array<string, array{TsmlPosition}>
      */
-    public function incompletePositions(): array
+    public static function incompletePositions(): array
     {
         return [
             'no email' => [new TsmlPosition(0, 6, 1, '', 'Treasurer', 'Handles the money', 'Summary')],
@@ -151,9 +143,8 @@ class TsmlPositionRepositoryTest extends TestCase
      */
     public function save_returns_false_when_wp_insert_post_fails(): void
     {
-        $error = new \stdClass();
-        WP_Mock::userFunction('wp_insert_post')->once()->andReturn($error);
-        WP_Mock::userFunction('is_wp_error')->with($error)->andReturn(true);
+        $error = new \WP_Error('db_error', 'the write failed');
+        Functions\expect('wp_insert_post')->once()->andReturn($error);
 
         // No update_field expectation: the failure returns before any writes.
 
@@ -171,8 +162,7 @@ class TsmlPositionRepositoryTest extends TestCase
         // than wp_insert_post, which has no expectation here.
         $postId = 4242;
 
-        WP_Mock::userFunction('wp_update_post')->once()->andReturn($postId);
-        WP_Mock::userFunction('is_wp_error')->andReturn(false);
+        Functions\expect('wp_update_post')->once()->andReturn($postId);
 
         $written = null;
         $this->captureUpdateField(TsmlPositionFields::LONG_NAME, $written);
@@ -190,8 +180,7 @@ class TsmlPositionRepositoryTest extends TestCase
     {
         $postId = 4242;
 
-        WP_Mock::userFunction('wp_update_post')->once()->andReturn($postId);
-        WP_Mock::userFunction('is_wp_error')->andReturn(false);
+        Functions\expect('wp_update_post')->once()->andReturn($postId);
 
         $written = null;
         $this->captureUpdateField(TsmlPositionFields::SUMMARY, $written);
@@ -231,9 +220,8 @@ class TsmlPositionRepositoryTest extends TestCase
      */
     public function update_returns_false_when_wp_update_post_fails(): void
     {
-        $error = new \stdClass();
-        WP_Mock::userFunction('wp_update_post')->once()->andReturn($error);
-        WP_Mock::userFunction('is_wp_error')->with($error)->andReturn(true);
+        $error = new \WP_Error('db_error', 'the write failed');
+        Functions\expect('wp_update_post')->once()->andReturn($error);
 
         $this->assertFalse($this->repository->update($this->position(4242)));
     }

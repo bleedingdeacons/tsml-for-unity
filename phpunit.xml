@@ -1,9 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Schema is 10.5. Coverage include/exclude therefore lives in <source>,
+    not the 9.x <coverage> element, which now carries only report options.
+
+    That comment about <source> being unavailable is gone with the constraint
+    that caused it: 10up/wp_mock 1.1.1 declared "phpunit/phpunit": "^9.6" in
+    its own require block and had no PHPUnit 10 branch, so asking for
+    "^9.6|^10.0" alongside it always resolved to 9.6. Brain Monkey declares no
+    PHPUnit constraint at all, which is what freed this.
+-->
 <phpunit
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.6/phpunit.xsd"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
     bootstrap="tests/bootstrap.php"
     colors="true"
+    cacheDirectory=".phpunit.cache"
     failOnRisky="true"
     failOnWarning="true"
 >
@@ -13,14 +24,12 @@
         </testsuite>
     </testsuites>
     <!--
-        Coverage is only computed when a run asks for it (composer test:coverage,
-        which needs pcov or xdebug). Declaring the filter here rather than in a
-        <source> block keeps it valid for PHPUnit 9, which is the only major
-        version wp_mock's ^9.6 constraint allows.
+        Coverage is only computed when a run asks for it (composer
+        test:coverage, which needs pcov or xdebug).
     -->
-    <coverage>
+    <source>
         <include>
             <directory suffix=".php">src</directory>
         </include>
-    </coverage>
+    </source>
 </phpunit>

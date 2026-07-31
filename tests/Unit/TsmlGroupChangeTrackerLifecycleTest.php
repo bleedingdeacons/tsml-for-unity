@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use Brain\Monkey\Actions;
+use Brain\Monkey\Functions;
 use Exception;
-use PHPUnit\Framework\TestCase;
 use TsmlForUnity\Groups\TsmlGroup;
 use TsmlForUnity\Groups\TsmlGroupChangeTracker;
 use TsmlForUnity\Groups\TsmlGroupFields;
+use TsmlForUnity\Tests\TestCase;
 use Unity\Groups\Interfaces\GroupRepository;
-use WP_Mock;
 use WP_Post;
 
 /**
@@ -38,9 +39,7 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
-        WP_Mock::userFunction('add_action')->andReturn(true);
 
         $this->repository = $this->createMock(GroupRepository::class);
         $this->tracker = new TsmlGroupChangeTracker($this->repository);
@@ -48,7 +47,6 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
 
     protected function tearDown(): void
     {
-        WP_Mock::tearDown();
 
         (new \ReflectionClass(TsmlGroupChangeTracker::class))
             ->getProperty('originalGroup')->setValue(null, null);
@@ -71,12 +69,12 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
     /** @test */
     public function deleting_a_group_fires_the_event_with_the_group_as_it_was(): void
     {
-        WP_Mock::userFunction('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
+        Functions\expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
 
         $group = $this->group();
         $this->repository->expects($this->once())->method('findById')->with(42)->willReturn($group);
 
-        WP_Mock::expectAction('unity/group_deleted', 42, $group);
+        Actions\expectDone('unity/group_deleted')->once()->with(42, $group);
 
         $this->tracker->onGroupDeleted(42);
     }
@@ -84,7 +82,7 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
     /** @test */
     public function deleting_a_post_of_another_type_is_ignored(): void
     {
-        WP_Mock::userFunction('get_post_type')->andReturn('page');
+        Functions\expect('get_post_type')->andReturn('page');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->onGroupDeleted(42);
@@ -95,10 +93,10 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
     /** @test */
     public function a_repository_failure_during_deletion_still_fires_the_event(): void
     {
-        WP_Mock::userFunction('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
+        Functions\expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
         $this->repository->method('findById')->willThrowException(new Exception('row vanished'));
 
-        WP_Mock::expectAction('unity/group_deleted', 42, null);
+        Actions\expectDone('unity/group_deleted')->once()->with(42, null);
 
         $this->tracker->onGroupDeleted(42);
 
@@ -113,7 +111,7 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
         $group = $this->group();
         $this->repository->expects($this->once())->method('findById')->with(42)->willReturn($group);
 
-        WP_Mock::expectAction('unity/group_hidden', 42, $group);
+        Actions\expectDone('unity/group_hidden')->once()->with(42, $group);
 
         $this->tracker->onGroupHidden('private', 'publish', $this->post());
     }
@@ -157,7 +155,7 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
         // still has to fire so listeners can react to the transition.
         $this->repository->method('findById')->willThrowException(new Exception('not visible'));
 
-        WP_Mock::expectAction('unity/group_hidden', 42, null);
+        Actions\expectDone('unity/group_hidden')->once()->with(42, null);
 
         $this->tracker->onGroupHidden('private', 'publish', $this->post());
 
@@ -169,7 +167,7 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
     /** @test */
     public function a_capture_failure_is_swallowed(): void
     {
-        WP_Mock::userFunction('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
+        Functions\expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
         $this->repository->method('findById')->willThrowException(new Exception('boom'));
 
         $this->tracker->captureOriginalGroup(42);
@@ -180,7 +178,7 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
     /** @test */
     public function a_check_that_cannot_reload_the_group_stops_quietly(): void
     {
-        WP_Mock::userFunction('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
+        Functions\expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
 
         // Capture succeeds, then the reload comes back empty.
         $this->repository->method('findById')
@@ -195,7 +193,7 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
     /** @test */
     public function a_check_failure_is_swallowed(): void
     {
-        WP_Mock::userFunction('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
+        Functions\expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
 
         $this->repository->method('findById')
             ->willReturnOnConsecutiveCalls($this->group(), $this->throwException(new Exception('boom')));
@@ -209,7 +207,7 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
     /** @test */
     public function a_renamed_group_has_its_post_title_synced(): void
     {
-        WP_Mock::userFunction('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
+        Functions\expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
 
         $original = new TsmlGroup(id: 42, title: 'Old Name', email: 'group@example.com');
         $updated  = new TsmlGroup(id: 42, title: 'New Name', email: 'group@example.com');
@@ -218,11 +216,11 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
 
         // The stored post_title still holds the old name, so the tracker
         // should write the new one back.
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->andReturn((object) ['ID' => 42, 'post_title' => 'Old Name']);
 
         $updatedPost = [];
-        WP_Mock::userFunction('wp_update_post')->andReturnUsing(
+        Functions\expect('wp_update_post')->andReturnUsing(
             function (array $args) use (&$updatedPost): int {
                 $updatedPost = $args;
 

@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Actions;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Members\TsmlMemberChangeTracker;
 use TsmlForUnity\Members\TsmlMemberFields;
 use TsmlForUnity\Tests\Fixtures\MemberStub;
 use TsmlForUnity\Tests\Support\ActionExpectations;
+use TsmlForUnity\Tests\TestCase;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberRepository;
-use WP_Mock;
 
 /**
  * Tests for TsmlMemberChangeTracker's admin-form save lifecycle.
@@ -37,12 +38,10 @@ class TsmlMemberChangeTrackerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
         // Allow add_action calls fired by the constructor without
         // pinning their exact arguments — the constructor wiring is
         // not under test here.
-        WP_Mock::userFunction('add_action')->andReturn(true);
 
         $this->repository = $this->createMock(MemberRepository::class);
         $this->tracker = new TsmlMemberChangeTracker($this->repository);
@@ -50,7 +49,6 @@ class TsmlMemberChangeTrackerTest extends TestCase
 
     protected function tearDown(): void
     {
-        WP_Mock::tearDown();
 
         // Reset static state so test order can't leak originalMember /
         // newMemberIds between cases.
@@ -67,7 +65,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
      */
     private function stubPostTypeGuard(int $postId): void
     {
-        WP_Mock::userFunction('get_post_type')
+        Functions\expect('get_post_type')
             ->with($postId)
             ->andReturn(TsmlMemberFields::POST_TYPE);
     }
@@ -97,7 +95,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
      */
     private function stubTitleSyncIsNoop(int $postId, string $existingTitle = ''): void
     {
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->with($postId)
             ->andReturn((object) [
                 'ID' => $postId,
@@ -134,9 +132,9 @@ class TsmlMemberChangeTrackerTest extends TestCase
             ->with($postId)
             ->willReturnOnConsecutiveCalls($autoDraft, $populated);
 
-        WP_Mock::expectAction('unity/member_before_save', $postId, $autoDraft);
-        WP_Mock::expectAction('unity/member_created', $populated);
-        WP_Mock::expectAction('unity/member_changed', $postId, $populated, $autoDraft);
+        Actions\expectDone('unity/member_before_save')->once()->with($postId, $autoDraft);
+        Actions\expectDone('unity/member_created')->once()->with($populated);
+        Actions\expectDone('unity/member_changed')->once()->with($postId, $populated, $autoDraft);
         // member_changing must NOT fire on a first save.
         $this->expectActionNotFired('unity/member_changing', $populated, $autoDraft);
 
@@ -167,7 +165,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
             ->with($postId)
             ->willReturnOnConsecutiveCalls($before, $after);
 
-        WP_Mock::expectAction('unity/member_created', $after);
+        Actions\expectDone('unity/member_created')->once()->with($after);
         $this->expectActionNotFired('unity/member_changing', $after, $before);
 
         $this->tracker->captureOriginalMember($postId);
@@ -200,7 +198,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
             ->with($postId)
             ->willReturnOnConsecutiveCalls($original, $updated);
 
-        WP_Mock::expectAction('unity/member_changing', $updated, $original);
+        Actions\expectDone('unity/member_changing')->once()->with($updated, $original);
         $this->expectActionNotFired('unity/member_created', $updated);
 
         $this->tracker->captureOriginalMember($postId);
@@ -233,7 +231,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
             ->with($postId)
             ->willReturnOnConsecutiveCalls($original, $updated);
 
-        WP_Mock::expectAction('unity/member_changing', $updated, $original);
+        Actions\expectDone('unity/member_changing')->once()->with($updated, $original);
         $this->expectActionNotFired('unity/member_created', $updated);
 
         $this->tracker->captureOriginalMember($postId);
@@ -262,7 +260,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
 
         // Only the catch-all "save completed" event fires; create and
         // changing both stay silent.
-        WP_Mock::expectAction('unity/member_changed', $postId, $updated, $original);
+        Actions\expectDone('unity/member_changed')->once()->with($postId, $updated, $original);
         $this->expectActionNotFired('unity/member_created', $updated);
         $this->expectActionNotFired('unity/member_changing', $updated, $original);
 
@@ -280,7 +278,6 @@ class TsmlMemberChangeTrackerTest extends TestCase
     {
         $r = new \ReflectionClass(TsmlMemberChangeTracker::class);
         $prop = $r->getProperty('newMemberIds');
-        $prop->setAccessible(true);
         return $prop->getValue();
     }
 
@@ -388,8 +385,8 @@ class TsmlMemberChangeTrackerTest extends TestCase
                 $editUpdated,
             );
 
-        WP_Mock::expectAction('unity/member_created', $createPopulated);
-        WP_Mock::expectAction('unity/member_changing', $editUpdated, $editOriginal);
+        Actions\expectDone('unity/member_created')->once()->with($createPopulated);
+        Actions\expectDone('unity/member_changing')->once()->with($editUpdated, $editOriginal);
 
         // Request 1 — create
         $this->tracker->captureOriginalMember($createId);

@@ -244,8 +244,9 @@ composer build:clean        # Remove build artifacts
 
 = Testing Stack =
 
-* **PHPUnit** 10 for unit tests
-* **WP_Mock** 1.0 for WordPress function mocking
+* **PHPUnit** 10.5 for unit tests
+* **bleedingdeacons/wp-mocks** for the shared WordPress stand-ins and the base TestCase
+* **Brain Monkey** for WordPress function and hook mocking, replacing WP_Mock
 * **Mockery** for general mocking
 * **PHPStan** with the WordPress extension for static analysis
 * **PHP_CodeSniffer** with the WordPress standard

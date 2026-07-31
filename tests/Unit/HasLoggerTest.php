@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Logger\HasLogger;
-use WP_Mock;
+use TsmlForUnity\Tests\TestCase;
 
 // The global \Sentinel_Log_Channel stand-in the trait's cached-channel
 // property is typed against is declared in tests/stubs/wordpress.php.
@@ -33,13 +33,11 @@ class HasLoggerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
         $this->resetChannel();
     }
 
     protected function tearDown(): void
     {
-        WP_Mock::tearDown();
         $this->resetChannel();
         parent::tearDown();
     }
@@ -51,7 +49,6 @@ class HasLoggerTest extends TestCase
     private function resetChannel(): void
     {
         $prop = (new \ReflectionClass(HasLoggerFixture::class))->getProperty('loggerChannel');
-        $prop->setAccessible(true);
         $prop->setValue(null, null);
     }
 
@@ -84,7 +81,14 @@ class HasLoggerTest extends TestCase
     }
 
     /**
+     * Runs in its own process. Setting an expectation on wp_log() defines the
+     * function for the lifetime of the process, and the two tests above assert
+     * it is *absent* — so leaking the definition into the rest of the run
+     * would take every other class that logs down with it.
+     *
      * @test
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
      */
     public function it_resolves_and_caches_a_channel_when_wp_log_exists(): void
     {
@@ -92,8 +96,8 @@ class HasLoggerTest extends TestCase
 
         // logChannel() sanitises the short class name before asking wp_log
         // for that channel.
-        WP_Mock::userFunction('sanitize_key')->andReturnUsing(fn ($v) => strtolower($v));
-        WP_Mock::userFunction('wp_log')->once()->with('hasloggerfixture')->andReturn($channel);
+        Functions\expect('sanitize_key')->andReturnUsing(fn ($v) => strtolower($v));
+        Functions\expect('wp_log')->once()->with('hasloggerfixture')->andReturn($channel);
 
         HasLoggerFixture::logError('boom');
         HasLoggerFixture::logInfo('fyi');

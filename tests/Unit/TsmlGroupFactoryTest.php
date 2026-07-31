@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Groups\TsmlGroupFactory;
 use TsmlForUnity\Groups\TsmlGroupFields;
+use TsmlForUnity\Tests\TestCase;
 use Unity\Contacts\Interfaces\Contact;
 use Unity\Groups\Interfaces\Group;
 use Unity\Meetings\Interfaces\Meeting;
 use Unity\Meetings\Interfaces\MeetingRepository;
-use WP_Mock;
 
 /**
  * @covers \TsmlForUnity\Groups\TsmlGroupFactory
@@ -26,7 +26,6 @@ class TsmlGroupFactoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
         // A group's meetings come from the MeetingRepository, so the factory
         // needs one to return anything but an empty list. The contact factory
@@ -35,18 +34,12 @@ class TsmlGroupFactoryTest extends TestCase
         $this->factory = new TsmlGroupFactory(null, $this->meetingRepository);
     }
 
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
-    }
-
     /**
      * @test
      */
     public function it_returns_null_when_post_does_not_exist(): void
     {
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->once()
             ->with(999)
             ->andReturn(null);
@@ -67,7 +60,7 @@ class TsmlGroupFactoryTest extends TestCase
             'post_title' => 'Wrong Post Type',
         ]);
 
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->once()
             ->with(123)
             ->andReturn($post);
@@ -103,17 +96,17 @@ class TsmlGroupFactoryTest extends TestCase
             'contact_1_phone' => ['555-5678'],
         ];
 
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        WP_Mock::userFunction('get_post_custom')
+        Functions\expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn($meta);
 
-        WP_Mock::userFunction('maybe_unserialize')
+        Functions\expect('maybe_unserialize')
             ->andReturnUsing(function ($value) {
                 return $value;
             });
@@ -126,7 +119,7 @@ class TsmlGroupFactoryTest extends TestCase
                 $this->createMeeting(202),
             ]);
 
-        WP_Mock::userFunction('get_permalink')
+        Functions\expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('https://example.com/group/test-group');
@@ -175,22 +168,22 @@ class TsmlGroupFactoryTest extends TestCase
             'contact_3_phone' => ['555-3333'],
         ];
 
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        WP_Mock::userFunction('get_post_custom')
+        Functions\expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn($meta);
 
-        WP_Mock::userFunction('maybe_unserialize')
+        Functions\expect('maybe_unserialize')
             ->andReturnUsing(function ($value) {
                 return $value;
             });
 
-        WP_Mock::userFunction('get_permalink')
+        Functions\expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('');
@@ -230,17 +223,17 @@ class TsmlGroupFactoryTest extends TestCase
             'post_title' => 'Minimal Group',
         ]);
 
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        WP_Mock::userFunction('get_post_custom')
+        Functions\expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn([]);
 
-        WP_Mock::userFunction('get_permalink')
+        Functions\expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('');
@@ -276,22 +269,22 @@ class TsmlGroupFactoryTest extends TestCase
             // Missing name and phone for contact 2
         ];
 
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        WP_Mock::userFunction('get_post_custom')
+        Functions\expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn($meta);
 
-        WP_Mock::userFunction('maybe_unserialize')
+        Functions\expect('maybe_unserialize')
             ->andReturnUsing(function ($value) {
                 return $value;
             });
 
-        WP_Mock::userFunction('get_permalink')
+        Functions\expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('');
@@ -326,17 +319,17 @@ class TsmlGroupFactoryTest extends TestCase
             'post_title' => 'Test',
         ]);
 
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        WP_Mock::userFunction('get_post_custom')
+        Functions\expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn([]);
 
-        WP_Mock::userFunction('get_permalink')
+        Functions\expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn(false);

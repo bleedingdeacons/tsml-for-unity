@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Support;
 
-use Mockery;
-use WP_Mock;
+use Brain\Monkey\Actions;
 
 /**
  * Negative expectations for WordPress actions.
  *
- * WP_Mock ships expectAction for "this fired" but has no counterpart for
- * "this must not fire", which several of the change/create branches turn on.
+ * Brain Monkey says "this must not fire" directly, so this is now a thin
+ * wrapper — kept because the name reads better at the call sites than
+ * Actions\expectDone(...)->never() does, and because there are a lot of them.
  *
- * Note that WP_Mock keys its argument matching on scalar values; every object
- * collapses to the same key. Scalar arguments are therefore matched exactly,
- * while object arguments only match on position, so pass the real values and
- * read these as assertions about the hook firing, not about its payload.
+ * Unlike the WP_Mock version this replaces, arguments are matched for real.
+ * WP_Mock keyed its matching on scalar values and collapsed every object to
+ * the same key, so an object argument only ever matched on position; Mockery
+ * compares them, falling back to == for objects that are not the same
+ * instance.
  */
 trait ActionExpectations
 {
@@ -29,11 +30,10 @@ trait ActionExpectations
      */
     protected function expectActionNotFired(string $hook, ...$args): void
     {
-        $intercept = Mockery::mock('intercept');
-        $intercept->shouldReceive('intercepted')->never();
+        $expectation = Actions\expectDone($hook)->never();
 
-        WP_Mock::onAction($hook)
-            ->with(...$args)
-            ->perform([$intercept, 'intercepted']);
+        if ($args !== []) {
+            $expectation->with(...$args);
+        }
     }
 }

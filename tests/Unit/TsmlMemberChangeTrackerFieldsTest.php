@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use Brain\Monkey\Actions;
+use Brain\Monkey\Functions;
 use Exception;
-use PHPUnit\Framework\TestCase;
 use TsmlForUnity\Members\TsmlMemberChangeTracker;
 use TsmlForUnity\Members\TsmlMemberFields;
 use TsmlForUnity\Tests\Fixtures\MemberStub;
+use TsmlForUnity\Tests\TestCase;
 use Unity\Members\Interfaces\MemberRepository;
 use Unity\Members\ResponderCertification;
-use WP_Mock;
 
 /**
  * Field-by-field change detection, plus the save-path guards.
@@ -39,13 +40,12 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
-        WP_Mock::userFunction('add_action')->andReturn(true);
-        // Routed through a property: WP_Mock resolves the first matching
-        // expectation, so a per-test override registered later is ignored.
+        // Routed through a property: the first matching expectation wins —
+        // that is true of Brain Monkey as it was of WP_Mock — so a per-test
+        // override registered later would never be consulted.
         $this->postType = TsmlMemberFields::POST_TYPE;
-        WP_Mock::userFunction('get_post_type')->andReturnUsing(fn (): string => $this->postType);
+        Functions\expect('get_post_type')->andReturnUsing(fn (): string => $this->postType);
 
         $this->repository = $this->createMock(MemberRepository::class);
         $this->tracker = new TsmlMemberChangeTracker($this->repository);
@@ -53,7 +53,6 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
 
     protected function tearDown(): void
     {
-        WP_Mock::tearDown();
 
         $reflection = new \ReflectionClass(TsmlMemberChangeTracker::class);
         $reflection->getProperty('originalMember')->setValue(null, null);
@@ -65,9 +64,9 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
     /** post_title already matches, so the sync is a no-op. */
     private function stubTitleSyncIsNoop(string $existingTitle = ''): void
     {
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->andReturn((object) ['ID' => self::POST_ID, 'post_title' => $existingTitle]);
-        WP_Mock::userFunction('wp_update_post')->andReturn(self::POST_ID);
+        Functions\expect('wp_update_post')->andReturn(self::POST_ID);
     }
 
     /** The tracker's static snapshot, or null once released. */
@@ -105,7 +104,7 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
         $original = new MemberStub(self::POST_ID);
         $updated  = new MemberStub(self::POST_ID, ...$updatedArgs);
 
-        WP_Mock::expectAction('unity/member_changing', $updated, $original);
+        Actions\expectDone('unity/member_changing')->once()->with($updated, $original);
 
         $this->runSave($original, $updated);
 
@@ -156,11 +155,11 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
     public function a_renamed_member_has_its_post_title_synced(): void
     {
         // The stored title still holds the previous name.
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->andReturn((object) ['ID' => self::POST_ID, 'post_title' => 'Old Name']);
 
         $captured = [];
-        WP_Mock::userFunction('wp_update_post')->andReturnUsing(
+        Functions\expect('wp_update_post')->andReturnUsing(
             function (array $args) use (&$captured): int {
                 $captured = $args;
 
@@ -179,11 +178,11 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
     /** @test */
     public function a_name_needing_escaping_is_encoded_into_the_post_title(): void
     {
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->andReturn((object) ['ID' => self::POST_ID, 'post_title' => 'plain']);
 
         $captured = [];
-        WP_Mock::userFunction('wp_update_post')->andReturnUsing(
+        Functions\expect('wp_update_post')->andReturnUsing(
             function (array $args) use (&$captured): int {
                 $captured = $args;
 

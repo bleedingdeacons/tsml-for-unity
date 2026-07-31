@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Meetings\TsmlMeetingFactory;
-use WP_Mock;
+use TsmlForUnity\Tests\TestCase;
 
 /**
  * Tests for meeting type resolution and the factory's failure handling.
@@ -30,24 +30,16 @@ class TsmlMeetingFactoryTypesTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
-        WP_Mock::userFunction('get_permalink')->andReturn('https://example.test/m/1');
-        WP_Mock::userFunction('get_post_status')->andReturn('publish');
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_permalink')->andReturn('https://example.test/m/1');
+        Functions\expect('get_post_status')->andReturn('publish');
+        Functions\expect('get_post')
             ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
-        WP_Mock::userFunction('is_wp_error')->andReturn(false);
-        WP_Mock::userFunction('get_post_custom')->andReturn([]);
-        WP_Mock::userFunction('is_serialized')->andReturn(false);
-        WP_Mock::userFunction('maybe_unserialize')->andReturnUsing(static fn ($v) => $v);
+        Functions\expect('get_post_custom')->andReturn([]);
+        Functions\expect('is_serialized')->andReturn(false);
+        Functions\expect('maybe_unserialize')->andReturnUsing(static fn ($v) => $v);
 
         $this->factory = new TsmlMeetingFactory();
-    }
-
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
     }
 
     private function source(array $overrides = []): array
@@ -64,7 +56,7 @@ class TsmlMeetingFactoryTypesTest extends TestCase
     /** Make get_post_meta() answer with the given stored type codes. */
     private function stubStoredTypes(mixed $types): void
     {
-        WP_Mock::userFunction('get_post_meta')->andReturn($types);
+        Functions\expect('get_post_meta')->andReturn($types);
     }
 
     // ─── types from postmeta ────────────────────────────────────────
@@ -201,7 +193,7 @@ class TsmlMeetingFactoryTypesTest extends TestCase
     {
         $this->stubStoredTypes([]);
         // get_post_custom() can return false when a post has no meta.
-        WP_Mock::userFunction('get_post_custom')->andReturn(false);
+        Functions\expect('get_post_custom')->andReturn(false);
 
         $this->assertNotNull(
             $this->factory->createFromSource($this->source()),

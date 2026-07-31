@@ -2,11 +2,21 @@
 
 declare(strict_types=1);
 
+use BleedingDeacons\WpMocks\Bootstrap;
+use BleedingDeacons\WpMocks\WpState;
+
 // Load Composer autoloader
 require_once __DIR__ . '/../vendor/autoload.php';
 
-// Initialize WP_Mock
-WP_Mock::bootstrap();
+// Patchwork first, and nothing patchable before it.
+//
+// It rewrites functions as their defining file is included, so anything
+// defined ahead of it can never be overridden per-test afterwards; Brain
+// Monkey only requires it lazily inside Monkey\setUp(), by which point the
+// stubs below exist. Symptom otherwise: Patchwork\Exceptions\DefinedTooEarly.
+Bootstrap::loadPatchwork();
+
+WpState::$pluginSlug = 'tsml-for-unity';
 
 // Define WordPress constants if not defined.
 //
@@ -56,18 +66,10 @@ if (!defined('WP_DEBUG')) {
     define('WP_DEBUG', true);
 }
 
-// $wpdb output-format constants. The custom-table repositories pass ARRAY_A
-// to get_row()/get_results(); undefined constants are fatal on PHP 8, so the
-// values are declared here rather than in each test.
-if (!defined('OBJECT')) {
-    define('OBJECT', 'OBJECT');
-}
-if (!defined('ARRAY_A')) {
-    define('ARRAY_A', 'ARRAY_A');
-}
-if (!defined('ARRAY_N')) {
-    define('ARRAY_N', 'ARRAY_N');
-}
+// The $wpdb output-format constants the custom-table repositories pass to
+// get_row()/get_results() are no longer declared here: bleedingdeacons/wp-mocks
+// carries OBJECT, OBJECT_K, ARRAY_A and ARRAY_N, along with the *_IN_SECONDS
+// family.
 
 if (!defined('TSML_FOR_UNITY_PATH')) {
     define('TSML_FOR_UNITY_PATH', dirname(__DIR__) . '/');
@@ -88,12 +90,25 @@ if (!defined('TSML_FOR_UNITY_URL')) {
 // would stay green while production fataled.
 require_once __DIR__ . '/stubs/wordpress.php';
 
-// The error-logging paths reach for wp_json_encode, so any test that exercises
-// a failure branch needs it. It is a pure function, so use the real semantics
-// rather than making every such test declare a mock.
-if (!function_exists('wp_json_encode')) {
-    function wp_json_encode($data, int $options = 0, int $depth = 512)
-    {
-        return json_encode($data, $options, $depth);
-    }
-}
+// The shared stub layer, loaded last so the classes above keep winning — its
+// definitions are all class_exists()/function_exists()-guarded.
+//
+// Only the `wordpress` group:
+//
+//   - `sentinel` would replace the Sentinel_Log_Channel in stubs/wordpress.php,
+//     which records level/message pairs in the shape HasLoggerTest asserts on.
+//   - `acf` must stay out. Several tests cover the ACF-unavailable branch by
+//     asserting acf_get_field() is *absent*, and a function, once defined,
+//     stays defined for the life of the process. Tests that need ACF present
+//     set their own expectation, which is enough for Brain Monkey to define
+//     the function for that test.
+//
+// Note what the group deliberately does not contain: add_action, add_filter,
+// do_action and apply_filters. Brain Monkey owns the hook layer and defines
+// them inside its own setUp(), which is why every test extends
+// TsmlForUnity\Tests\TestCase.
+Bootstrap::load(['wordpress']);
+
+// wp_json_encode() used to be declared here, for the error-logging paths that
+// reach for it. The shared layer above defines the same thing — json_encode()
+// with the same arguments — so this file's copy would never have been reached.

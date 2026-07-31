@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendance;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceFactory;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceRepository;
 use TsmlForUnity\Tests\Support\FakeWpdb;
+use TsmlForUnity\Tests\TestCase;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingOfficerAttendance;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingOfficerAttendanceRepository;
-use WP_Mock;
 
 /**
  * Tests for TsmlIntergroupMeetingOfficerAttendanceRepository.
@@ -37,8 +37,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
-        WP_Mock::userFunction('esc_sql')->andReturnUsing(static fn ($v) => $v);
+        Functions\expect('esc_sql')->andReturnUsing(static fn ($v) => $v);
 
         $this->previousWpdb = $GLOBALS['wpdb'] ?? null;
         $this->wpdb = new FakeWpdb();
@@ -51,7 +50,6 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
     protected function tearDown(): void
     {
         $GLOBALS['wpdb'] = $this->previousWpdb;
-        WP_Mock::tearDown();
         parent::tearDown();
     }
 

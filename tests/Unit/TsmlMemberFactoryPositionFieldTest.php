@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Members\TsmlMemberFactory;
 use TsmlForUnity\Members\TsmlMemberFields;
-use WP_Mock;
+use TsmlForUnity\Tests\TestCase;
 use WP_Post;
 
 /**
@@ -33,18 +33,11 @@ class TsmlMemberFactoryPositionFieldTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
 
         $this->factory = new TsmlMemberFactory();
-    }
-
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
     }
 
     /**
@@ -53,7 +46,7 @@ class TsmlMemberFactoryPositionFieldTest extends TestCase
      */
     private function stubFields(array $values): void
     {
-        WP_Mock::userFunction('get_field')->andReturnUsing(
+        Functions\expect('get_field')->andReturnUsing(
             static fn (string $field, int $id = 0) => $values[$field] ?? ''
         );
     }

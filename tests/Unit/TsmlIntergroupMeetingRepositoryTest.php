@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeeting;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFields;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingRepository;
+use TsmlForUnity\Tests\TestCase;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingFactory;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingRepository;
-use WP_Mock;
 
 /**
  * Tests for TsmlIntergroupMeetingRepository.
@@ -27,16 +27,9 @@ class TsmlIntergroupMeetingRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
         $this->factory = $this->createMock(IntergroupMeetingFactory::class);
         $this->repository = new TsmlIntergroupMeetingRepository($this->factory);
-    }
-
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
     }
 
     private function meetingPost(): object
@@ -57,7 +50,7 @@ class TsmlIntergroupMeetingRepositoryTest extends TestCase
      */
     public function find_by_id_returns_null_for_a_missing_post(): void
     {
-        WP_Mock::userFunction('get_post')->with(9)->andReturn(null);
+        Functions\expect('get_post')->with(9)->andReturn(null);
 
         $this->assertNull($this->repository->findById(9));
     }
@@ -67,7 +60,7 @@ class TsmlIntergroupMeetingRepositoryTest extends TestCase
      */
     public function find_by_id_returns_null_for_the_wrong_post_type(): void
     {
-        WP_Mock::userFunction('get_post')->with(9)->andReturn((object) ['post_type' => 'page']);
+        Functions\expect('get_post')->with(9)->andReturn((object) ['post_type' => 'page']);
 
         $this->assertNull($this->repository->findById(9));
     }
@@ -77,7 +70,7 @@ class TsmlIntergroupMeetingRepositoryTest extends TestCase
      */
     public function find_by_id_delegates_to_the_factory(): void
     {
-        WP_Mock::userFunction('get_post')->with(5)->andReturn($this->meetingPost());
+        Functions\expect('get_post')->with(5)->andReturn($this->meetingPost());
 
         $meeting = new TsmlIntergroupMeeting(id: 5, title: 'July');
         $this->factory->expects($this->once())
@@ -91,11 +84,11 @@ class TsmlIntergroupMeetingRepositoryTest extends TestCase
      */
     public function find_all_maps_posts_through_find_by_id(): void
     {
-        WP_Mock::userFunction('get_posts')->once()->andReturn([
+        Functions\expect('get_posts')->once()->andReturn([
             (object) ['ID' => 1],
             (object) ['ID' => 2],
         ]);
-        WP_Mock::userFunction('get_post')->andReturn($this->meetingPost());
+        Functions\expect('get_post')->andReturn($this->meetingPost());
 
         $a = new TsmlIntergroupMeeting(id: 1);
         $b = new TsmlIntergroupMeeting(id: 2);
@@ -109,7 +102,7 @@ class TsmlIntergroupMeetingRepositoryTest extends TestCase
      */
     public function find_all_returns_empty_when_there_are_no_posts(): void
     {
-        WP_Mock::userFunction('get_posts')->once()->andReturn([]);
+        Functions\expect('get_posts')->once()->andReturn([]);
 
         $this->assertSame([], $this->repository->findAll());
     }
@@ -119,7 +112,7 @@ class TsmlIntergroupMeetingRepositoryTest extends TestCase
      */
     public function count_returns_the_number_of_ids(): void
     {
-        WP_Mock::userFunction('get_posts')->once()->andReturn([10, 11]);
+        Functions\expect('get_posts')->once()->andReturn([10, 11]);
 
         $this->assertSame(2, $this->repository->count());
     }
@@ -131,7 +124,7 @@ class TsmlIntergroupMeetingRepositoryTest extends TestCase
     {
         // posts_per_page → numberposts and paged → offset are handled in
         // buildQueryArgs; the count path then forces numberposts -1.
-        WP_Mock::userFunction('get_posts')->once()->andReturn([1, 2, 3]);
+        Functions\expect('get_posts')->once()->andReturn([1, 2, 3]);
 
         $this->assertSame(3, $this->repository->count([
             'posts_per_page' => 10,
@@ -144,11 +137,11 @@ class TsmlIntergroupMeetingRepositoryTest extends TestCase
      */
     public function save_writes_both_relationship_fields_by_key(): void
     {
-        WP_Mock::userFunction('get_option')
+        Functions\expect('get_option')
             ->with('tsml_unity_acf_field_keys', [])->andReturn([]);
 
         $writes = [];
-        WP_Mock::userFunction('update_field')->andReturnUsing(
+        Functions\expect('update_field')->andReturnUsing(
             function ($key, $value, $id) use (&$writes) {
                 $writes[$key] = $value;
                 return true;
@@ -173,7 +166,7 @@ class TsmlIntergroupMeetingRepositoryTest extends TestCase
      */
     public function delete_force_deletes_the_post(): void
     {
-        WP_Mock::userFunction('wp_delete_post')->once()->with(5, true)->andReturn((object) ['ID' => 5]);
+        Functions\expect('wp_delete_post')->once()->with(5, true)->andReturn((object) ['ID' => 5]);
 
         $this->assertTrue($this->repository->delete(5));
     }
@@ -183,7 +176,7 @@ class TsmlIntergroupMeetingRepositoryTest extends TestCase
      */
     public function delete_returns_false_when_removal_fails(): void
     {
-        WP_Mock::userFunction('wp_delete_post')->once()->with(5, true)->andReturn(false);
+        Functions\expect('wp_delete_post')->once()->with(5, true)->andReturn(false);
 
         $this->assertFalse($this->repository->delete(5));
     }

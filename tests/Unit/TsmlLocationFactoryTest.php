@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Locations\TsmlLocationFactory;
 use TsmlForUnity\Locations\TsmlLocationFields;
+use TsmlForUnity\Tests\TestCase;
 use Unity\Locations\Interfaces\Location;
-use WP_Mock;
 
 /**
  * @covers \TsmlForUnity\Locations\TsmlLocationFactory
@@ -20,14 +20,7 @@ class TsmlLocationFactoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
         $this->factory = new TsmlLocationFactory();
-    }
-
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
     }
 
     /**
@@ -35,7 +28,7 @@ class TsmlLocationFactoryTest extends TestCase
      */
     public function it_returns_null_when_post_does_not_exist(): void
     {
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->once()
             ->with(999)
             ->andReturn(null);
@@ -56,7 +49,7 @@ class TsmlLocationFactoryTest extends TestCase
             'post_title' => 'Wrong Post Type',
         ]);
 
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->once()
             ->with(123)
             ->andReturn($post);
@@ -90,31 +83,31 @@ class TsmlLocationFactoryTest extends TestCase
             TsmlLocationFields::TIMEZONE => ['America/Chicago'],
         ];
 
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        WP_Mock::userFunction('get_post_custom')
+        Functions\expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn($meta);
 
-        WP_Mock::userFunction('maybe_unserialize')
+        Functions\expect('maybe_unserialize')
             ->andReturnUsing(function ($value) {
                 return $value;
             });
 
-        WP_Mock::userFunction('wp_get_post_terms')
+        Functions\expect('wp_get_post_terms')
             ->once()
             ->with($postId, TsmlLocationFields::REGION_TAXONOMY, ['fields' => 'names'])
             ->andReturn(['Downtown']);
 
-        WP_Mock::userFunction('get_posts')
+        Functions\expect('get_posts')
             ->once()
             ->andReturn([200, 201, 202]); // Meeting IDs
 
-        WP_Mock::userFunction('get_permalink')
+        Functions\expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('https://example.com/location/community-center');
@@ -151,25 +144,25 @@ class TsmlLocationFactoryTest extends TestCase
             'post_title' => 'Minimal Location',
         ]);
 
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        WP_Mock::userFunction('get_post_custom')
+        Functions\expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn([]);
 
-        WP_Mock::userFunction('wp_get_post_terms')
+        Functions\expect('wp_get_post_terms')
             ->once()
             ->andReturn([]);
 
-        WP_Mock::userFunction('get_posts')
+        Functions\expect('get_posts')
             ->once()
             ->andReturn([]);
 
-        WP_Mock::userFunction('get_permalink')
+        Functions\expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('');
@@ -210,30 +203,30 @@ class TsmlLocationFactoryTest extends TestCase
             // No latitude/longitude
         ];
 
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        WP_Mock::userFunction('get_post_custom')
+        Functions\expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn($meta);
 
-        WP_Mock::userFunction('maybe_unserialize')
+        Functions\expect('maybe_unserialize')
             ->andReturnUsing(function ($value) {
                 return $value;
             });
 
-        WP_Mock::userFunction('wp_get_post_terms')
+        Functions\expect('wp_get_post_terms')
             ->once()
             ->andReturn([]);
 
-        WP_Mock::userFunction('get_posts')
+        Functions\expect('get_posts')
             ->once()
             ->andReturn([]);
 
-        WP_Mock::userFunction('get_permalink')
+        Functions\expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('');
@@ -258,26 +251,26 @@ class TsmlLocationFactoryTest extends TestCase
             'post_title' => 'Multi-Region Location',
         ]);
 
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        WP_Mock::userFunction('get_post_custom')
+        Functions\expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn([]);
 
-        WP_Mock::userFunction('wp_get_post_terms')
+        Functions\expect('wp_get_post_terms')
             ->once()
             ->with($postId, TsmlLocationFields::REGION_TAXONOMY, ['fields' => 'names'])
             ->andReturn(['North Side', 'Downtown', 'Metro Area']);
 
-        WP_Mock::userFunction('get_posts')
+        Functions\expect('get_posts')
             ->once()
             ->andReturn([]);
 
-        WP_Mock::userFunction('get_permalink')
+        Functions\expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('');
@@ -300,25 +293,25 @@ class TsmlLocationFactoryTest extends TestCase
             'post_title' => 'Test Location',
         ]);
 
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        WP_Mock::userFunction('get_post_custom')
+        Functions\expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn([]);
 
-        WP_Mock::userFunction('wp_get_post_terms')
+        Functions\expect('wp_get_post_terms')
             ->once()
             ->andReturn([]);
 
-        WP_Mock::userFunction('get_posts')
+        Functions\expect('get_posts')
             ->once()
             ->andReturn([]);
 
-        WP_Mock::userFunction('get_permalink')
+        Functions\expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn(false);
@@ -346,30 +339,30 @@ class TsmlLocationFactoryTest extends TestCase
             TsmlLocationFields::LONGITUDE => ['-0.1278'],
         ];
 
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        WP_Mock::userFunction('get_post_custom')
+        Functions\expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn($meta);
 
-        WP_Mock::userFunction('maybe_unserialize')
+        Functions\expect('maybe_unserialize')
             ->andReturnUsing(function ($value) {
                 return $value;
             });
 
-        WP_Mock::userFunction('wp_get_post_terms')
+        Functions\expect('wp_get_post_terms')
             ->once()
             ->andReturn([]);
 
-        WP_Mock::userFunction('get_posts')
+        Functions\expect('get_posts')
             ->once()
             ->andReturn([]);
 
-        WP_Mock::userFunction('get_permalink')
+        Functions\expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('');
@@ -399,30 +392,30 @@ class TsmlLocationFactoryTest extends TestCase
             TsmlLocationFields::LONGITUDE => ['also-not-a-number'],
         ];
 
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        WP_Mock::userFunction('get_post_custom')
+        Functions\expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn($meta);
 
-        WP_Mock::userFunction('maybe_unserialize')
+        Functions\expect('maybe_unserialize')
             ->andReturnUsing(function ($value) {
                 return $value;
             });
 
-        WP_Mock::userFunction('wp_get_post_terms')
+        Functions\expect('wp_get_post_terms')
             ->once()
             ->andReturn([]);
 
-        WP_Mock::userFunction('get_posts')
+        Functions\expect('get_posts')
             ->once()
             ->andReturn([]);
 
-        WP_Mock::userFunction('get_permalink')
+        Functions\expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('');

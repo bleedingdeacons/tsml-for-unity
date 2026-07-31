@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace TsmlForUnity\Tests\Unit;
 
 use Exception;
-use PHPUnit\Framework\TestCase;
+use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Positions\TsmlPositionView;
 use TsmlForUnity\Positions\TsmlPositionViewFactory;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberRepository;
 use Unity\Positions\Interfaces\Position;
 use Unity\Positions\Interfaces\PositionRepository;
-use WP_Mock;
 
 /**
  * Tests for choosing which member currently holds a position.
@@ -33,18 +32,6 @@ use WP_Mock;
 class TsmlPositionViewRotationTest extends TestCase
 {
     private const POSITION_ID = 5;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        WP_Mock::setUp();
-    }
-
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
-    }
 
     private function position(): Position
     {
