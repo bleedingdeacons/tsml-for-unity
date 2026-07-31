@@ -18,7 +18,6 @@ use function do_action;
 use function get_post;
 use function get_post_type;
 use function wp_update_post;
-use const WP_DEBUG;
 
 /**
  * Class TsmlPositionChangeTracker
@@ -59,9 +58,7 @@ class TsmlPositionChangeTracker implements PositionChangeTracker
         try {
             self::$originalPosition = $this->repository->findById($postId);
 
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                \TsmlForUnity\Plugin::logError('Original position captured for post ID: ' . $postId);
-            }
+            \TsmlForUnity\Plugin::logDebug('Original position captured for post ID: ' . $postId);
 
             do_action('unity/position_before_save', $postId, self::$originalPosition);
         } catch (Exception $e) {
@@ -82,9 +79,7 @@ class TsmlPositionChangeTracker implements PositionChangeTracker
         }
 
         if (!self::$originalPosition) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                \TsmlForUnity\Plugin::logError('No original position captured for comparison, post ID: ' . $postId);
-            }
+            \TsmlForUnity\Plugin::logDebug('No original position captured for comparison, post ID: ' . $postId);
             return;
         }
 
@@ -97,9 +92,7 @@ class TsmlPositionChangeTracker implements PositionChangeTracker
             }
 
             if ($this->hasPositionChanged(self::$originalPosition, $updatedPosition)) {
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    \TsmlForUnity\Plugin::logError('Changes detected in position ID: ' . $postId . ', firing unity/position_changing hook');
-                }
+                \TsmlForUnity\Plugin::logDebug('Changes detected in position ID: ' . $postId . ', firing unity/position_changing hook');
 
                 $post = get_post($postId);
                 $encodedName = htmlspecialchars($updatedPosition->getLongName(), ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -112,9 +105,7 @@ class TsmlPositionChangeTracker implements PositionChangeTracker
 
                 do_action('unity/position_changing', $updatedPosition, self::$originalPosition);
             } else {
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    \TsmlForUnity\Plugin::logError('No changes detected in position ID: ' . $postId);
-                }
+                \TsmlForUnity\Plugin::logDebug('No changes detected in position ID: ' . $postId);
             }
 
             do_action('unity/position_changed', $postId, $updatedPosition, self::$originalPosition);

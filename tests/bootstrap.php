@@ -56,15 +56,13 @@ if (!defined('TSML_FOR_UNITY_VERSION')) {
     define('TSML_FOR_UNITY_VERSION', '1.0.0');
 }
 
-// The change trackers guard their diagnostic logging behind
-// `defined('WP_DEBUG') && WP_DEBUG`. Leaving it undefined meant those
-// branches never ran under test, so a fault in one — a bad string
-// concatenation, say — would only ever surface on a debug-enabled site.
-// Turning it on exercises them. Plugin::logError() degrades to a no-op when
-// the logger is absent, so this adds coverage without adding noise.
-if (!defined('WP_DEBUG')) {
-    define('WP_DEBUG', true);
-}
+// WP_DEBUG is not defined here any more, and defining it would no longer mean
+// anything: the change trackers used to wrap their diagnostic logging in
+// `defined('WP_DEBUG') && WP_DEBUG`, so the branches only ran on a
+// debug-enabled site. They log at debug level unconditionally now and let
+// Sentinel's own SENTINEL_LOG_LEVEL decide, so the lines run in every test
+// regardless. Plugin::logDebug() degrades to a no-op when the logger is
+// absent, which it is here.
 
 // The $wpdb output-format constants the custom-table repositories pass to
 // get_row()/get_results() are no longer declared here: bleedingdeacons/wp-mocks
