@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Meetings\TsmlMeetingFactory;
-use WP_Mock;
+use TsmlForUnity\Tests\TestCase;
 
 /**
  * Tests for TsmlMeetingFactory's postmeta normalisation.
@@ -31,20 +31,18 @@ class TsmlMeetingFactoryMetaTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
-        WP_Mock::userFunction('get_permalink')->andReturn('https://example.test/m/1');
-        WP_Mock::userFunction('get_post_status')->andReturn('publish');
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_permalink')->andReturn('https://example.test/m/1');
+        Functions\expect('get_post_status')->andReturn('publish');
+        Functions\expect('get_post')
             ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
-        WP_Mock::userFunction('is_wp_error')->andReturn(false);
-        WP_Mock::userFunction('get_post_meta')->andReturn('');
+        Functions\expect('get_post_meta')->andReturn('');
 
         // Mirror WordPress's real serialization helpers so the branch the
         // factory takes is decided by the data, not by the stub.
-        WP_Mock::userFunction('is_serialized')
+        Functions\expect('is_serialized')
             ->andReturnUsing(static fn ($v): bool => is_string($v) && @unserialize($v) !== false);
-        WP_Mock::userFunction('maybe_unserialize')
+        Functions\expect('maybe_unserialize')
             ->andReturnUsing(static function ($v) {
                 if (!is_string($v)) {
                     return $v;
@@ -57,19 +55,13 @@ class TsmlMeetingFactoryMetaTest extends TestCase
         $this->factory = new TsmlMeetingFactory();
     }
 
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
-    }
-
     /**
      * Build a meeting whose postmeta is the supplied array, and return the
      * meeting. The factory reads meta through get_post_custom().
      */
     private function meetingWithMeta(array $meta): ?object
     {
-        WP_Mock::userFunction('get_post_custom')->andReturn($meta);
+        Functions\expect('get_post_custom')->andReturn($meta);
 
         return $this->factory->createFromSource([
             'id'       => 1,

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceTable;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceTable;
 use TsmlForUnity\Tests\Support\FakeWpdb;
-use WP_Mock;
+use TsmlForUnity\Tests\TestCase;
 
 /**
  * Tests for the custom attendance tables' install/upgrade lifecycle.
@@ -33,7 +33,6 @@ class AttendanceTableInstallerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
         $this->previousWpdb = $GLOBALS['wpdb'] ?? null;
         $this->wpdb = new FakeWpdb();
@@ -42,16 +41,16 @@ class AttendanceTableInstallerTest extends TestCase
         $GLOBALS['tsml_test_dbdelta'] = [];
         $this->options = [];
 
-        WP_Mock::userFunction('esc_sql')->andReturnUsing(static fn ($v) => $v);
-        WP_Mock::userFunction('get_option')
+        Functions\expect('esc_sql')->andReturnUsing(static fn ($v) => $v);
+        Functions\expect('get_option')
             ->andReturnUsing(fn (string $name, $default = false) => $this->options[$name] ?? $default);
-        WP_Mock::userFunction('update_option')
+        Functions\expect('update_option')
             ->andReturnUsing(function (string $name, $value): bool {
                 $this->options[$name] = $value;
 
                 return true;
             });
-        WP_Mock::userFunction('delete_option')
+        Functions\expect('delete_option')
             ->andReturnUsing(function (string $name): bool {
                 unset($this->options[$name]);
 
@@ -62,7 +61,6 @@ class AttendanceTableInstallerTest extends TestCase
     protected function tearDown(): void
     {
         $GLOBALS['wpdb'] = $this->previousWpdb;
-        WP_Mock::tearDown();
         parent::tearDown();
     }
 

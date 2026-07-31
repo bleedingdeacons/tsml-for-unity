@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Groups\TsmlGroup;
 use TsmlForUnity\Members\TsmlMember;
 use TsmlForUnity\Members\TsmlMemberViewFactory;

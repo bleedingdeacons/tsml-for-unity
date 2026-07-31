@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Actions;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Contacts\TsmlContact;
 use TsmlForUnity\Groups\TsmlGroup;
 use TsmlForUnity\Groups\TsmlGroupChangeTracker;
 use TsmlForUnity\Groups\TsmlGroupFields;
 use TsmlForUnity\Tests\Support\ActionExpectations;
+use TsmlForUnity\Tests\TestCase;
 use Unity\Groups\Interfaces\GroupRepository;
 use Unity\Meetings\Interfaces\Meeting;
-use WP_Mock;
 
 /**
  * Tests for TsmlGroupChangeTracker.
@@ -35,9 +36,7 @@ class TsmlGroupChangeTrackerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
-        WP_Mock::userFunction('add_action')->andReturn(true);
 
         $this->repository = $this->createMock(GroupRepository::class);
         $this->tracker = new TsmlGroupChangeTracker($this->repository);
@@ -45,7 +44,6 @@ class TsmlGroupChangeTrackerTest extends TestCase
 
     protected function tearDown(): void
     {
-        WP_Mock::tearDown();
 
         (new \ReflectionClass(TsmlGroupChangeTracker::class))
             ->getProperty('originalGroup')->setValue(null, null);
@@ -55,14 +53,14 @@ class TsmlGroupChangeTrackerTest extends TestCase
 
     private function stubPostTypeGuard(int $postId): void
     {
-        WP_Mock::userFunction('get_post_type')
+        Functions\expect('get_post_type')
             ->with($postId)
             ->andReturn(TsmlGroupFields::POST_TYPE);
     }
 
     private function stubTitleSyncIsNoop(int $postId, string $existingTitle): void
     {
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->with($postId)
             ->andReturn((object) ['ID' => $postId, 'post_title' => $existingTitle]);
     }
@@ -105,9 +103,9 @@ class TsmlGroupChangeTrackerTest extends TestCase
             $this->group(['email' => 'new@example.com'])
         );
 
-        WP_Mock::expectAction('group_before_save', 42, $original);
-        WP_Mock::expectAction('unity/group_changing', $updated, $original);
-        WP_Mock::expectAction('unity/group_changed', 42, $updated, $original);
+        Actions\expectDone('group_before_save')->once()->with(42, $original);
+        Actions\expectDone('unity/group_changing')->once()->with($updated, $original);
+        Actions\expectDone('unity/group_changed')->once()->with(42, $updated, $original);
 
         $this->tracker->captureOriginalGroup(42);
         $this->tracker->checkForChanges(42);
@@ -128,7 +126,7 @@ class TsmlGroupChangeTrackerTest extends TestCase
             ->with(42)
             ->willReturnOnConsecutiveCalls($original, $updated);
 
-        WP_Mock::expectAction('unity/group_changed', 42, $updated, $original);
+        Actions\expectDone('unity/group_changed')->once()->with(42, $updated, $original);
         $this->expectActionNotFired('unity/group_changing', $updated, $original);
 
         $this->tracker->captureOriginalGroup(42);
@@ -140,7 +138,7 @@ class TsmlGroupChangeTrackerTest extends TestCase
      */
     public function capture_ignores_a_non_group_post_type(): void
     {
-        WP_Mock::userFunction('get_post_type')->with(99)->andReturn('page');
+        Functions\expect('get_post_type')->with(99)->andReturn('page');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->captureOriginalGroup(99);
@@ -165,7 +163,7 @@ class TsmlGroupChangeTrackerTest extends TestCase
     {
         [$original, $updated] = $this->runSave($this->group($originalArgs), $this->group($updatedArgs));
 
-        WP_Mock::expectAction('unity/group_changing', $updated, $original);
+        Actions\expectDone('unity/group_changing')->once()->with($updated, $original);
 
         $this->tracker->captureOriginalGroup(42);
         $this->tracker->checkForChanges(42);
@@ -174,7 +172,7 @@ class TsmlGroupChangeTrackerTest extends TestCase
     /**
      * @return array<string, array{array<string,mixed>, array<string,mixed>}>
      */
-    public function changedFieldProvider(): array
+    public static function changedFieldProvider(): array
     {
         return [
             'notes'       => [['groupNotes' => 'a'], ['groupNotes' => 'b']],
@@ -206,7 +204,7 @@ class TsmlGroupChangeTrackerTest extends TestCase
             ->willReturnOnConsecutiveCalls($original, $updated);
 
         $this->expectActionNotFired('unity/group_changing', $updated, $original);
-        WP_Mock::expectAction('unity/group_changed', 42, $updated, $original);
+        Actions\expectDone('unity/group_changed')->once()->with(42, $updated, $original);
 
         $this->tracker->captureOriginalGroup(42);
         $this->tracker->checkForChanges(42);
@@ -222,7 +220,7 @@ class TsmlGroupChangeTrackerTest extends TestCase
             $this->group(['meetings' => [$this->meeting(1), $this->meeting(2)]])
         );
 
-        WP_Mock::expectAction('unity/group_changing', $updated, $original);
+        Actions\expectDone('unity/group_changing')->once()->with($updated, $original);
 
         $this->tracker->captureOriginalGroup(42);
         $this->tracker->checkForChanges(42);
@@ -241,7 +239,7 @@ class TsmlGroupChangeTrackerTest extends TestCase
             $this->group(['contacts' => [$c]])
         );
 
-        WP_Mock::expectAction('unity/group_changing', $updated, $original);
+        Actions\expectDone('unity/group_changing')->once()->with($updated, $original);
 
         $this->tracker->captureOriginalGroup(42);
         $this->tracker->checkForChanges(42);
@@ -265,7 +263,7 @@ class TsmlGroupChangeTrackerTest extends TestCase
             ->willReturnOnConsecutiveCalls($original, $updated);
 
         $this->expectActionNotFired('unity/group_changing', $updated, $original);
-        WP_Mock::expectAction('unity/group_changed', 42, $updated, $original);
+        Actions\expectDone('unity/group_changed')->once()->with(42, $updated, $original);
 
         $this->tracker->captureOriginalGroup(42);
         $this->tracker->checkForChanges(42);
@@ -284,7 +282,7 @@ class TsmlGroupChangeTrackerTest extends TestCase
             $this->group(['contacts' => [$a, $b]])
         );
 
-        WP_Mock::expectAction('unity/group_changing', $updated, $original);
+        Actions\expectDone('unity/group_changing')->once()->with($updated, $original);
 
         $this->tracker->captureOriginalGroup(42);
         $this->tracker->checkForChanges(42);
@@ -301,7 +299,7 @@ class TsmlGroupChangeTrackerTest extends TestCase
         $this->stubPostTypeGuard(42);
         $this->repository->expects($this->once())->method('findById')->with(42)->willReturn($group);
 
-        WP_Mock::expectAction('unity/group_deleted', 42, $group);
+        Actions\expectDone('unity/group_deleted')->once()->with(42, $group);
 
         $this->tracker->onGroupDeleted(42);
     }
@@ -311,7 +309,7 @@ class TsmlGroupChangeTrackerTest extends TestCase
      */
     public function deleting_ignores_a_non_group_post_type(): void
     {
-        WP_Mock::userFunction('get_post_type')->with(99)->andReturn('post');
+        Functions\expect('get_post_type')->with(99)->andReturn('post');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->onGroupDeleted(99);
@@ -327,7 +325,7 @@ class TsmlGroupChangeTrackerTest extends TestCase
             ->method('findById')
             ->willThrowException(new \RuntimeException('gone'));
 
-        WP_Mock::expectAction('unity/group_deleted', 42, null);
+        Actions\expectDone('unity/group_deleted')->once()->with(42, null);
 
         $this->tracker->onGroupDeleted(42);
     }
@@ -341,7 +339,7 @@ class TsmlGroupChangeTrackerTest extends TestCase
         $post = $this->wpPost(42);
         $this->repository->expects($this->once())->method('findById')->with(42)->willReturn($group);
 
-        WP_Mock::expectAction('unity/group_hidden', 42, $group);
+        Actions\expectDone('unity/group_hidden')->once()->with(42, $group);
 
         $this->tracker->onGroupHidden('private', 'publish', $post);
     }

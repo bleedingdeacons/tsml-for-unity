@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\IntergroupMeetings\AcfFieldKeyResolver;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFields;
-use WP_Mock;
+use TsmlForUnity\Tests\TestCase;
 
 /**
  * Tests for AcfFieldKeyResolver
@@ -16,18 +16,6 @@ use WP_Mock;
  */
 class AcfFieldKeyResolverTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-        WP_Mock::setUp();
-    }
-
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
-    }
-
     /**
      * @test
      */
@@ -45,7 +33,7 @@ class AcfFieldKeyResolverTest extends TestCase
      */
     public function get_key_returns_the_cached_key_when_present(): void
     {
-        WP_Mock::userFunction('get_option')
+        Functions\expect('get_option')
             ->with('tsml_unity_acf_field_keys', [])
             ->andReturn([
                 TsmlIntergroupMeetingFields::FIELD_ATTENDEES => 'field_cached123',
@@ -62,7 +50,7 @@ class AcfFieldKeyResolverTest extends TestCase
      */
     public function get_key_falls_back_to_the_hardcoded_constant_when_uncached(): void
     {
-        WP_Mock::userFunction('get_option')
+        Functions\expect('get_option')
             ->with('tsml_unity_acf_field_keys', [])
             ->andReturn([]);
 
@@ -77,7 +65,7 @@ class AcfFieldKeyResolverTest extends TestCase
      */
     public function get_key_returns_null_for_an_unknown_uncached_field(): void
     {
-        WP_Mock::userFunction('get_option')
+        Functions\expect('get_option')
             ->with('tsml_unity_acf_field_keys', [])
             ->andReturn([]);
 
@@ -89,7 +77,7 @@ class AcfFieldKeyResolverTest extends TestCase
      */
     public function is_cached_reflects_whether_the_option_is_populated(): void
     {
-        WP_Mock::userFunction('get_option')
+        Functions\expect('get_option')
             ->with('tsml_unity_acf_field_keys', [])
             ->andReturn(['x' => 'field_1']);
 
@@ -101,7 +89,7 @@ class AcfFieldKeyResolverTest extends TestCase
      */
     public function is_cached_is_false_for_an_empty_mapping(): void
     {
-        WP_Mock::userFunction('get_option')
+        Functions\expect('get_option')
             ->with('tsml_unity_acf_field_keys', [])
             ->andReturn([]);
 
@@ -114,7 +102,7 @@ class AcfFieldKeyResolverTest extends TestCase
     public function clear_deletes_the_cached_option(): void
     {
         $deleted = null;
-        WP_Mock::userFunction('delete_option')
+        Functions\expect('delete_option')
             ->once()
             ->andReturnUsing(function ($option) use (&$deleted) {
                 $deleted = $option;

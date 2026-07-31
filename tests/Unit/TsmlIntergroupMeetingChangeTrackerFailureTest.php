@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use Brain\Monkey\Functions;
 use Exception;
-use PHPUnit\Framework\TestCase;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingChangeTracker;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFields;
+use TsmlForUnity\Tests\TestCase;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeeting;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingRepository;
-use WP_Mock;
 
 /**
  * Guard and failure paths for the intergroup meeting change tracker.
@@ -33,9 +33,7 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
-        WP_Mock::userFunction('add_action')->andReturn(true);
 
         $this->repository = $this->createMock(IntergroupMeetingRepository::class);
         $this->tracker = new TsmlIntergroupMeetingChangeTracker($this->repository);
@@ -43,7 +41,6 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
 
     protected function tearDown(): void
     {
-        WP_Mock::tearDown();
 
         (new \ReflectionClass(TsmlIntergroupMeetingChangeTracker::class))
             ->getProperty('originalMeeting')->setValue(null, null);
@@ -59,7 +56,7 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
     /** @test */
     public function capturing_a_post_of_another_type_is_ignored(): void
     {
-        WP_Mock::userFunction('get_post_type')->andReturn('page');
+        Functions\expect('get_post_type')->andReturn('page');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->captureOriginalMeeting(3);
@@ -70,7 +67,7 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
     /** @test */
     public function a_capture_failure_is_swallowed(): void
     {
-        WP_Mock::userFunction('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
+        Functions\expect('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
         $this->repository->method('findById')->willThrowException(new Exception('boom'));
 
         $this->tracker->captureOriginalMeeting(3);
@@ -81,7 +78,7 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
     /** @test */
     public function checking_a_post_of_another_type_is_ignored(): void
     {
-        WP_Mock::userFunction('get_post_type')->andReturn('page');
+        Functions\expect('get_post_type')->andReturn('page');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->checkForChanges(3);
@@ -92,7 +89,7 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
     /** @test */
     public function a_check_without_a_captured_original_stops_quietly(): void
     {
-        WP_Mock::userFunction('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
+        Functions\expect('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
         // No captureOriginalMeeting() call, so there is nothing to compare.
         $this->repository->expects($this->never())->method('findById');
 
@@ -104,7 +101,7 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
     /** @test */
     public function a_check_that_cannot_reload_the_meeting_stops_quietly(): void
     {
-        WP_Mock::userFunction('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
+        Functions\expect('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
 
         $this->repository->method('findById')
             ->willReturnOnConsecutiveCalls($this->meeting(), null);
@@ -118,7 +115,7 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
     /** @test */
     public function a_check_failure_is_swallowed(): void
     {
-        WP_Mock::userFunction('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
+        Functions\expect('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
 
         $this->repository->method('findById')
             ->willReturnOnConsecutiveCalls(
@@ -135,7 +132,7 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
     /** @test */
     public function deleting_a_post_of_another_type_is_ignored(): void
     {
-        WP_Mock::userFunction('get_post_type')->andReturn('page');
+        Functions\expect('get_post_type')->andReturn('page');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->onIntergroupMeetingDeleted(3);
@@ -146,7 +143,7 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
     /** @test */
     public function a_repository_failure_during_deletion_is_contained(): void
     {
-        WP_Mock::userFunction('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
+        Functions\expect('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
         $this->repository->method('findById')->willThrowException(new Exception('row vanished'));
 
         $this->tracker->onIntergroupMeetingDeleted(3);

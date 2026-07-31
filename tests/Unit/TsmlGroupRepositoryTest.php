@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Groups\TsmlGroup;
 use TsmlForUnity\Groups\TsmlGroupFields;
 use TsmlForUnity\Groups\TsmlGroupRepository;
+use TsmlForUnity\Tests\TestCase;
 use Unity\Groups\Interfaces\Group;
 use Unity\Groups\Interfaces\GroupFactory;
 use Unity\Meetings\Interfaces\Meeting;
-use WP_Mock;
 
 /**
  * Tests for TsmlGroupRepository's write paths.
@@ -34,16 +34,9 @@ class TsmlGroupRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
         $this->factory = $this->createMock(GroupFactory::class);
         $this->repository = new TsmlGroupRepository($this->factory);
-    }
-
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
     }
 
     /**
@@ -91,7 +84,7 @@ class TsmlGroupRepositoryTest extends TestCase
      */
     private function captureUpdateField(string $field, &$captured): void
     {
-        WP_Mock::userFunction('update_field')
+        Functions\expect('update_field')
             ->withArgs(function ($key) use ($field) {
                 return $key === $field;
             })
@@ -101,7 +94,7 @@ class TsmlGroupRepositoryTest extends TestCase
             });
 
         // The other fields in the same save are not under test.
-        WP_Mock::userFunction('update_field')->andReturn(true);
+        Functions\expect('update_field')->andReturn(true);
     }
 
     // ─── save() insert path writes meeting IDs ──────────────────────
@@ -123,8 +116,7 @@ class TsmlGroupRepositoryTest extends TestCase
             $this->meetingWithId(202),
         ]);
 
-        WP_Mock::userFunction('wp_insert_post')->once()->andReturn($newPostId);
-        WP_Mock::userFunction('is_wp_error')->andReturn(false);
+        Functions\expect('wp_insert_post')->once()->andReturn($newPostId);
 
         $written = null;
         $this->captureUpdateField(TsmlGroupFields::MEETING, $written);
@@ -140,8 +132,7 @@ class TsmlGroupRepositoryTest extends TestCase
      */
     public function save_insert_writes_empty_array_when_group_has_no_meetings(): void
     {
-        WP_Mock::userFunction('wp_insert_post')->once()->andReturn(4242);
-        WP_Mock::userFunction('is_wp_error')->andReturn(false);
+        Functions\expect('wp_insert_post')->once()->andReturn(4242);
 
         $written = null;
         $this->captureUpdateField(TsmlGroupFields::MEETING, $written);
@@ -168,9 +159,8 @@ class TsmlGroupRepositoryTest extends TestCase
     {
         $group = $this->groupWith(0, [$this->meetingWithId(200)]);
 
-        $error = new \stdClass();
-        WP_Mock::userFunction('wp_insert_post')->once()->andReturn($error);
-        WP_Mock::userFunction('is_wp_error')->with($error)->andReturn(true);
+        $error = new \WP_Error('db_error', 'the write failed');
+        Functions\expect('wp_insert_post')->once()->andReturn($error);
 
         // No update_field expectation: the failure returns before any writes.
 
@@ -193,8 +183,7 @@ class TsmlGroupRepositoryTest extends TestCase
 
         $this->assertTrue($group->isValid(), 'A titled, unsaved group must be valid');
 
-        WP_Mock::userFunction('wp_insert_post')->once()->andReturn(4242);
-        WP_Mock::userFunction('is_wp_error')->andReturn(false);
+        Functions\expect('wp_insert_post')->once()->andReturn(4242);
 
         $written = null;
         $this->captureUpdateField(TsmlGroupFields::TITLE, $written);
@@ -226,8 +215,7 @@ class TsmlGroupRepositoryTest extends TestCase
             $this->meetingWithId(301),
         ]);
 
-        WP_Mock::userFunction('wp_update_post')->once()->andReturn($postId);
-        WP_Mock::userFunction('is_wp_error')->andReturn(false);
+        Functions\expect('wp_update_post')->once()->andReturn($postId);
 
         $written = null;
         $this->captureUpdateField(TsmlGroupFields::MEETING, $written);
@@ -249,8 +237,7 @@ class TsmlGroupRepositoryTest extends TestCase
 
         $group = $this->groupWith($postId, [$this->meetingWithId(300)]);
 
-        WP_Mock::userFunction('wp_update_post')->once()->andReturn($postId);
-        WP_Mock::userFunction('is_wp_error')->andReturn(false);
+        Functions\expect('wp_update_post')->once()->andReturn($postId);
 
         $written = null;
         $this->captureUpdateField(TsmlGroupFields::MEETING, $written);
@@ -279,9 +266,8 @@ class TsmlGroupRepositoryTest extends TestCase
 
         $group = $this->groupWith($postId, [$this->meetingWithId(300)]);
 
-        $error = new \stdClass();
-        WP_Mock::userFunction('wp_update_post')->once()->andReturn($error);
-        WP_Mock::userFunction('is_wp_error')->with($error)->andReturn(true);
+        $error = new \WP_Error('db_error', 'the write failed');
+        Functions\expect('wp_update_post')->once()->andReturn($error);
 
         $this->assertFalse($this->repository->update($group));
     }

@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Actions;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Members\TsmlMemberFields;
 use TsmlForUnity\Members\TsmlMemberRepository;
 use TsmlForUnity\Tests\Fixtures\MemberStub;
+use TsmlForUnity\Tests\TestCase;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberFactory;
-use WP_Mock;
 
 /**
  * Tests for TsmlMemberRepository's domain event firing.
@@ -37,16 +38,9 @@ class TsmlMemberRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
         $this->factory = $this->createMock(MemberFactory::class);
         $this->repository = new TsmlMemberRepository($this->factory);
-    }
-
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
     }
 
     /**
@@ -55,7 +49,7 @@ class TsmlMemberRepositoryTest extends TestCase
      */
     private function stubExistingPost(int $postId): void
     {
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->with($postId)
             ->andReturn((object) [
                 'ID' => $postId,
@@ -70,7 +64,7 @@ class TsmlMemberRepositoryTest extends TestCase
      */
     private function allowAnyUpdateFieldCalls(): void
     {
-        WP_Mock::userFunction('update_field')->andReturn(true);
+        Functions\expect('update_field')->andReturn(true);
     }
 
     // ─── update() fires unity/member_changing ───────────────────────
@@ -95,11 +89,10 @@ class TsmlMemberRepositoryTest extends TestCase
             ->with($postId)
             ->willReturnOnConsecutiveCalls($original, $updated);
 
-        WP_Mock::userFunction('wp_update_post')->once()->andReturn($postId);
-        WP_Mock::userFunction('is_wp_error')->andReturn(false);
+        Functions\expect('wp_update_post')->once()->andReturn($postId);
         $this->allowAnyUpdateFieldCalls();
 
-        WP_Mock::expectAction('unity/member_changing', $updated, $original);
+        Actions\expectDone('unity/member_changing')->once()->with($updated, $original);
 
         $caller = new MemberStub($postId, 'Anon', false, false, '', 0, '', 0, false, null, '', 'NEW-MOBILE');
         $result = $this->repository->update($caller);
@@ -123,9 +116,8 @@ class TsmlMemberRepositoryTest extends TestCase
             ->willReturn($original);
 
         // Simulate wp_update_post returning a WP_Error.
-        $error = new \stdClass();
-        WP_Mock::userFunction('wp_update_post')->once()->andReturn($error);
-        WP_Mock::userFunction('is_wp_error')->with($error)->andReturn(true);
+        $error = new \WP_Error('db_error', 'the write failed');
+        Functions\expect('wp_update_post')->once()->andReturn($error);
 
         // No update_field calls and no event fired — assert by absence.
 
@@ -133,10 +125,9 @@ class TsmlMemberRepositoryTest extends TestCase
         $result = $this->repository->update($caller);
 
         $this->assertFalse($result);
-        // If the action had fired, WP_Mock::tearDown() would not flag
-        // it because we didn't expect-and-fail; but the more important
-        // assertion is that we never reached findField/createFromSource
-        // a second time (verified by the once() expectation above).
+        // The assertion that matters is that we never reached
+        // findField/createFromSource a second time, verified by the once()
+        // expectation above.
     }
 
     /**
@@ -145,7 +136,11 @@ class TsmlMemberRepositoryTest extends TestCase
     public function update_returns_false_for_zero_post_id_and_does_nothing(): void
     {
         // Zero ID never reaches findById, wp_update_post, or update_field.
-        // No WP_Mock expectations: any call would fail the test.
+        // Said explicitly rather than left to "an unstubbed call fatals":
+        // wp-mocks defines these for real, so an unexpected call would now
+        // succeed quietly where wp_mock would have blown up.
+        Functions\expect('wp_update_post')->never();
+        Functions\expect('update_field')->never();
 
         $caller = new MemberStub(0, 'Anon');
         $result = $this->repository->update($caller);
@@ -170,12 +165,11 @@ class TsmlMemberRepositoryTest extends TestCase
         // member as it exists in storage.
         $persisted = new MemberStub($newPostId, 'New Anon');
 
-        WP_Mock::userFunction('wp_insert_post')->once()->andReturn($newPostId);
-        WP_Mock::userFunction('is_wp_error')->andReturn(false);
+        Functions\expect('wp_insert_post')->once()->andReturn($newPostId);
         $this->allowAnyUpdateFieldCalls();
 
         // findById's pre-check
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->with($newPostId)
             ->andReturn((object) [
                 'ID' => $newPostId,
@@ -187,7 +181,7 @@ class TsmlMemberRepositoryTest extends TestCase
             ->with($newPostId)
             ->willReturn($persisted);
 
-        WP_Mock::expectAction('unity/member_created', $persisted);
+        Actions\expectDone('unity/member_created')->once()->with($persisted);
 
         $result = $this->repository->save($caller);
 
@@ -201,9 +195,8 @@ class TsmlMemberRepositoryTest extends TestCase
     {
         $caller = new MemberStub(0, 'New Anon');
 
-        $error = new \stdClass();
-        WP_Mock::userFunction('wp_insert_post')->once()->andReturn($error);
-        WP_Mock::userFunction('is_wp_error')->with($error)->andReturn(true);
+        $error = new \WP_Error('db_error', 'the write failed');
+        Functions\expect('wp_insert_post')->once()->andReturn($error);
 
         // No update_field, no get_post, no createFromSource: a
         // failure to insert returns false before any of those.
@@ -233,11 +226,10 @@ class TsmlMemberRepositoryTest extends TestCase
             ->with($postId)
             ->willReturnOnConsecutiveCalls($original, $updated);
 
-        WP_Mock::userFunction('wp_update_post')->once()->andReturn($postId);
-        WP_Mock::userFunction('is_wp_error')->andReturn(false);
+        Functions\expect('wp_update_post')->once()->andReturn($postId);
         $this->allowAnyUpdateFieldCalls();
 
-        WP_Mock::expectAction('unity/member_changing', $updated, $original);
+        Actions\expectDone('unity/member_changing')->once()->with($updated, $original);
 
         $caller = new MemberStub($postId, 'New Anon');
         $result = $this->repository->save($caller);
@@ -259,7 +251,7 @@ class TsmlMemberRepositoryTest extends TestCase
         //  - filters by the members CPT and 'publish' status (defaults)
         //  - limits to one post (numberposts => 1)
         //  - meta_query keys on the personal-email ACF field
-        WP_Mock::userFunction('get_posts')
+        Functions\expect('get_posts')
             ->once()
             ->withArgs(function ($args) use ($email) {
                 if (!isset($args['meta_query'][0])) {
@@ -294,7 +286,7 @@ class TsmlMemberRepositoryTest extends TestCase
     public function find_by_email_returns_null_when_no_member_matches(): void
     {
         // No matching posts → findAll() returns [] → findByEmail() returns null.
-        WP_Mock::userFunction('get_posts')->once()->andReturn([]);
+        Functions\expect('get_posts')->once()->andReturn([]);
 
         // Factory must not be called when there are no posts.
         $this->factory->expects($this->never())->method('createFromSource');
@@ -307,8 +299,10 @@ class TsmlMemberRepositoryTest extends TestCase
      */
     public function find_by_email_returns_null_for_empty_string_without_querying(): void
     {
-        // Empty input short-circuits before any DB work. No WP_Mock
-        // expectations: a get_posts call would fail the test.
+        // Empty input short-circuits before any DB work. get_posts() is a
+        // real function in wp-mocks, so "no expectation" no longer means "a
+        // call would fatal" — say it outright.
+        Functions\expect('get_posts')->never();
         $this->factory->expects($this->never())->method('createFromSource');
 
         $this->assertNull($this->repository->findByEmail(''));
@@ -329,7 +323,7 @@ class TsmlMemberRepositoryTest extends TestCase
         //    goes straight through the factory, no per-post get_post
         //  - meta_query keys on the telephone-responder ACF field,
         //    matching the ACF true_false stored value '1'
-        WP_Mock::userFunction('get_posts')
+        Functions\expect('get_posts')
             ->once()
             ->withArgs(function ($args) {
                 if (!isset($args['meta_query'][0])) {
@@ -362,7 +356,7 @@ class TsmlMemberRepositoryTest extends TestCase
     public function find_telephone_responders_returns_empty_array_when_none_match(): void
     {
         // No matching posts → findAll() returns [] → method returns [].
-        WP_Mock::userFunction('get_posts')->once()->andReturn([]);
+        Functions\expect('get_posts')->once()->andReturn([]);
 
         $this->factory->expects($this->never())->method('createFromSource');
 

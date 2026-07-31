@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
+use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Members\TsmlMemberFactory;
 use TsmlForUnity\Members\TsmlMemberFields;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\ResponderCertification;
-use WP_Mock;
 
 /**
  * @covers \TsmlForUnity\Members\TsmlMemberFactory
@@ -21,19 +21,12 @@ class TsmlMemberFactoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
         $this->factory = new TsmlMemberFactory();
 
         // Every createFromSource reads post_modified_gmt for the updated
         // timestamp; no test here asserts on it.
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
-    }
-
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
     }
 
     /**
@@ -43,69 +36,24 @@ class TsmlMemberFactoryTest extends TestCase
     {
         $postId = 123;
 
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $postId)
-            ->andReturn('John D.');
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $postId)
-            ->andReturn('john@example.com');
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_SHOW_ANONYMOUS_NAME, $postId)
-            ->andReturn(true);
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_SHOW_MEMBER_PROFILE, $postId)
-            ->andReturn(false);
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_ANONYMOUS_PROFILE, $postId)
-            ->andReturn('Anonymous profile text');
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_INTERGROUP_POSITION, $postId)
-            ->andReturn(5);
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_INTERGROUP_POSITION_ROTATION, $postId)
-            ->andReturn('2024-01-01');
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_HOME_GROUP, $postId)
-            ->andReturn(42);
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_HOMEGROUP_GSR, $postId)
-            ->andReturn(true);
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_MEETING_PO, $postId)
-            ->andReturn(null);
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_MOBILE_NUMBER, $postId)
-            ->andReturn('555-1234');
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_TWELFTH_STEPPER, $postId)
-            ->andReturn(true);
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_TELEPHONE_RESPONDER, $postId)
-            ->andReturn(true);
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_RESPONDER_CERTIFICATION, $postId)
-            ->andReturn('Certified');
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_AREA, $postId)
-            ->andReturn('North London');
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_ACCEPTS, $postId)
-            ->andReturn(['phone', 'email']);
+        $this->stubFields([
+            TsmlMemberFields::FIELD_ANONYMOUS_NAME => 'John D.',
+            TsmlMemberFields::FIELD_PERSONAL_EMAIL => 'john@example.com',
+            TsmlMemberFields::FIELD_SHOW_ANONYMOUS_NAME => true,
+            TsmlMemberFields::FIELD_SHOW_MEMBER_PROFILE => false,
+            TsmlMemberFields::FIELD_ANONYMOUS_PROFILE => 'Anonymous profile text',
+            TsmlMemberFields::FIELD_INTERGROUP_POSITION => 5,
+            TsmlMemberFields::FIELD_INTERGROUP_POSITION_ROTATION => '2024-01-01',
+            TsmlMemberFields::FIELD_HOME_GROUP => 42,
+            TsmlMemberFields::FIELD_HOMEGROUP_GSR => true,
+            TsmlMemberFields::FIELD_MEETING_PO => null,
+            TsmlMemberFields::FIELD_MOBILE_NUMBER => '555-1234',
+            TsmlMemberFields::FIELD_TWELFTH_STEPPER => true,
+            TsmlMemberFields::FIELD_TELEPHONE_RESPONDER => true,
+            TsmlMemberFields::FIELD_RESPONDER_CERTIFICATION => 'Certified',
+            TsmlMemberFields::FIELD_AREA => 'North London',
+            TsmlMemberFields::FIELD_ACCEPTS => ['phone', 'email'],
+        ]);
 
         $this->mockGdprFields($postId);
 
@@ -143,12 +91,9 @@ class TsmlMemberFactoryTest extends TestCase
         $wpPost1 = new \WP_Post(['ID' => 99, 'post_type' => 'tsml_group']);
         $wpPost2 = new \WP_Post(['ID' => 100, 'post_type' => 'tsml_group']);
 
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_HOME_GROUP, $postId)
-            ->andReturn([$wpPost1, $wpPost2]); // ACF relationship field returns array of WP_Post objects
-
-        // Mock other required fields with defaults
-        $this->mockDefaultFields($postId);
+        $this->mockDefaultFields($postId, [
+            TsmlMemberFields::FIELD_HOME_GROUP => [$wpPost1, $wpPost2],  // ACF relationship field returns array of WP_Post objects
+        ]);
 
         $member = $this->factory->createFromSource($postId);
 
@@ -164,12 +109,9 @@ class TsmlMemberFactoryTest extends TestCase
 
         $wpPost = new \WP_Post(['ID' => 42, 'post_type' => 'tsml_group', 'post_title' => 'Test Group']);
 
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_HOME_GROUP, $postId)
-            ->andReturn($wpPost); // ACF post object field returns single WP_Post
-
-        // Mock other required fields with defaults
-        $this->mockDefaultFields($postId);
+        $this->mockDefaultFields($postId, [
+            TsmlMemberFields::FIELD_HOME_GROUP => $wpPost,  // ACF post object field returns single WP_Post
+        ]);
 
         $member = $this->factory->createFromSource($postId);
 
@@ -183,12 +125,9 @@ class TsmlMemberFactoryTest extends TestCase
     {
         $postId = 128;
 
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_HOME_GROUP, $postId)
-            ->andReturn([55, 56]); // Array of numeric IDs (legacy format)
-
-        // Mock other required fields with defaults
-        $this->mockDefaultFields($postId);
+        $this->mockDefaultFields($postId, [
+            TsmlMemberFields::FIELD_HOME_GROUP => [55, 56],  // Array of numeric IDs (legacy format)
+        ]);
 
         $member = $this->factory->createFromSource($postId);
 
@@ -202,12 +141,9 @@ class TsmlMemberFactoryTest extends TestCase
     {
         $postId = 125;
 
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_HOME_GROUP, $postId)
-            ->andReturn([]); // Empty array
-
-        // Mock other required fields with defaults
-        $this->mockDefaultFields($postId);
+        $this->mockDefaultFields($postId, [
+            TsmlMemberFields::FIELD_HOME_GROUP => [],  // Empty array
+        ]);
 
         $member = $this->factory->createFromSource($postId);
 
@@ -221,12 +157,9 @@ class TsmlMemberFactoryTest extends TestCase
     {
         $postId = 129;
 
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_HOME_GROUP, $postId)
-            ->andReturn(null); // get_field returns null
-
-        // Mock other required fields with defaults
-        $this->mockDefaultFields($postId);
+        $this->mockDefaultFields($postId, [
+            TsmlMemberFields::FIELD_HOME_GROUP => null,  // get_field returns null
+        ]);
 
         $member = $this->factory->createFromSource($postId);
 
@@ -241,7 +174,7 @@ class TsmlMemberFactoryTest extends TestCase
         $postId = 126;
 
         // Mock all fields returning null
-        WP_Mock::userFunction('get_field')
+        Functions\expect('get_field')
             ->andReturn(null);
 
         $member = $this->factory->createFromSource($postId);
@@ -267,104 +200,77 @@ class TsmlMemberFactoryTest extends TestCase
     }
 
     /**
-     * Helper method to mock default field values
+     * Stub every field the factory reads, with defaults.
+     *
+     * A single call, because a test cannot layer a second get_field stub on
+     * top of this one — see stubFields(). Per-test values go in $overrides.
+     *
+     * @param array<string, mixed> $overrides Field name => value.
      */
-    private function mockDefaultFields(int $postId): void
+    private function mockDefaultFields(int $postId, array $overrides = []): void
     {
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_ANONYMOUS_NAME, $postId)
-            ->andReturn('');
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $postId)
-            ->andReturn('');
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_SHOW_ANONYMOUS_NAME, $postId)
-            ->andReturn(false);
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_SHOW_MEMBER_PROFILE, $postId)
-            ->andReturn(false);
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_ANONYMOUS_PROFILE, $postId)
-            ->andReturn('');
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_INTERGROUP_POSITION, $postId)
-            ->andReturn(0);
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_INTERGROUP_POSITION_ROTATION, $postId)
-            ->andReturn('');
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_HOMEGROUP_GSR, $postId)
-            ->andReturn(false);
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_MEETING_PO, $postId)
-            ->andReturn(null);
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_MOBILE_NUMBER, $postId)
-            ->andReturn('');
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_TWELFTH_STEPPER, $postId)
-            ->andReturn(false);
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_TELEPHONE_RESPONDER, $postId)
-            ->andReturn(false);
-
-        // Conditional logic hides this field for a non-responder, so ACF
-        // returns nothing for it.
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_RESPONDER_CERTIFICATION, $postId)
-            ->andReturn(null);
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_AREA, $postId)
-            ->andReturn('');
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_ACCEPTS, $postId)
-            ->andReturn(null);
-
-        $this->mockGdprFields($postId);
+        $this->stubFields(array_merge([
+            TsmlMemberFields::FIELD_ANONYMOUS_NAME => '',
+            TsmlMemberFields::FIELD_PERSONAL_EMAIL => '',
+            TsmlMemberFields::FIELD_SHOW_ANONYMOUS_NAME => false,
+            TsmlMemberFields::FIELD_SHOW_MEMBER_PROFILE => false,
+            TsmlMemberFields::FIELD_ANONYMOUS_PROFILE => '',
+            TsmlMemberFields::FIELD_INTERGROUP_POSITION => 0,
+            TsmlMemberFields::FIELD_INTERGROUP_POSITION_ROTATION => '',
+            TsmlMemberFields::FIELD_HOMEGROUP_GSR => false,
+            TsmlMemberFields::FIELD_MEETING_PO => null,
+            TsmlMemberFields::FIELD_MOBILE_NUMBER => '',
+            TsmlMemberFields::FIELD_TWELFTH_STEPPER => false,
+            TsmlMemberFields::FIELD_TELEPHONE_RESPONDER => false,
+            // Conditional logic hides this field for a non-responder, so ACF
+            // returns nothing for it.
+            TsmlMemberFields::FIELD_RESPONDER_CERTIFICATION => null,
+            TsmlMemberFields::FIELD_AREA => '',
+            TsmlMemberFields::FIELD_ACCEPTS => null,
+        ], self::GDPR_FIELDS_UNSET, $overrides));
     }
 
     /**
-     * Mock the GDPR acceptance fields as unset.
+     * The GDPR acceptance fields as unset.
      *
      * The factory reads all five on every createFromSource, so they need a
-     * handler even for tests that say nothing about GDPR.
-     *
-     * @param int $postId Member post ID.
-     * @return void
+     * value even for tests that say nothing about GDPR.
      */
+    private const GDPR_FIELDS_UNSET = [
+        TsmlMemberFields::FIELD_GDPR_ACCEPTED => false,
+        TsmlMemberFields::FIELD_GDPR_ACCEPTED_AT => '',
+        TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_VERSION => '',
+        TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_METHOD => '',
+        TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_STATEMENT => '',
+    ];
+
     private function mockGdprFields(int $postId): void
     {
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_GDPR_ACCEPTED, $postId)
-            ->andReturn(false);
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_GDPR_ACCEPTED_AT, $postId)
-            ->andReturn('');
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_VERSION, $postId)
-            ->andReturn('');
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_METHOD, $postId)
-            ->andReturn('');
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_STATEMENT, $postId)
-            ->andReturn('');
+        $this->stubFields([
+            TsmlMemberFields::FIELD_GDPR_ACCEPTED => false,
+            TsmlMemberFields::FIELD_GDPR_ACCEPTED_AT => '',
+            TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_VERSION => '',
+            TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_METHOD => '',
+            TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_STATEMENT => '',
+        ]);
     }
+
+    /**
+     * Stub get_field() for a whole set of fields at once.
+     *
+     * One expectation, dispatching on the field name. Stacking
+     * Functions\expect('get_field')->with(...) calls does not work the way the
+     * WP_Mock equivalent did: Brain Monkey keeps one stub per function per
+     * test, and the first one registered answers every call whatever its
+     * ->with() says. The failure is silent, so the mapping is explicit.
+     *
+     * @param array<string, mixed> $fields Field name => value.
+     */
+    private function stubFields(array $fields): void
+    {
+        Functions\expect('get_field')->andReturnUsing(
+            static fn (string $field, int $postId): mixed => $fields[$field] ?? null
+        );
+    }
+
 }

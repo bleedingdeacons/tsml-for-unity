@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace TsmlForUnity\Tests\Unit;
 
 use InvalidArgumentException;
-use PHPUnit\Framework\TestCase;
+use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Members\TsmlMember;
 use TsmlForUnity\Members\TsmlMemberRevisor;
 use TsmlForUnity\Tests\Fixtures\MemberStub;

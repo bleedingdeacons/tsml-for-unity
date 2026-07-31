@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Actions;
+use Brain\Monkey\Functions;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeeting;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingChangeTracker;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFields;
 use TsmlForUnity\Tests\Support\ActionExpectations;
+use TsmlForUnity\Tests\TestCase;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingRepository;
-use WP_Mock;
 
 /**
  * Tests for TsmlIntergroupMeetingChangeTracker.
@@ -29,9 +30,7 @@ class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
-        WP_Mock::userFunction('add_action')->andReturn(true);
 
         $this->repository = $this->createMock(IntergroupMeetingRepository::class);
         $this->tracker = new TsmlIntergroupMeetingChangeTracker($this->repository);
@@ -39,7 +38,6 @@ class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
 
     protected function tearDown(): void
     {
-        WP_Mock::tearDown();
 
         (new \ReflectionClass(TsmlIntergroupMeetingChangeTracker::class))
             ->getProperty('originalMeeting')->setValue(null, null);
@@ -49,14 +47,14 @@ class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
 
     private function stubPostTypeGuard(int $postId): void
     {
-        WP_Mock::userFunction('get_post_type')
+        Functions\expect('get_post_type')
             ->with($postId)
             ->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
     }
 
     private function stubTitleSyncIsNoop(int $postId, string $title): void
     {
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->with($postId)
             ->andReturn((object) ['ID' => $postId, 'post_title' => $title]);
     }
@@ -95,11 +93,11 @@ class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
         );
 
         // Title changed, so the title-sync path runs; allow the update.
-        WP_Mock::userFunction('wp_update_post')->andReturn(42);
+        Functions\expect('wp_update_post')->andReturn(42);
 
-        WP_Mock::expectAction('unity/intergroup_meeting_before_save', 42, $original);
-        WP_Mock::expectAction('unity/intergroup_meeting_changing', $updated, $original);
-        WP_Mock::expectAction('unity/intergroup_meeting_changed', 42, $updated, $original);
+        Actions\expectDone('unity/intergroup_meeting_before_save')->once()->with(42, $original);
+        Actions\expectDone('unity/intergroup_meeting_changing')->once()->with($updated, $original);
+        Actions\expectDone('unity/intergroup_meeting_changed')->once()->with(42, $updated, $original);
 
         $this->tracker->captureOriginalMeeting(42);
         $this->tracker->checkForChanges(42);
@@ -113,7 +111,7 @@ class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
     {
         [$original, $updated] = $this->runSave($this->meeting($originalArgs), $this->meeting($updatedArgs));
 
-        WP_Mock::expectAction('unity/intergroup_meeting_changing', $updated, $original);
+        Actions\expectDone('unity/intergroup_meeting_changing')->once()->with($updated, $original);
 
         $this->tracker->captureOriginalMeeting(42);
         $this->tracker->checkForChanges(42);
@@ -122,7 +120,7 @@ class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
     /**
      * @return array<string, array{array<string,mixed>, array<string,mixed>}>
      */
-    public function changedFieldProvider(): array
+    public static function changedFieldProvider(): array
     {
         return [
             'date'      => [['date' => '2026-07-01'], ['date' => '2026-08-01']],
@@ -146,7 +144,7 @@ class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
             ->willReturnOnConsecutiveCalls($original, $updated);
 
         $this->expectActionNotFired('unity/intergroup_meeting_changing', $updated, $original);
-        WP_Mock::expectAction('unity/intergroup_meeting_changed', 42, $updated, $original);
+        Actions\expectDone('unity/intergroup_meeting_changed')->once()->with(42, $updated, $original);
 
         $this->tracker->captureOriginalMeeting(42);
         $this->tracker->checkForChanges(42);
@@ -157,7 +155,7 @@ class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
      */
     public function capture_ignores_a_non_meeting_post_type(): void
     {
-        WP_Mock::userFunction('get_post_type')->with(99)->andReturn('page');
+        Functions\expect('get_post_type')->with(99)->andReturn('page');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->captureOriginalMeeting(99);
@@ -172,7 +170,7 @@ class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
         $this->stubPostTypeGuard(42);
         $this->repository->expects($this->once())->method('findById')->with(42)->willReturn($meeting);
 
-        WP_Mock::expectAction('unity/intergroup_meeting_deleted', 42, $meeting);
+        Actions\expectDone('unity/intergroup_meeting_deleted')->once()->with(42, $meeting);
 
         $this->tracker->onIntergroupMeetingDeleted(42);
     }
@@ -187,7 +185,7 @@ class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
             ->method('findById')
             ->willThrowException(new \RuntimeException('gone'));
 
-        WP_Mock::expectAction('unity/intergroup_meeting_deleted', 42, null);
+        Actions\expectDone('unity/intergroup_meeting_deleted')->once()->with(42, null);
 
         $this->tracker->onIntergroupMeetingDeleted(42);
     }
@@ -197,7 +195,7 @@ class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
      */
     public function deleting_ignores_a_non_meeting_post_type(): void
     {
-        WP_Mock::userFunction('get_post_type')->with(99)->andReturn('post');
+        Functions\expect('get_post_type')->with(99)->andReturn('post');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->onIntergroupMeetingDeleted(99);

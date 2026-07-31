@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFactory;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFields;
+use TsmlForUnity\Tests\TestCase;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingFactory;
-use WP_Mock;
 
 /**
  * Tests for TsmlIntergroupMeetingFactory::createFromSource.
@@ -26,14 +26,7 @@ class TsmlIntergroupMeetingFactoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
         $this->factory = new TsmlIntergroupMeetingFactory();
-    }
-
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
     }
 
     /**
@@ -49,16 +42,24 @@ class TsmlIntergroupMeetingFactoryTest extends TestCase
      */
     public function it_builds_a_meeting_from_acf_fields_with_numeric_ids(): void
     {
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlIntergroupMeetingFields::FIELD_MEETING_TITLE, 42)->andReturn('July Intergroup');
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlIntergroupMeetingFields::FIELD_ATTENDEES, 42)->andReturn([1, 2]);
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlIntergroupMeetingFields::FIELD_ATTENDING_OFFICERS, 42)->andReturn([3]);
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlIntergroupMeetingFields::FIELD_DATE, 42)->andReturn('01/07/2026');
+        // One expectation, dispatching on the field name.
+        //
+        // Stacking Functions\expect('get_field')->with(...) calls does not work
+        // the way the WP_Mock equivalent did: Brain Monkey keeps one stub per
+        // function per test, and the first one registered answers every call
+        // whatever its ->with() says. The failure is silent — every field comes
+        // back as the title — so the mapping is spelled out instead.
+        Functions\expect('get_field')->andReturnUsing(
+            static fn (string $field, int $postId): mixed => match ($field) {
+                TsmlIntergroupMeetingFields::FIELD_MEETING_TITLE      => 'July Intergroup',
+                TsmlIntergroupMeetingFields::FIELD_ATTENDEES          => [1, 2],
+                TsmlIntergroupMeetingFields::FIELD_ATTENDING_OFFICERS => [3],
+                TsmlIntergroupMeetingFields::FIELD_DATE               => '01/07/2026',
+                default                                              => null,
+            }
+        );
 
-        WP_Mock::userFunction('get_post')->with(42)->andReturn(
+        Functions\expect('get_post')->with(42)->andReturn(
             (object) ['post_modified_gmt' => '2026-07-01 20:00:00']
         );
 
@@ -79,31 +80,35 @@ class TsmlIntergroupMeetingFactoryTest extends TestCase
     public function it_falls_back_to_the_post_title_and_field_key_and_keeps_unparseable_dates(): void
     {
         // ACF meeting_title is empty, so the WP post title is used.
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlIntergroupMeetingFields::FIELD_MEETING_TITLE, 42)->andReturn('');
-        WP_Mock::userFunction('get_the_title')->with(42)->andReturn('Fallback Title');
+        Functions\expect('get_the_title')->with(42)->andReturn('Fallback Title');
 
-        // Name-based attendees read fails (no shadow meta) → key fallback.
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlIntergroupMeetingFields::FIELD_ATTENDEES, 42)->andReturn(false);
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlIntergroupMeetingFields::FIELD_KEY_ATTENDEES, 42)
-            ->andReturn([$this->wpPost(5), $this->wpPost(6)]);
-
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlIntergroupMeetingFields::FIELD_ATTENDING_OFFICERS, 42)->andReturn(false);
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlIntergroupMeetingFields::FIELD_KEY_ATTENDING_OFFICERS, 42)->andReturn(false);
-
-        // Date not in d/m/Y — kept verbatim.
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlIntergroupMeetingFields::FIELD_DATE, 42)->andReturn('2026-07-01');
+        // One expectation, dispatching on the field name.
+        //
+        // Stacking Functions\expect('get_field')->with(...) calls does not work
+        // the way the WP_Mock equivalent did: Brain Monkey keeps one stub per
+        // function per test, and the first one registered answers every call
+        // whatever its ->with() says. The failure is silent — every field comes
+        // back as the title — so the mapping is spelled out instead.
+        // The name-based attendees read fails (no shadow meta), so the factory
+        // retries by field key; the officers fail both ways. The date is not in
+        // d/m/Y, so it is kept verbatim.
+        Functions\expect('get_field')->andReturnUsing(
+            fn (string $field, int $postId): mixed => match ($field) {
+                TsmlIntergroupMeetingFields::FIELD_MEETING_TITLE          => '',
+                TsmlIntergroupMeetingFields::FIELD_ATTENDEES              => false,
+                TsmlIntergroupMeetingFields::FIELD_KEY_ATTENDEES          => [$this->wpPost(5), $this->wpPost(6)],
+                TsmlIntergroupMeetingFields::FIELD_ATTENDING_OFFICERS     => false,
+                TsmlIntergroupMeetingFields::FIELD_KEY_ATTENDING_OFFICERS => false,
+                TsmlIntergroupMeetingFields::FIELD_DATE                   => '2026-07-01',
+                default                                                  => null,
+            }
+        );
 
         // The key fallback resolves via the cached option (empty → hardcoded key).
-        WP_Mock::userFunction('get_option')
+        Functions\expect('get_option')
             ->with('tsml_unity_acf_field_keys', [])->andReturn([]);
 
-        WP_Mock::userFunction('get_post')->with(42)->andReturn(null);
+        Functions\expect('get_post')->with(42)->andReturn(null);
 
         $meeting = $this->factory->createFromSource(42);
 
@@ -121,15 +126,23 @@ class TsmlIntergroupMeetingFactoryTest extends TestCase
      */
     public function an_empty_date_field_yields_an_empty_date(): void
     {
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlIntergroupMeetingFields::FIELD_MEETING_TITLE, 42)->andReturn('Title');
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlIntergroupMeetingFields::FIELD_ATTENDEES, 42)->andReturn([]);
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlIntergroupMeetingFields::FIELD_ATTENDING_OFFICERS, 42)->andReturn([]);
-        WP_Mock::userFunction('get_field')
-            ->with(TsmlIntergroupMeetingFields::FIELD_DATE, 42)->andReturn('');
-        WP_Mock::userFunction('get_post')->with(42)->andReturn(null);
+        // One expectation, dispatching on the field name.
+        //
+        // Stacking Functions\expect('get_field')->with(...) calls does not work
+        // the way the WP_Mock equivalent did: Brain Monkey keeps one stub per
+        // function per test, and the first one registered answers every call
+        // whatever its ->with() says. The failure is silent — every field comes
+        // back as the title — so the mapping is spelled out instead.
+        Functions\expect('get_field')->andReturnUsing(
+            static fn (string $field, int $postId): mixed => match ($field) {
+                TsmlIntergroupMeetingFields::FIELD_MEETING_TITLE      => 'Title',
+                TsmlIntergroupMeetingFields::FIELD_ATTENDEES          => [],
+                TsmlIntergroupMeetingFields::FIELD_ATTENDING_OFFICERS => [],
+                TsmlIntergroupMeetingFields::FIELD_DATE               => '',
+                default                                              => null,
+            }
+        );
+        Functions\expect('get_post')->with(42)->andReturn(null);
 
         // Empty arrays are not false/null, so no key fallback and no get_option.
         $meeting = $this->factory->createFromSource(42);

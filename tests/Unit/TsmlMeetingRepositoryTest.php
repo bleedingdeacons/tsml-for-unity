@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Meetings\TsmlMeetingFields;
 use TsmlForUnity\Meetings\TsmlMeetingRepository;
+use TsmlForUnity\Tests\TestCase;
 use Unity\Core\Interfaces\Cache;
 use Unity\Meetings\Interfaces\Meeting;
 use Unity\Meetings\Interfaces\MeetingFactory;
 use Unity\Meetings\Interfaces\MeetingRepository;
-use WP_Mock;
 use WP_Post;
 
 /**
@@ -41,17 +41,10 @@ class TsmlMeetingRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
         $this->factory = $this->createMock(MeetingFactory::class);
         $this->repository = new TsmlMeetingRepository($this->factory);
         $this->capturedArgs = [];
-    }
-
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
     }
 
     private function post(int $id = 1, string $type = TsmlMeetingFields::POST_TYPE): WP_Post
@@ -68,7 +61,7 @@ class TsmlMeetingRepositoryTest extends TestCase
     /** Stub get_posts(), capturing the arguments it was called with. */
     private function stubGetPosts(array $posts): void
     {
-        WP_Mock::userFunction('get_posts')->andReturnUsing(function (array $args) use ($posts): array {
+        Functions\expect('get_posts')->andReturnUsing(function (array $args) use ($posts): array {
             $this->capturedArgs = $args;
 
             return $posts;
@@ -77,7 +70,7 @@ class TsmlMeetingRepositoryTest extends TestCase
 
     private function stubPostMeta(array $meta = []): void
     {
-        WP_Mock::userFunction('get_post_meta')->andReturn($meta);
+        Functions\expect('get_post_meta')->andReturn($meta);
     }
 
     private function meeting(bool $online = false): Meeting
@@ -106,7 +99,7 @@ class TsmlMeetingRepositoryTest extends TestCase
     /** @test */
     public function find_by_id_builds_a_meeting_from_the_post(): void
     {
-        WP_Mock::userFunction('get_post')->andReturn($this->post(7));
+        Functions\expect('get_post')->andReturn($this->post(7));
         $this->stubPostMeta(['day' => ['2'], 'group_id' => ['99']]);
 
         $expected = $this->meeting();
@@ -132,7 +125,7 @@ class TsmlMeetingRepositoryTest extends TestCase
     /** @test */
     public function find_by_id_returns_null_when_the_post_is_missing(): void
     {
-        WP_Mock::userFunction('get_post')->andReturn(null);
+        Functions\expect('get_post')->andReturn(null);
 
         $this->assertNull($this->repository->findById(7));
     }
@@ -140,7 +133,7 @@ class TsmlMeetingRepositoryTest extends TestCase
     /** @test */
     public function find_by_id_returns_null_for_a_post_of_the_wrong_type(): void
     {
-        WP_Mock::userFunction('get_post')->andReturn($this->post(7, 'page'));
+        Functions\expect('get_post')->andReturn($this->post(7, 'page'));
 
         $this->assertNull($this->repository->findById(7));
     }
@@ -173,7 +166,7 @@ class TsmlMeetingRepositoryTest extends TestCase
             ->method('set')
             ->with('meeting_7', $built, 'unity_meetings', 3600);
 
-        WP_Mock::userFunction('get_post')->andReturn($this->post(7));
+        Functions\expect('get_post')->andReturn($this->post(7));
         $this->stubPostMeta();
         $this->factory->method('createFromSource')->willReturn($built);
 

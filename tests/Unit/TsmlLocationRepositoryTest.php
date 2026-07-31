@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Locations\TsmlLocation;
 use TsmlForUnity\Locations\TsmlLocationRepository;
+use TsmlForUnity\Tests\TestCase;
 use Unity\Locations\Interfaces\LocationFactory;
 use Unity\Locations\Interfaces\LocationRepository;
-use WP_Mock;
 
 /**
  * Tests for TsmlLocationRepository.
@@ -30,21 +30,14 @@ class TsmlLocationRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
         // wp_parse_args merges the caller args over the defaults.
-        WP_Mock::userFunction('wp_parse_args')->andReturnUsing(
+        Functions\expect('wp_parse_args')->andReturnUsing(
             fn ($args, $defaults) => array_merge($defaults, $args)
         );
 
         $this->factory = $this->createMock(LocationFactory::class);
         $this->repository = new TsmlLocationRepository($this->factory);
-    }
-
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
     }
 
     /**
@@ -72,7 +65,7 @@ class TsmlLocationRepositoryTest extends TestCase
      */
     public function find_all_maps_every_post_through_the_factory(): void
     {
-        WP_Mock::userFunction('get_posts')->once()->andReturn([
+        Functions\expect('get_posts')->once()->andReturn([
             (object) ['ID' => 1],
             (object) ['ID' => 2],
         ]);
@@ -90,7 +83,7 @@ class TsmlLocationRepositoryTest extends TestCase
      */
     public function find_by_city_queries_all_and_returns_the_matches(): void
     {
-        WP_Mock::userFunction('get_posts')->once()->andReturn([(object) ['ID' => 3]]);
+        Functions\expect('get_posts')->once()->andReturn([(object) ['ID' => 3]]);
 
         $location = new TsmlLocation(id: 3, name: 'City Hall', city: 'London');
         $this->factory->method('createFromSource')->with(3)->willReturn($location);
@@ -103,7 +96,7 @@ class TsmlLocationRepositoryTest extends TestCase
      */
     public function find_by_region_queries_all_and_returns_the_matches(): void
     {
-        WP_Mock::userFunction('get_posts')->once()->andReturn([(object) ['ID' => 4]]);
+        Functions\expect('get_posts')->once()->andReturn([(object) ['ID' => 4]]);
 
         $location = new TsmlLocation(id: 4, name: 'Regional', region: 'South');
         $this->factory->method('createFromSource')->with(4)->willReturn($location);
@@ -116,7 +109,7 @@ class TsmlLocationRepositoryTest extends TestCase
      */
     public function find_all_returns_empty_when_there_are_no_posts(): void
     {
-        WP_Mock::userFunction('get_posts')->once()->andReturn([]);
+        Functions\expect('get_posts')->once()->andReturn([]);
 
         $this->assertSame([], $this->repository->findAll());
     }

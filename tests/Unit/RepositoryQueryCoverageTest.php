@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use Brain\Monkey\Functions;
 use Exception;
-use PHPUnit\Framework\TestCase;
 use TsmlForUnity\Groups\TsmlGroupFactory;
 use TsmlForUnity\Groups\TsmlGroupFields;
 use TsmlForUnity\Groups\TsmlGroupRepository;
@@ -14,6 +14,7 @@ use TsmlForUnity\Members\TsmlMemberFields;
 use TsmlForUnity\Members\TsmlMemberRepository;
 use TsmlForUnity\Positions\TsmlPositionFields;
 use TsmlForUnity\Positions\TsmlPositionRepository;
+use TsmlForUnity\Tests\TestCase;
 use Unity\Contacts\Interfaces\ContactFactory;
 use Unity\Groups\Interfaces\Group;
 use Unity\Groups\Interfaces\GroupFactory;
@@ -23,7 +24,6 @@ use Unity\Members\Interfaces\MemberFactory;
 use Unity\Members\ResponderCertification;
 use Unity\Positions\Interfaces\Position;
 use Unity\Positions\Interfaces\PositionFactory;
-use WP_Mock;
 
 /**
  * Query-path coverage for the CPT-backed repositories.
@@ -46,25 +46,18 @@ class RepositoryQueryCoverageTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
         // wp_parse_args is pure; mirror it rather than assert against a stub.
-        WP_Mock::userFunction('wp_parse_args')
+        Functions\expect('wp_parse_args')
             ->andReturnUsing(static fn ($args, $defaults = []) => array_merge($defaults, (array) $args));
 
         $this->capturedArgs = [];
     }
 
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
-    }
-
     /** Stub get_posts(), capturing the arguments and returning $posts. */
     private function stubGetPosts(array $posts): void
     {
-        WP_Mock::userFunction('get_posts')->andReturnUsing(function ($args) use ($posts) {
+        Functions\expect('get_posts')->andReturnUsing(function ($args) use ($posts) {
             $this->capturedArgs = (array) $args;
 
             return $posts;
@@ -149,7 +142,10 @@ class RepositoryQueryCoverageTest extends TestCase
     /** @test */
     public function group_count_is_zero_when_the_query_returns_nothing_usable(): void
     {
-        WP_Mock::userFunction('get_posts')->andReturn(null);
+        // WordPress always hands back an array; wp-mocks types get_posts() that
+        // way, so the old andReturn(null) is no longer expressible — and was
+        // never reachable in production either.
+        Functions\expect('get_posts')->andReturn([]);
 
         $repository = new TsmlGroupRepository($this->createMock(GroupFactory::class));
 
@@ -231,7 +227,10 @@ class RepositoryQueryCoverageTest extends TestCase
     /** @test */
     public function position_count_is_zero_when_the_query_returns_nothing_usable(): void
     {
-        WP_Mock::userFunction('get_posts')->andReturn(null);
+        // WordPress always hands back an array; wp-mocks types get_posts() that
+        // way, so the old andReturn(null) is no longer expressible — and was
+        // never reachable in production either.
+        Functions\expect('get_posts')->andReturn([]);
 
         $repository = new TsmlPositionRepository($this->createMock(PositionFactory::class));
 
@@ -266,7 +265,10 @@ class RepositoryQueryCoverageTest extends TestCase
     /** @test */
     public function member_count_is_zero_when_the_query_returns_nothing_usable(): void
     {
-        WP_Mock::userFunction('get_posts')->andReturn(null);
+        // WordPress always hands back an array; wp-mocks types get_posts() that
+        // way, so the old andReturn(null) is no longer expressible — and was
+        // never reachable in production either.
+        Functions\expect('get_posts')->andReturn([]);
 
         $repository = new TsmlMemberRepository($this->createMock(MemberFactory::class));
 
@@ -276,11 +278,12 @@ class RepositoryQueryCoverageTest extends TestCase
     /** @test */
     public function creating_a_member_inserts_a_post_and_mirrors_the_name_into_acf(): void
     {
-        WP_Mock::userFunction('wp_insert_post')->andReturn(77);
-        WP_Mock::userFunction('is_wp_error')->andReturn(false);
-        WP_Mock::userFunction('update_field')->andReturn(true);
-        WP_Mock::userFunction('do_action')->andReturn(null);
-        WP_Mock::userFunction('get_post')->andReturn(null);
+        Functions\expect('wp_insert_post')->andReturn(77);
+        Functions\expect('update_field')->andReturn(true);
+        // do_action() is not stubbed: Brain Monkey owns it, and overriding it
+        // here would take the call out of the container every hook assertion
+        // in this suite reads from.
+        Functions\expect('get_post')->andReturn(null);
 
         $repository = new TsmlMemberRepository($this->createMock(MemberFactory::class));
 
@@ -290,8 +293,7 @@ class RepositoryQueryCoverageTest extends TestCase
     /** @test */
     public function a_failed_member_insert_reports_zero(): void
     {
-        WP_Mock::userFunction('wp_insert_post')->andReturn('error');
-        WP_Mock::userFunction('is_wp_error')->andReturn(true);
+        Functions\expect('wp_insert_post')->andReturn(new \WP_Error('db_error', 'the write failed'));
 
         $repository = new TsmlMemberRepository($this->createMock(MemberFactory::class));
 
@@ -302,7 +304,7 @@ class RepositoryQueryCoverageTest extends TestCase
     public function deleting_a_member_forces_a_permanent_delete(): void
     {
         $captured = [];
-        WP_Mock::userFunction('wp_delete_post')->andReturnUsing(
+        Functions\expect('wp_delete_post')->andReturnUsing(
             function ($id, $force = false) use (&$captured) {
                 $captured = [$id, $force];
 
@@ -319,7 +321,7 @@ class RepositoryQueryCoverageTest extends TestCase
     /** @test */
     public function a_failed_member_delete_reports_false(): void
     {
-        WP_Mock::userFunction('wp_delete_post')->andReturn(false);
+        Functions\expect('wp_delete_post')->andReturn(false);
 
         $repository = new TsmlMemberRepository($this->createMock(MemberFactory::class));
 

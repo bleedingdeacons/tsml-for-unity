@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use Brain\Monkey\Functions;
 use Exception;
-use PHPUnit\Framework\TestCase;
 use TsmlForUnity\Groups\TsmlGroupFactory;
 use TsmlForUnity\Groups\TsmlGroupFields;
+use TsmlForUnity\Tests\TestCase;
 use Unity\Contacts\Interfaces\Contact;
 use Unity\Meetings\Interfaces\Meeting;
 use Unity\Meetings\Interfaces\MeetingRepository;
-use WP_Mock;
 
 /**
  * Tests for how a group acquires its meetings and their contacts.
@@ -34,23 +34,16 @@ class TsmlGroupFactoryMeetingsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
-        WP_Mock::userFunction('get_post')->andReturn((object) [
+        Functions\expect('get_post')->andReturn((object) [
             'ID'          => self::GROUP_ID,
             'post_title'  => 'Tuesday Group',
             'post_type'   => TsmlGroupFields::POST_TYPE,
             'post_status' => 'publish',
             'post_content' => '',
         ]);
-        WP_Mock::userFunction('get_post_custom')->andReturn([]);
-        WP_Mock::userFunction('get_permalink')->andReturn('https://example.test/group/42');
-    }
-
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
+        Functions\expect('get_post_custom')->andReturn([]);
+        Functions\expect('get_permalink')->andReturn('https://example.test/group/42');
     }
 
     private function contact(string $name, string $email = '', string $phone = ''): Contact

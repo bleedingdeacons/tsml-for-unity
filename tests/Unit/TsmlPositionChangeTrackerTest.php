@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Actions;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Positions\TsmlPosition;
 use TsmlForUnity\Positions\TsmlPositionChangeTracker;
 use TsmlForUnity\Positions\TsmlPositionFields;
 use TsmlForUnity\Tests\Support\ActionExpectations;
+use TsmlForUnity\Tests\TestCase;
 use Unity\Positions\Interfaces\PositionRepository;
-use WP_Mock;
 
 /**
  * Tests for TsmlPositionChangeTracker.
@@ -34,9 +35,7 @@ class TsmlPositionChangeTrackerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
-        WP_Mock::userFunction('add_action')->andReturn(true);
 
         $this->repository = $this->createMock(PositionRepository::class);
         $this->tracker = new TsmlPositionChangeTracker($this->repository);
@@ -44,7 +43,6 @@ class TsmlPositionChangeTrackerTest extends TestCase
 
     protected function tearDown(): void
     {
-        WP_Mock::tearDown();
 
         $reflection = new \ReflectionClass(TsmlPositionChangeTracker::class);
         $reflection->getProperty('originalPosition')->setValue(null, null);
@@ -54,14 +52,14 @@ class TsmlPositionChangeTrackerTest extends TestCase
 
     private function stubPostTypeGuard(int $postId): void
     {
-        WP_Mock::userFunction('get_post_type')
+        Functions\expect('get_post_type')
             ->with($postId)
             ->andReturn(TsmlPositionFields::POST_TYPE);
     }
 
     private function stubTitleSyncIsNoop(int $postId, string $existingTitle): void
     {
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->with($postId)
             ->andReturn((object) ['ID' => $postId, 'post_title' => $existingTitle]);
     }
@@ -99,9 +97,9 @@ class TsmlPositionChangeTrackerTest extends TestCase
             ->with($postId)
             ->willReturnOnConsecutiveCalls($original, $updated);
 
-        WP_Mock::expectAction('unity/position_before_save', $postId, $original);
-        WP_Mock::expectAction('unity/position_changing', $updated, $original);
-        WP_Mock::expectAction('unity/position_changed', $postId, $updated, $original);
+        Actions\expectDone('unity/position_before_save')->once()->with($postId, $original);
+        Actions\expectDone('unity/position_changing')->once()->with($updated, $original);
+        Actions\expectDone('unity/position_changed')->once()->with($postId, $updated, $original);
 
         $this->tracker->captureOriginalPosition($postId);
         $this->tracker->checkForChanges($postId);
@@ -125,7 +123,7 @@ class TsmlPositionChangeTrackerTest extends TestCase
             ->willReturnOnConsecutiveCalls($original, $updated);
 
         // Only the catch-all "changed" event fires; "changing" stays silent.
-        WP_Mock::expectAction('unity/position_changed', $postId, $updated, $original);
+        Actions\expectDone('unity/position_changed')->once()->with($postId, $updated, $original);
         $this->expectActionNotFired('unity/position_changing', $updated, $original);
 
         $this->tracker->captureOriginalPosition($postId);
@@ -138,7 +136,7 @@ class TsmlPositionChangeTrackerTest extends TestCase
     public function capture_ignores_a_non_position_post_type(): void
     {
         $postId = 99;
-        WP_Mock::userFunction('get_post_type')->with($postId)->andReturn('page');
+        Functions\expect('get_post_type')->with($postId)->andReturn('page');
 
         // A wrong post type must not reach the repository.
         $this->repository->expects($this->never())->method('findById');
@@ -180,7 +178,7 @@ class TsmlPositionChangeTrackerTest extends TestCase
             ->with($postId)
             ->willReturnOnConsecutiveCalls($original, $updated);
 
-        WP_Mock::expectAction('unity/position_changing', $updated, $original);
+        Actions\expectDone('unity/position_changing')->once()->with($updated, $original);
 
         $this->tracker->captureOriginalPosition($postId);
         $this->tracker->checkForChanges($postId);
@@ -189,7 +187,7 @@ class TsmlPositionChangeTrackerTest extends TestCase
     /**
      * @return array<string, array{TsmlPosition, TsmlPosition}>
      */
-    public function changedFieldProvider(): array
+    public static function changedFieldProvider(): array
     {
         $base = fn (array $o = []) => new TsmlPosition(...array_merge([
             'id' => 42, 'minimumSobriety' => 6, 'termYears' => 1,

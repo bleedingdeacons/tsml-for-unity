@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Plugin;
 use TsmlForUnity\Tests\Support\FakeContainer;
 use Unity\Core\Interfaces\Configuration;
@@ -19,7 +19,6 @@ use Unity\Members\Interfaces\MemberFactory;
 use Unity\Members\Interfaces\MemberRepository;
 use Unity\Positions\Interfaces\PositionFactory;
 use Unity\Positions\Interfaces\PositionRepository;
-use WP_Mock;
 
 /**
  * Tests for the plugin's Unity integration.
@@ -46,7 +45,6 @@ class PluginTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
         $this->storedConfig = [];
 
@@ -58,12 +56,6 @@ class PluginTest extends TestCase
 
         $this->container = new FakeContainer();
         $this->container->prime(Configuration::class, $this->config);
-    }
-
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
     }
 
     // ─── availability probes ────────────────────────────────────────
@@ -260,4 +252,23 @@ class PluginTest extends TestCase
             $this->assertNotEmpty($map, $key . ' should have a non-empty field map');
         }
     }
+
+    /**
+     * The plugin logs under its own channel name.
+     *
+     * Asserted directly rather than through wp_log(). It used to be covered
+     * only incidentally: HasLoggerTest defined wp_log() and the definition
+     * leaked into every later test in the process, so Plugin::logChannel()
+     * ran as a side effect. That test is isolated now, so the channel name
+     * needs saying out loud.
+     *
+     * @test
+     */
+    public function it_logs_under_its_own_channel(): void
+    {
+        $logChannel = new \ReflectionMethod(Plugin::class, 'logChannel');
+
+        $this->assertSame('tsml-for-unity', $logChannel->invoke(null));
+    }
+
 }

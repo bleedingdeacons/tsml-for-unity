@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Meetings\TsmlMeetingFactory;
+use TsmlForUnity\Tests\TestCase;
 use Unity\Contacts\Interfaces\ContactFactory;
 use Unity\Locations\Interfaces\Location;
 use Unity\Locations\Interfaces\LocationRepository;
-use WP_Mock;
 
 /**
  * Tests for TsmlMeetingFactory's location resolution and meta handling.
@@ -29,25 +29,17 @@ class TsmlMeetingFactoryLocationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        WP_Mock::setUp();
 
         // createFromSource() refuses to run unless the whole WordPress post
         // API is present, so stub the lot once here rather than per test.
-        WP_Mock::userFunction('get_permalink')->andReturn('https://example.test/location/5');
-        WP_Mock::userFunction('get_post_status')->andReturn('publish');
-        WP_Mock::userFunction('get_post_custom')->andReturn([]);
-        WP_Mock::userFunction('is_serialized')
+        Functions\expect('get_permalink')->andReturn('https://example.test/location/5');
+        Functions\expect('get_post_status')->andReturn('publish');
+        Functions\expect('get_post_custom')->andReturn([]);
+        Functions\expect('is_serialized')
             ->andReturnUsing(static fn ($v): bool => is_string($v) && @unserialize($v) !== false);
-        WP_Mock::userFunction('get_post')
+        Functions\expect('get_post')
             ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
-        WP_Mock::userFunction('is_wp_error')->andReturn(false);
-        WP_Mock::userFunction('get_post_meta')->andReturn('');
-    }
-
-    protected function tearDown(): void
-    {
-        WP_Mock::tearDown();
-        parent::tearDown();
+        Functions\expect('get_post_meta')->andReturn('');
     }
 
     /** The minimum source createFromSource() will accept. */
