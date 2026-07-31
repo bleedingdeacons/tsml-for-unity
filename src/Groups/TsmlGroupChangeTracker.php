@@ -18,7 +18,6 @@ use function do_action;
 use function get_post;
 use function get_post_type;
 use function wp_update_post;
-use const WP_DEBUG;
 
 /**
  * Class TsmlGroupChangeTracker
@@ -62,9 +61,7 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
         try {
             self::$originalGroup = $this->repository->findById($postId);
 
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                \TsmlForUnity\Plugin::logError('Original group captured for post ID: ' . $postId);
-            }
+            \TsmlForUnity\Plugin::logDebug('Original group captured for post ID: ' . $postId);
 
             do_action('group_before_save', $postId, self::$originalGroup);
         } catch (Exception $e) {
@@ -85,9 +82,7 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
         }
 
         if (!self::$originalGroup) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                \TsmlForUnity\Plugin::logError('No original group captured for comparison, post ID: ' . $postId);
-            }
+            \TsmlForUnity\Plugin::logDebug('No original group captured for comparison, post ID: ' . $postId);
             return;
         }
 
@@ -100,9 +95,7 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
             }
 
             if ($this->hasGroupChanged(self::$originalGroup, $updatedGroup)) {
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    \TsmlForUnity\Plugin::logError('Changes detected in group ID: ' . $postId . ', firing unity/group_changing hook');
-                }
+                \TsmlForUnity\Plugin::logDebug('Changes detected in group ID: ' . $postId . ', firing unity/group_changing hook');
 
                 $post = get_post($postId);
                 $encodedTitle = htmlspecialchars($updatedGroup->getTitle(), ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -115,9 +108,7 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
 
                 do_action('unity/group_changing', $updatedGroup, self::$originalGroup);
             } else {
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    \TsmlForUnity\Plugin::logError('No changes detected in group ID: ' . $postId);
-                }
+                \TsmlForUnity\Plugin::logDebug('No changes detected in group ID: ' . $postId);
             }
 
             do_action('unity/group_changed', $postId, $updatedGroup, self::$originalGroup);
@@ -146,17 +137,13 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
         try {
             $group = $this->repository->findById($postId);
 
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                \TsmlForUnity\Plugin::logError('Group deleted, firing unity/group_deleted hook for post ID: ' . $postId);
-            }
+            \TsmlForUnity\Plugin::logDebug('Group deleted, firing unity/group_deleted hook for post ID: ' . $postId);
 
             do_action('unity/group_deleted', $postId, $group);
         } catch (Exception $e) {
             // Group may already be partially removed; fire with null so
             // listeners can still react to the deletion itself.
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                \TsmlForUnity\Plugin::logError('Error fetching group during deletion: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            }
+            \TsmlForUnity\Plugin::logDebug('Error fetching group during deletion: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
 
             do_action('unity/group_deleted', $postId, null);
         }
@@ -186,17 +173,13 @@ class TsmlGroupChangeTracker implements GroupChangeTracker
         try {
             $group = $this->repository->findById($post->ID);
 
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                \TsmlForUnity\Plugin::logError('Group hidden (set to private), firing unity/group_hidden hook for post ID: ' . $post->ID);
-            }
+            \TsmlForUnity\Plugin::logDebug('Group hidden (set to private), firing unity/group_hidden hook for post ID: ' . $post->ID);
 
             do_action('unity/group_hidden', $post->ID, $group);
         } catch (Exception $e) {
             // The repository may not return private posts; fire with null
             // so listeners can still react.
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                \TsmlForUnity\Plugin::logError('Error fetching group during hide: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            }
+            \TsmlForUnity\Plugin::logDebug('Error fetching group during hide: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
 
             do_action('unity/group_hidden', $post->ID, null);
         }

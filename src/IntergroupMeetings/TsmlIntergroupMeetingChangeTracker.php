@@ -18,7 +18,6 @@ use function do_action;
 use function get_post;
 use function get_post_type;
 use function wp_update_post;
-use const WP_DEBUG;
 
 /**
  * Class TsmlIntergroupMeetingChangeTracker
@@ -67,9 +66,7 @@ class TsmlIntergroupMeetingChangeTracker implements IntergroupMeetingChangeTrack
         try {
             self::$originalMeeting = $this->repository->findById($postId);
 
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                \TsmlForUnity\Plugin::logError('Original intergroup meeting captured for post ID: ' . $postId);
-            }
+            \TsmlForUnity\Plugin::logDebug('Original intergroup meeting captured for post ID: ' . $postId);
 
             do_action('unity/intergroup_meeting_before_save', $postId, self::$originalMeeting);
         } catch (Exception $e) {
@@ -90,9 +87,7 @@ class TsmlIntergroupMeetingChangeTracker implements IntergroupMeetingChangeTrack
         }
 
         if (!self::$originalMeeting) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                \TsmlForUnity\Plugin::logError('No original intergroup meeting captured for comparison, post ID: ' . $postId);
-            }
+            \TsmlForUnity\Plugin::logDebug('No original intergroup meeting captured for comparison, post ID: ' . $postId);
             return;
         }
 
@@ -105,9 +100,7 @@ class TsmlIntergroupMeetingChangeTracker implements IntergroupMeetingChangeTrack
             }
 
             if ($this->hasMeetingChanged(self::$originalMeeting, $updatedMeeting)) {
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    \TsmlForUnity\Plugin::logError('Changes detected in intergroup meeting ID: ' . $postId . ', firing unity/intergroup_meeting_changing hook');
-                }
+                \TsmlForUnity\Plugin::logDebug('Changes detected in intergroup meeting ID: ' . $postId . ', firing unity/intergroup_meeting_changing hook');
 
                 // Sync the meeting title ACF field to the WordPress post title
                 $post = get_post($postId);
@@ -120,9 +113,7 @@ class TsmlIntergroupMeetingChangeTracker implements IntergroupMeetingChangeTrack
 
                 do_action('unity/intergroup_meeting_changing', $updatedMeeting, self::$originalMeeting);
             } else {
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    \TsmlForUnity\Plugin::logError('No changes detected in intergroup meeting ID: ' . $postId);
-                }
+                \TsmlForUnity\Plugin::logDebug('No changes detected in intergroup meeting ID: ' . $postId);
             }
 
             do_action('unity/intergroup_meeting_changed', $postId, $updatedMeeting, self::$originalMeeting);
@@ -151,17 +142,13 @@ class TsmlIntergroupMeetingChangeTracker implements IntergroupMeetingChangeTrack
         try {
             $meeting = $this->repository->findById($postId);
 
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                \TsmlForUnity\Plugin::logError('Intergroup meeting deleted, firing unity/intergroup_meeting_deleted hook for post ID: ' . $postId);
-            }
+            \TsmlForUnity\Plugin::logDebug('Intergroup meeting deleted, firing unity/intergroup_meeting_deleted hook for post ID: ' . $postId);
 
             do_action('unity/intergroup_meeting_deleted', $postId, $meeting);
         } catch (Exception $e) {
             // Meeting may already be partially removed; fire with null so
             // listeners can still react to the deletion itself.
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                \TsmlForUnity\Plugin::logError('Error fetching intergroup meeting during deletion: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            }
+            \TsmlForUnity\Plugin::logDebug('Error fetching intergroup meeting during deletion: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
 
             do_action('unity/intergroup_meeting_deleted', $postId, null);
         }
