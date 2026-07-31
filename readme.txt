@@ -3,8 +3,8 @@ Contributors: thebleedingdeacons
 Tags: meetings, tsml, 12-step, groups, integration
 Requires at least: 6.0
 Tested up to: 6.9
-Stable tag: 1.18.11
-Build date: 2026/07/30 18:22:22
+Stable tag: 1.19.0
+Build date: 2026/07/31 22:59:42
 Requires PHP: 8.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
