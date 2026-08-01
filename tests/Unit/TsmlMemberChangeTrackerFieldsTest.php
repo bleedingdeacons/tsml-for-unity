@@ -9,7 +9,7 @@ use Brain\Monkey\Functions;
 use Exception;
 use TsmlForUnity\Members\TsmlMemberChangeTracker;
 use TsmlForUnity\Members\TsmlMemberFields;
-use TsmlForUnity\Tests\Fixtures\MemberStub;
+use Unity\Testing\Doubles\MemberStub;
 use TsmlForUnity\Tests\TestCase;
 use Unity\Members\Interfaces\MemberRepository;
 use Unity\Members\ResponderCertification;

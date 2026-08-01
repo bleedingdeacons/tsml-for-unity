@@ -6,7 +6,7 @@ namespace TsmlForUnity\Tests\Unit;
 
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Plugin;
-use TsmlForUnity\Tests\Support\FakeContainer;
+use Unity\Testing\Doubles\FakeContainer;
 use Unity\Core\Interfaces\Configuration;
 use Unity\Groups\Interfaces\GroupFactory;
 use Unity\Groups\Interfaces\GroupRepository;
