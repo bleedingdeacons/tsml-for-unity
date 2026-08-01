@@ -8,7 +8,7 @@ use Brain\Monkey\Actions;
 use Brain\Monkey\Functions;
 use TsmlForUnity\Members\TsmlMemberFields;
 use TsmlForUnity\Members\TsmlMemberRepository;
-use TsmlForUnity\Tests\Fixtures\MemberStub;
+use Unity\Testing\Doubles\MemberStub;
 use TsmlForUnity\Tests\TestCase;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberFactory;

@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Members\TsmlMember;
 use TsmlForUnity\Members\TsmlMemberRevisor;
-use TsmlForUnity\Tests\Fixtures\MemberStub;
+use Unity\Testing\Doubles\MemberStub;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberRevisor;
 
