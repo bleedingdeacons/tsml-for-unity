@@ -143,7 +143,7 @@ jobs:
           PY
 
       - name: PHPCS (advisory)
-        run: composer cs
+        run: composer phpcs
         continue-on-error: true
 
       - name: Upload coverage to Coveralls (advisory)
