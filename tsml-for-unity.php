@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /**
  * Plugin Name: TSML for Unity
  * Plugin URI: https://github.com/bleedingdeacons/tsml-for-unity
@@ -16,6 +14,8 @@ declare(strict_types=1);
  * Contact: thebleedingdeacons@gmail.com
  * License: MIT (Modified)
  */
+
+declare(strict_types=1);
 
 if (!defined('ABSPATH')) {
     exit;
@@ -74,7 +74,6 @@ add_action('unity/loaded', function ($container) {
          * Fires after TSML for Unity is fully loaded.
          */
         do_action('tsml_for_unity/loaded');
-
     } catch (\Exception $e) {
         function_exists('wp_log')
             ? wp_log('tsml-for-unity')->error('TSML for Unity Plugin Initialization Error: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()])
@@ -91,7 +90,6 @@ add_action('unity/loaded', function ($container) {
         }
 
         return;
-
     } catch (\Throwable $e) {
         function_exists('wp_log')
             ? wp_log('tsml-for-unity')->critical('TSML for Unity Plugin Fatal Error: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()])
@@ -137,7 +135,6 @@ add_action('unity/register_services', function ($container) {
         }
 
         \TsmlForUnity\Plugin::registerWithUnity($container);
-
     } catch (\Exception $e) {
         function_exists('wp_log')
             ? wp_log('tsml-for-unity')->error('TSML for Unity Registration Error: ' . $e->getMessage(), ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()])
