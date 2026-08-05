@@ -27,7 +27,7 @@
     },
     "require-dev": {
         "bleeding-deacons/unity": "@dev",
-        "bleedingdeacons/wp-mocks": "^1.0.2",
+        "bleedingdeacons/wp-mocks": "^1.5.2",
         "mockery/mockery": "^1.6",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^10.5",
@@ -48,11 +48,11 @@
         "test": "phpunit",
         "test:unit": "phpunit --testsuite=Unit",
         "test:coverage": "phpunit --coverage-html ./tests/coverage",
-        "cs": "phpcs --standard=WordPress ./src",
-        "cs:fix": "phpcbf --standard=WordPress ./src",
+        "phpcs": "phpcs --standard=.phpcs.xml.dist",
+        "phpcs:fix": "phpcbf --standard=.phpcs.xml.dist",
         "stan": "@phpstan",
         "check": [
-            "@cs",
+            "@phpcs",
             "@stan",
             "@test"
         ],
@@ -64,9 +64,6 @@
     },
     "config": {
         "optimize-autoloader": true,
-        "sort-packages": true,
-        "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true
-        }
+        "sort-packages": true
     }
 }
