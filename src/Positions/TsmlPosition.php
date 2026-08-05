@@ -28,7 +28,7 @@ class TsmlPosition implements Position
 
     /**
      * Position constructor
-     * 
+     *
      * @param int    $id                Post ID
      * @param int    $minimumSobriety   Minimum sobriety requirement in months
      * @param int    $termYears         Term length in years

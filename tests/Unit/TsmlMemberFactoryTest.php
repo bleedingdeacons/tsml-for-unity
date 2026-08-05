@@ -272,5 +272,4 @@ class TsmlMemberFactoryTest extends TestCase
             static fn (string $field, int $postId): mixed => $fields[$field] ?? null
         );
     }
-
 }

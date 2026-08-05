@@ -43,7 +43,7 @@ class TsmlGroupViewFactory implements GroupViewFactory
     /**
      * {@inheritdoc}
      */
-    public function createFrom(int $sourceId): ? GroupView
+    public function createFrom(int $sourceId): ?GroupView
     {
         $group = $this->groupRepository->findById($sourceId);
 
@@ -66,11 +66,9 @@ class TsmlGroupViewFactory implements GroupViewFactory
         $members = [];
 
         foreach ($all as $member) {
-
             if ($member->getHomeGroup() === $group->getId()) {
                 $members[] = $member;
             }
-
         }
 
         return new TsmlGroupView(

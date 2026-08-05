@@ -304,7 +304,6 @@ class Plugin
 
         // Register Location Dependencies
         if (self::unityLocationsAvailable()) {
-
             // Register Location Factory
             $container->register(
                 LocationFactory::class,
@@ -328,7 +327,6 @@ class Plugin
 
         // Register Meeting Dependencies
         if (self::unityMeetingsAvailable()) {
-
             // Register Meeting Factory
             $container->register(
                 MeetingFactory::class,
@@ -362,12 +360,10 @@ class Plugin
 
             // Store the Position Fields
             $config->setConfig(Meeting::class, self::extractConstants(TsmlMeetingFields::class));
-
         }
 
         // Register Group Dependencies
         if (self::unityGroupsAvailable()) {
-
             // Register Group Factory
             $container->register(
                 GroupFactory::class,
@@ -410,7 +406,6 @@ class Plugin
 
             // Store the Group Fields
             $config->setConfig(Group::class, self::extractConstants(TsmlGroupFields::class));
-
         }
 
         // Register Member Dependencies
@@ -459,12 +454,10 @@ class Plugin
 
             // Store the Member Fields
             $config->setConfig(Member::class, self::extractConstants(TsmlMemberFields::class));
-
         }
 
         // Register Position Dependencies
         if (self::unityPositionsAvailable()) {
-
             // Register Position Factory
             $container->register(
                 PositionFactory::class,
@@ -517,12 +510,10 @@ class Plugin
 
             // Store the Position Fields
             $config->setConfig(Position::class, self::extractConstants(TsmlPositionFields::class));
-
         }
 
         // Register Privacy Policy Dependencies
         if (self::unityPrivacyPoliciesAvailable()) {
-
             // Register Privacy Policy Factory
             $container->register(
                 PrivacyPolicyFactory::class,
@@ -545,7 +536,6 @@ class Plugin
 
             // Store the Privacy Policy Fields
             $config->setConfig(PrivacyPolicy::class, self::extractConstants(TsmlPrivacyPolicyFields::class));
-
         }
 
         // Register intergroup meeting factory and repository if Unity's intergroup meeting interfaces are available
@@ -584,7 +574,6 @@ class Plugin
                     return new TsmlIntergroupMeetingChangeTracker($intergroupMeetingRepository);
                 }
             );
-
         }
 
         // Register Intergroup Meeting Attendance Dependencies

@@ -137,7 +137,8 @@ class PluginTest extends TestCase
     {
         Plugin::registerWithUnity($this->container);
 
-        foreach ([
+        foreach (
+            [
             LocationFactory::class,
             LocationRepository::class,
             MeetingFactory::class,
@@ -148,7 +149,8 @@ class PluginTest extends TestCase
             MemberRepository::class,
             PositionFactory::class,
             PositionRepository::class,
-        ] as $id) {
+            ] as $id
+        ) {
             $this->assertContains($id, $this->container->registeredIds(), $id . ' should be registered');
         }
     }
@@ -270,5 +272,4 @@ class PluginTest extends TestCase
 
         $this->assertSame('tsml-for-unity', $logChannel->invoke(null));
     }
-
 }

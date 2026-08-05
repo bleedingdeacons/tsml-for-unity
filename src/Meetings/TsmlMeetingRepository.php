@@ -128,7 +128,7 @@ class TsmlMeetingRepository implements MeetingRepository
 
         // Filter to only online meetings using the Meeting's isOnline() method
         // This handles all the different ways TSML can mark a meeting as online
-        $onlineMeetings = array_filter($allMeetings, function($meeting) {
+        $onlineMeetings = array_filter($allMeetings, function ($meeting) {
             return $meeting->isOnline();
         });
 
@@ -144,7 +144,7 @@ class TsmlMeetingRepository implements MeetingRepository
         $allMeetings = $this->findAll($args);
 
         // Filter to only in-person meetings (NOT online)
-        $inPersonMeetings = array_filter($allMeetings, function($meeting) {
+        $inPersonMeetings = array_filter($allMeetings, function ($meeting) {
             return !$meeting->isOnline();
         });
 
