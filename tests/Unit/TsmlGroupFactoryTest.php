@@ -191,20 +191,20 @@ class TsmlGroupFactoryTest extends TestCase
         $result = $this->factory->createFromSource($postId);
 
         $this->assertInstanceOf(Group::class, $result);
-        
+
         $contacts = $result->getContacts();
         $this->assertCount(3, $contacts);
-        
+
         $this->assertInstanceOf(Contact::class, $contacts[0]);
         $this->assertEquals('John Doe', $contacts[0]->getName());
         $this->assertEquals('john@example.com', $contacts[0]->getEmail());
         $this->assertEquals('555-1111', $contacts[0]->getPhone());
-        
+
         $this->assertInstanceOf(Contact::class, $contacts[1]);
         $this->assertEquals('Jane Smith', $contacts[1]->getName());
         $this->assertEquals('jane@example.com', $contacts[1]->getEmail());
         $this->assertEquals('555-2222', $contacts[1]->getPhone());
-        
+
         $this->assertInstanceOf(Contact::class, $contacts[2]);
         $this->assertEquals('Bob Wilson', $contacts[2]->getName());
         $this->assertEquals('bob@example.com', $contacts[2]->getEmail());
@@ -293,13 +293,13 @@ class TsmlGroupFactoryTest extends TestCase
 
         $contacts = $result->getContacts();
         $this->assertCount(2, $contacts);
-        
+
         // First contact has name only
         $this->assertInstanceOf(Contact::class, $contacts[0]);
         $this->assertEquals('John Doe', $contacts[0]->getName());
         $this->assertEquals('', $contacts[0]->getEmail());
         $this->assertEquals('', $contacts[0]->getPhone());
-        
+
         // Second contact has email only
         $this->assertInstanceOf(Contact::class, $contacts[1]);
         $this->assertEquals('', $contacts[1]->getName());

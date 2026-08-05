@@ -21,7 +21,7 @@ final class TsmlPositionFields
     public const SHORT_DESCRIPTION = 'position-short-description';
 
     public const SUMMARY = 'position-summary';
-    
+
     public const POST_TYPE = 'intergroup-position';
 
     private function __construct()

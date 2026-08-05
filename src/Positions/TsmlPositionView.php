@@ -231,7 +231,7 @@ class TsmlPositionView implements PositionView
      *
      * @return bool
      */
-    function isArchivist(): bool
+    public function isArchivist(): bool
     {
         $description = $this->getDescription() ?? '';
         return strcasecmp(trim($description), 'Archivist') === 0;

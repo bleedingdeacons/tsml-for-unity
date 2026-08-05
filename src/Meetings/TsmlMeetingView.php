@@ -36,9 +36,8 @@ class TsmlMeetingView implements MeetingView
      */
     public function __construct(
         Meeting $meeting,
-        array   $members,
-    )
-    {
+        array $members,
+    ) {
         $this->meeting = $meeting;
         $this->members = $members;
     }

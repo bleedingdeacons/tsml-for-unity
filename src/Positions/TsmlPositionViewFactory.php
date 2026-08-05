@@ -101,7 +101,7 @@ class TsmlPositionViewFactory implements PositionViewFactory
             $views[] = new TsmlPositionView($position, $member, $members);
         }
 
-        usort($views, function(PositionView $a, PositionView $b) {
+        usort($views, function (PositionView $a, PositionView $b) {
             $titleA = $a->getTitle() ?? '';
             $titleB = $b->getTitle() ?? '';
 

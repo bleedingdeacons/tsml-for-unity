@@ -13,7 +13,7 @@ use Unity\Positions\Interfaces\PositionView;
 
 /**
  * PositionViewCollection
- * 
+ *
  * Handles a collection of position views with filtering and sorting capabilities
  */
 class TsmlPositionViewCollection
@@ -23,7 +23,7 @@ class TsmlPositionViewCollection
 
     /**
      * Constructor
-     * 
+     *
      * @param array<int, PositionView> $views Array of PositionView objects
      */
     public function __construct(array $views = [])
@@ -33,7 +33,7 @@ class TsmlPositionViewCollection
 
     /**
      * Get views that have members assigned
-     * 
+     *
      * @return TsmlPositionViewCollection
      */
     public function getFilledPositions(): TsmlPositionViewCollection
@@ -45,7 +45,7 @@ class TsmlPositionViewCollection
 
     /**
      * Get views that don't have members assigned
-     * 
+     *
      * @return TsmlPositionViewCollection
      */
     public function getVacantPositions(): TsmlPositionViewCollection
@@ -57,7 +57,7 @@ class TsmlPositionViewCollection
 
     /**
      * Get positions that will rotate soon
-     * 
+     *
      * @param int $days Number of days threshold
      * @return TsmlPositionViewCollection
      */
@@ -71,7 +71,7 @@ class TsmlPositionViewCollection
 
     /**
      * Get positions that have already passed their rotation date
-     * 
+     *
      * @return TsmlPositionViewCollection
      */
     public function getOverduePositions(): TsmlPositionViewCollection
@@ -84,7 +84,7 @@ class TsmlPositionViewCollection
 
     /**
      * Sort positions by days until rotation
-     * 
+     *
      * @param bool $ascending Sort order
      * @return TsmlPositionViewCollection
      */
@@ -116,7 +116,7 @@ class TsmlPositionViewCollection
 
     /**
      * Sort positions by name
-     * 
+     *
      * @param bool $ascending Sort order
      * @return TsmlPositionViewCollection
      */
@@ -137,7 +137,7 @@ class TsmlPositionViewCollection
 
     /**
      * Sort positions by title
-     * 
+     *
      * @param bool $ascending Sort order
      * @return TsmlPositionViewCollection
      */
@@ -158,7 +158,7 @@ class TsmlPositionViewCollection
 
     /**
      * Sort positions by email
-     * 
+     *
      * @param bool $ascending Sort order
      * @return TsmlPositionViewCollection
      */
@@ -179,7 +179,7 @@ class TsmlPositionViewCollection
 
     /**
      * Apply a filter to the collection
-     * 
+     *
      * @param callable $callback Filter callback function
      * @return TsmlPositionViewCollection
      */
@@ -190,7 +190,7 @@ class TsmlPositionViewCollection
 
     /**
      * Get all position views in the collection
-     * 
+     *
      * @return array<int, PositionView> Array of PositionView objects
      */
     public function getAll(): array
@@ -200,7 +200,7 @@ class TsmlPositionViewCollection
 
     /**
      * Get number of views in the collection
-     * 
+     *
      * @return int
      */
     public function count(): int

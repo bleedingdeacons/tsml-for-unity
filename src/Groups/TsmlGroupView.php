@@ -28,7 +28,7 @@ class TsmlGroupView implements GroupView
     private array $members;
     /**
      * TsmlGroupView constructor
-     * 
+     *
      * @param int    $id       Post ID
      * @param string $title    Group title
      * @param string $email    Email address

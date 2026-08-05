@@ -40,8 +40,7 @@ class TsmlMeetingViewFactory implements MeetingViewFactory
         MeetingRepository $meetingRepository,
         MemberRepository $memberRepository,
         GroupRepository $groupRepository
-    )
-    {
+    ) {
         $this->meetingRepository = $meetingRepository;
         $this->memberRepository = $memberRepository;
         $this->groupRepository = $groupRepository;
@@ -71,5 +70,4 @@ class TsmlMeetingViewFactory implements MeetingViewFactory
             . 'implement it before wiring it up, or remove the class.'
         );
     }
-
 }

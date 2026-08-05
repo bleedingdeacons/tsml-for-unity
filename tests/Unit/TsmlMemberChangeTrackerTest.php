@@ -119,8 +119,16 @@ class TsmlMemberChangeTrackerTest extends TestCase
         $populated = new MemberStub(
             $postId,
             'New Anon',
-            false, false, '', 0, '', 0, false, null,
-            'new@example.com', '07700 900000'
+            false,
+            false,
+            '',
+            0,
+            '',
+            0,
+            false,
+            null,
+            'new@example.com',
+            '07700 900000'
         );
 
         $this->stubPostTypeGuard($postId);
@@ -182,12 +190,32 @@ class TsmlMemberChangeTrackerTest extends TestCase
         $postId = 5678;
 
         $original = new MemberStub(
-            $postId, 'Anon', false, false, '', 0, '', 0, false, null,
-            '', 'OLD-MOBILE'
+            $postId,
+            'Anon',
+            false,
+            false,
+            '',
+            0,
+            '',
+            0,
+            false,
+            null,
+            '',
+            'OLD-MOBILE'
         );
         $updated = new MemberStub(
-            $postId, 'Anon', false, false, '', 0, '', 0, false, null,
-            '', 'NEW-MOBILE'
+            $postId,
+            'Anon',
+            false,
+            false,
+            '',
+            0,
+            '',
+            0,
+            false,
+            null,
+            '',
+            'NEW-MOBILE'
         );
 
         $this->stubPostTypeGuard($postId);
@@ -215,12 +243,36 @@ class TsmlMemberChangeTrackerTest extends TestCase
         // Original: not a responder. Updated: is a responder. Everything
         // else is identical so the only diff lives in the new flag.
         $original = new MemberStub(
-            $postId, 'Anon', false, false, '', 0, '', 0, false, null,
-            '', '', false, false
+            $postId,
+            'Anon',
+            false,
+            false,
+            '',
+            0,
+            '',
+            0,
+            false,
+            null,
+            '',
+            '',
+            false,
+            false
         );
         $updated = new MemberStub(
-            $postId, 'Anon', false, false, '', 0, '', 0, false, null,
-            '', '', false, true
+            $postId,
+            'Anon',
+            false,
+            false,
+            '',
+            0,
+            '',
+            0,
+            false,
+            null,
+            '',
+            '',
+            false,
+            true
         );
 
         $this->stubPostTypeGuard($postId);
