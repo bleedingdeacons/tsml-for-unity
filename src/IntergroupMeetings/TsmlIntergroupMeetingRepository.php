@@ -66,7 +66,11 @@ class TsmlIntergroupMeetingRepository implements IntergroupMeetingRepository
 
         if (!empty($posts)) {
             foreach ($posts as $post) {
-                $intergroupMeeting = $this->findById($post->ID);
+                // $args is caller-supplied, so 'fields' => 'ids' can reach here
+                // and make get_posts() return plain ints, not post objects.
+                // See TsmlLocationRepository::findAll() on is_object().
+                $postId = is_object($post) ? (int) $post->ID : (int) $post;
+                $intergroupMeeting = $this->findById($postId);
                 if ($intergroupMeeting) {
                     $intergroupMeetings[] = $intergroupMeeting;
                 }

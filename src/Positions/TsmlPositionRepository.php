@@ -61,7 +61,11 @@ class TsmlPositionRepository implements PositionRepository
         $positions = [];
 
         foreach ($posts as $post) {
-            $position = $this->factory->createFromSource($post->ID);
+            // $args is caller-supplied, so 'fields' => 'ids' can reach here and
+            // make get_posts() return plain ints rather than post objects.
+            // See TsmlLocationRepository::findAll() on is_object().
+            $postId = is_object($post) ? (int) $post->ID : (int) $post;
+            $position = $this->factory->createFromSource($postId);
             if ($position !== null) {
                 $positions[] = $position;
             }
