@@ -229,8 +229,10 @@ class TsmlMeetingFactory implements MeetingFactory
                 throw new RuntimeException("Required WordPress functions are not available");
             }
 
-            $url = get_permalink($id);
-            $state = get_post_status($id);
+            // Both return false when the post has gone away between the
+            // caller's lookup and here; the meeting model wants strings.
+            $url = get_permalink($id) ?: '';
+            $state = get_post_status($id) ?: '';
 
             $day = (int)$this->getMeetingField($source, 'day', 0);
             $time = $this->getMeetingField($source, 'time', '');

@@ -68,7 +68,13 @@ class TsmlLocationRepository implements LocationRepository
         $locations = [];
 
         foreach ($posts as $post) {
-            $location = $this->factory->createFromSource($post->ID);
+            // $args is caller-supplied, so 'fields' => 'ids' can reach here and
+            // make get_posts() return plain ints rather than post objects.
+            // is_object() rather than instanceof WP_Post on purpose: anything
+            // object-shaped that reaches here already carried an ID before, and
+            // narrowing must not start rejecting it.
+            $postId = is_object($post) ? (int) $post->ID : (int) $post;
+            $location = $this->factory->createFromSource($postId);
             if ($location !== null) {
                 $locations[] = $location;
             }
