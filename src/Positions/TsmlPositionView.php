@@ -207,7 +207,10 @@ class TsmlPositionView implements PositionView
      */
     public function getPublicDisplayName(): ?string
     {
-        if ($this->isVacant()) {
+        // Written as the null check rather than isVacant(), which is exactly
+        // this test (see above) but which PHPStan cannot connect back to the
+        // property. Same condition, no runtime change.
+        if ($this->member === null) {
             return '';
         }
 
