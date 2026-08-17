@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a0f0e316e03ddab7c272ca3de7c872f0",
+    "content-hash": "669cd10f0b3e50be7d353b199c53c013",
     "packages": [
         {
             "name": "psr/container",
@@ -111,11 +111,11 @@
         },
         {
             "name": "bleeding-deacons/unity",
-            "version": "dev-chore/release",
+            "version": "dev-main",
             "dist": {
                 "type": "path",
                 "url": "../unity",
-                "reference": "a449b2262d5e3b46ca7effa84921023bbb5afdb3"
+                "reference": "70c152e6becc0b44af112905c6ac740f11d873af"
             },
             "require": {
                 "php": ">=8.1",
@@ -202,16 +202,16 @@
         },
         {
             "name": "bleedingdeacons/wp-mocks",
-            "version": "v1.5.2",
+            "version": "v2.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bleedingdeacons/wp-mocks.git",
-                "reference": "a9698851f4b9e0f7dc5c29f1eb6a6396a1c93a55"
+                "reference": "43da132068e8de6c36ffbd9c2174c4f38459d4fb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bleedingdeacons/wp-mocks/zipball/a9698851f4b9e0f7dc5c29f1eb6a6396a1c93a55",
-                "reference": "a9698851f4b9e0f7dc5c29f1eb6a6396a1c93a55",
+                "url": "https://api.github.com/repos/bleedingdeacons/wp-mocks/zipball/43da132068e8de6c36ffbd9c2174c4f38459d4fb",
+                "reference": "43da132068e8de6c36ffbd9c2174c4f38459d4fb",
                 "shasum": ""
             },
             "require": {
@@ -280,10 +280,10 @@
                 "wordpress"
             ],
             "support": {
-                "source": "https://github.com/bleedingdeacons/wp-mocks/tree/v1.5.2",
+                "source": "https://github.com/bleedingdeacons/wp-mocks/tree/v2.0.1",
                 "issues": "https://github.com/bleedingdeacons/wp-mocks/issues"
             },
-            "time": "2026-08-01T17:01:44+00:00"
+            "time": "2026-08-17T17:01:33+00:00"
         },
         {
             "name": "brain/monkey",
