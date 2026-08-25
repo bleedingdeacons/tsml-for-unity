@@ -1,6 +1,7 @@
 # TSML for Unity
 
 [![CI](https://github.com/bleedingdeacons/tsml-for-unity/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bleedingdeacons/tsml-for-unity/actions/workflows/ci.yml)
+[![Semgrep](https://github.com/bleedingdeacons/tsml-for-unity/actions/workflows/semgrep.yml/badge.svg?branch=main)](https://github.com/bleedingdeacons/tsml-for-unity/actions/workflows/semgrep.yml)
 [![Coverage Status](https://coveralls.io/repos/github/bleedingdeacons/tsml-for-unity/badge.svg?branch=main)](https://coveralls.io/github/bleedingdeacons/tsml-for-unity?branch=main)
 ![PHPStan](https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fbleedingdeacons%2Ftsml-for-unity%2Fmain%2Fphpstan.neon.dist&query=%24.parameters.level&label=PHPStan&prefix=level%20&color=brightgreen)
 ![PHPCS](https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fbleedingdeacons%2Ftsml-for-unity%2Fmain%2F.phpcs.xml.dist&query=%2Fruleset%2Frule%5B1%5D%2F%40ref&label=PHPCS&color=brightgreen)
