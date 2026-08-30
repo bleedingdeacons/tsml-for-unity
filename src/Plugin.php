@@ -11,6 +11,9 @@ if (!defined('ABSPATH')) {
 
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
+use TsmlForUnity\Committees\TsmlCommitteeFactory;
+use TsmlForUnity\Committees\TsmlCommitteeFields;
+use TsmlForUnity\Committees\TsmlCommitteeRepository;
 use TsmlForUnity\Contacts\TsmlContactFactory;
 use TsmlForUnity\Groups\TsmlGroupChangeTracker;
 use TsmlForUnity\Groups\TsmlGroupFactory;
@@ -46,6 +49,9 @@ use TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicyFactory;
 use TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicyFields;
 use TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicyRepository;
 
+use Unity\Committees\Interfaces\Committee;
+use Unity\Committees\Interfaces\CommitteeFactory;
+use Unity\Committees\Interfaces\CommitteeRepository;
 use Unity\Contacts\Interfaces\ContactFactory;
 use Unity\Core\Interfaces\Cache;
 use Unity\Core\Interfaces\Configuration;
@@ -139,6 +145,22 @@ class Plugin
     {
         return interface_exists(ContactFactory::class)
             && interface_exists('Unity\\Contacts\\Interfaces\\Contact');
+    }
+
+    /**
+     * Check if Unity's committee interfaces are available
+     *
+     * Guarded like every other block: Unity gained these after this plugin
+     * had already shipped, so a site running an older Unity must skip the
+     * registration rather than fatal on a missing interface.
+     *
+     * @return bool
+     */
+    public static function unityCommitteesAvailable(): bool
+    {
+        return interface_exists(CommitteeFactory::class)
+            && interface_exists(Committee::class)
+            && interface_exists(CommitteeRepository::class);
     }
 
     /**
@@ -510,6 +532,36 @@ class Plugin
 
             // Store the Position Fields
             $config->setConfig(Position::class, self::extractConstants(TsmlPositionFields::class));
+        }
+
+        // Register Committee Dependencies
+        if (self::unityCommitteesAvailable()) {
+            // Register Committee Factory
+            $container->register(
+                CommitteeFactory::class,
+                function (ContainerInterface $container) {
+                    return new TsmlCommitteeFactory();
+                }
+            );
+
+            // Register Committee Repository
+            //
+            // Built with its own TsmlCommitteeFactory rather than resolving
+            // CommitteeFactory::class from the container, unlike its siblings.
+            // It needs the factory's createFromTerm(), which is absent from
+            // Unity's interface because it takes a WP_Term -- so a container
+            // binding could hand back something without the method, and the
+            // failure would surface as a fatal on first use rather than at
+            // registration.
+            $container->register(
+                CommitteeRepository::class,
+                function (ContainerInterface $container) {
+                    return new TsmlCommitteeRepository(new TsmlCommitteeFactory());
+                }
+            );
+
+            // Store the Committee Fields
+            $config->setConfig(Committee::class, self::extractConstants(TsmlCommitteeFields::class));
         }
 
         // Register Privacy Policy Dependencies

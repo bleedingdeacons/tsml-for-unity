@@ -101,3 +101,41 @@ if (!class_exists('WP_Post')) {
         }
     }
 }
+
+if (!class_exists('WP_Term')) {
+    /**
+     * Minimal WP_Term.
+     *
+     * The committee factory and repository both guard on `instanceof WP_Term`
+     * -- get_terms() and wp_get_object_terms() can return ints or strings when
+     * a caller sets 'fields' -- so a plain stdClass would be skipped and every
+     * committee test would see an empty tree. Constructed from raw data the
+     * way core does, like WP_Post above.
+     *
+     * bleedingdeacons/wp-mocks does not carry this: its term support stops at
+     * wp_get_object_terms() over WpState::$postTerms, which stores whatever a
+     * test puts there and never needed a class.
+     */
+    class WP_Term
+    {
+        public int $term_id = 0;
+        public string $name = '';
+        public string $slug = '';
+        public string $taxonomy = '';
+        public string $description = '';
+        public int $parent = 0;
+        public int $count = 0;
+        public int $term_taxonomy_id = 0;
+        public int $term_group = 0;
+
+        /**
+         * @param object|array<string, mixed> $term Raw term data.
+         */
+        public function __construct($term = [])
+        {
+            foreach ((array) $term as $key => $value) {
+                $this->$key = $value;
+            }
+        }
+    }
+}
