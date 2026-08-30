@@ -7,6 +7,9 @@ namespace TsmlForUnity\Tests\Unit;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Plugin;
 use Unity\Testing\Doubles\FakeContainer;
+use Unity\Committees\Interfaces\Committee;
+use Unity\Committees\Interfaces\CommitteeFactory;
+use Unity\Committees\Interfaces\CommitteeRepository;
 use Unity\Core\Interfaces\Configuration;
 use Unity\Groups\Interfaces\GroupFactory;
 use Unity\Groups\Interfaces\GroupRepository;
@@ -83,6 +86,7 @@ class PluginTest extends TestCase
             'unityContactsAvailable',
             'unityMembersAvailable',
             'unityPositionsAvailable',
+            'unityCommitteesAvailable',
             'unityPrivacyPoliciesAvailable',
             'unityIntergroupMeetingsAvailable',
             'unityIntergroupMeetingGroupAttendanceAvailable',
@@ -149,6 +153,8 @@ class PluginTest extends TestCase
             MemberRepository::class,
             PositionFactory::class,
             PositionRepository::class,
+            CommitteeFactory::class,
+            CommitteeRepository::class,
             ] as $id
         ) {
             $this->assertContains($id, $this->container->registeredIds(), $id . ' should be registered');
@@ -218,6 +224,31 @@ class PluginTest extends TestCase
         $this->assertArrayHasKey(Member::class, $this->storedConfig);
         $this->assertArrayHasKey('POST_TYPE', $this->storedConfig[Member::class]);
         $this->assertSame('intergroup-member', $this->storedConfig[Member::class]['POST_TYPE']);
+    }
+
+    /** @test */
+    public function the_committee_field_map_carries_the_taxonomy_and_its_acf_fields(): void
+    {
+        Plugin::registerWithUnity($this->container);
+
+        $committeeConfig = $this->storedConfig[Committee::class];
+
+        $this->assertSame('intergroup-committee', $committeeConfig['TAXONOMY']);
+
+        // The member's field is nested in the "Service" ACF Group field, so
+        // its meta key carries the group prefix; the position's is top level.
+        // Nothing in this plugin reads either -- the term relationships are the
+        // source of truth -- but importers and field-key lookups need them.
+        $this->assertSame(
+            'service-layout-group_member-committees',
+            $committeeConfig['FIELD_MEMBER_COMMITTEES']
+        );
+        $this->assertSame(
+            'position-committees',
+            $committeeConfig['FIELD_POSITION_COMMITTEES']
+        );
+        $this->assertArrayHasKey('KEY_MEMBER_COMMITTEES', $committeeConfig);
+        $this->assertArrayHasKey('KEY_POSITION_COMMITTEES', $committeeConfig);
     }
 
     /** @test */
