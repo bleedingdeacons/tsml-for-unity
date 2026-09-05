@@ -114,6 +114,14 @@ class TsmlPrivacyPolicyRepository implements PrivacyPolicyRepository
 
         $queryArgs = array_merge($defaultArgs, $args);
         $posts = get_posts($queryArgs);
+        // get_posts() returns int[] rather than WP_Post[] when the caller
+        // passes 'fields' => 'ids', and these args are merged over the
+        // defaults so a caller can do exactly that. Filtering to WP_Post
+        // is a real guard, not a cast to satisfy the analyser: without it
+        // the property access below is a fatal error on an int. Surfaced
+        // by php-stubs/wordpress-stubs v7.1.0, which models the
+        // conditional return type that v6.9.4 did not.
+        $posts = array_filter($posts, static fn ($post): bool => $post instanceof \WP_Post);
         $policies = [];
 
         if (!empty($posts)) {

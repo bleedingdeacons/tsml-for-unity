@@ -265,7 +265,7 @@ class TsmlMemberRepositoryTest extends TestCase
                     && $clause['value']     === $email
                     && $clause['compare']   === '=';
             })
-            ->andReturn([(object) ['ID' => $postId]]);
+            ->andReturn([new \WP_Post(['ID' => $postId])]);
 
         $this->stubExistingPost($postId);
 
