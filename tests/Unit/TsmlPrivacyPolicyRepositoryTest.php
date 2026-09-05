@@ -104,7 +104,7 @@ class TsmlPrivacyPolicyRepositoryTest extends TestCase
      */
     public function find_active_reads_back_the_first_matching_policy(): void
     {
-        Functions\expect('get_posts')->once()->andReturn([(object) ['ID' => 5]]);
+        Functions\expect('get_posts')->once()->andReturn([new \WP_Post(['ID' => 5])]);
         Functions\expect('get_post')->with(5)->andReturn(
             (object) ['post_type' => TsmlPrivacyPolicyFields::POST_TYPE]
         );
@@ -121,8 +121,8 @@ class TsmlPrivacyPolicyRepositoryTest extends TestCase
     public function find_all_maps_posts_through_find_by_id(): void
     {
         Functions\expect('get_posts')->once()->andReturn([
-            (object) ['ID' => 1],
-            (object) ['ID' => 2],
+            new \WP_Post(['ID' => 1]),
+            new \WP_Post(['ID' => 2]),
         ]);
         Functions\expect('get_post')->andReturnUsing(
             fn ($id) => (object) ['post_type' => TsmlPrivacyPolicyFields::POST_TYPE]
