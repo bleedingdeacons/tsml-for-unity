@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use TsmlForUnity\Tests\Support\WpdbStub;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Plugin;
 use Unity\Testing\Doubles\FakeContainer;
@@ -45,6 +46,8 @@ class PluginTest extends TestCase
     /** @var array<string, array> Field maps captured from setConfig(). */
     private array $storedConfig = [];
 
+    private mixed $previousWpdb = null;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -59,6 +62,22 @@ class PluginTest extends TestCase
 
         $this->container = new FakeContainer();
         $this->container->prime(Configuration::class, $this->config);
+
+        // The credential repository takes a wpdb, so building the graph
+        // needs one in the global the closure reads. Restored in tearDown
+        // rather than left behind: this file builds every service the
+        // plugin registers, and a global set by one test leaking into the
+        // next is exactly the kind of thing that makes that useful test
+        // pass for the wrong reason.
+        $this->previousWpdb = $GLOBALS['wpdb'] ?? null;
+        $GLOBALS['wpdb'] = new WpdbStub();
+    }
+
+    protected function tearDown(): void
+    {
+        $GLOBALS['wpdb'] = $this->previousWpdb;
+
+        parent::tearDown();
     }
 
     // ─── availability probes ────────────────────────────────────────

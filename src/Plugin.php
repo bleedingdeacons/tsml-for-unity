@@ -11,6 +11,7 @@ if (!defined('ABSPATH')) {
 
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
+use TsmlForUnity\Auth\TsmlPasswordCredentialRepository;
 use TsmlForUnity\Committees\TsmlCommitteeFactory;
 use TsmlForUnity\Committees\TsmlCommitteeFields;
 use TsmlForUnity\Committees\TsmlCommitteeRepository;
@@ -49,6 +50,7 @@ use TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicyFactory;
 use TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicyFields;
 use TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicyRepository;
 
+use Unity\Auth\Interfaces\PasswordCredentialRepository;
 use Unity\Committees\Interfaces\Committee;
 use Unity\Committees\Interfaces\CommitteeFactory;
 use Unity\Committees\Interfaces\CommitteeRepository;
@@ -312,6 +314,28 @@ class Plugin
 
         // Configuration
         $config = $container->get(Configuration::class);
+
+        // Register the member password store.
+        //
+        // Reach and Fellowship both sign in against it, and each used to
+        // keep a private copy over a private table -- so a password set
+        // in one was invisible to the other, and a reset in one left the
+        // other stale with nothing to say so. A member has one password.
+        //
+        // Guarded on the interface existing rather than on a helper like
+        // the blocks below: a site on a Unity that predates the contract
+        // has nothing to implement, and referencing the class name
+        // unconditionally would fatal rather than degrade.
+        if (interface_exists(PasswordCredentialRepository::class)) {
+            $container->register(
+                PasswordCredentialRepository::class,
+                function (ContainerInterface $container) {
+                    global $wpdb;
+
+                    return new TsmlPasswordCredentialRepository($wpdb);
+                }
+            );
+        }
 
         // Register Contact Dependencies
         if (self::unityContactsAvailable()) {

@@ -113,6 +113,13 @@ add_action('plugins_loaded', function () {
     if (class_exists('TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceTable')) {
         \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceTable::maybeUpgrade();
     }
+    // The member password store. Checked here rather than only on
+    // activation because this plugin is already active everywhere it
+    // matters, and WordPress does not re-run activation hooks on an
+    // update -- so activation alone would never reach an existing site.
+    if (class_exists('TsmlForUnity\Auth\TsmlPasswordCredentialTable')) {
+        \TsmlForUnity\Auth\TsmlPasswordCredentialTable::maybeUpgrade();
+    }
 }, 10);
 
 // Show admin notice if Unity is not available
@@ -160,6 +167,11 @@ register_activation_hook(__FILE__, function () {
     // Create the intergroup meeting attendance custom tables
     \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceTable::createTable();
     \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceTable::createTable();
+
+    // The member password store, which also absorbs the two
+    // plugin-private credential tables it replaces. See
+    // TsmlPasswordCredentialTable::absorb().
+    \TsmlForUnity\Auth\TsmlPasswordCredentialTable::createTable();
 
     // Resolve and cache ACF field name → key mapping so repositories
     // can reliably read/write posts that lack ACF shadow meta rows
