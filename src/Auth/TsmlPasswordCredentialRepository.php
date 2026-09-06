@@ -1,0 +1,282 @@
+<?php
+
+declare(strict_types=1);
+
+namespace TsmlForUnity\Auth;
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+use LogicException;
+use Unity\Auth\Interfaces\PasswordCredentialRepository;
+use Unity\Auth\PasswordCredential;
+use wpdb;
+
+/**
+ * $wpdb-backed implementation of Unity's
+ * {@see \Unity\Auth\Interfaces\PasswordCredentialRepository}.
+ *
+ * <p>Unity declares the contract and binds nothing to it, as it does for
+ * every repository; this plugin supplies the implementation, alongside
+ * the other repositories and tables it already owns. The schema, and the
+ * migration off the two plugin-private tables this replaces, live in
+ * {@see TsmlPasswordCredentialTable}.</p>
+ *
+ * <p>One row per member email; holds only hashed secrets (bcrypt password
+ * hash, SHA-256 reset-token hash) plus the lockout counters - never any
+ * raw password or raw token.</p>
+ *
+ * <p>Writes use INSERT ... ON DUPLICATE KEY UPDATE so the first password
+ * reset for a member (who has no row yet) and every later change go
+ * through the same code path, keyed on the email primary key.</p>
+ *
+ * <p>Every write here guards wpdb::prepare() against null, which is why
+ * the SQL goes into a local before reaching query() rather than being
+ * nested inline. prepare() returns null only when the query carries no
+ * placeholders or the arguments do not match them - a coding error, never
+ * a runtime condition - so the guards throw rather than skipping the
+ * write. These statements are the source of truth for password sign-in;
+ * silently issuing no query at all would leave a caller believing a
+ * password or lockout counter had been stored when it had not.</p>
+ */
+final class TsmlPasswordCredentialRepository implements PasswordCredentialRepository
+{
+    public function __construct(private readonly wpdb $wpdb)
+    {
+    }
+
+    /**
+     * @return literal-string
+     *
+     * wpdb::prepare() only accepts a literal-string query, and every query
+     * in this class interpolates this table name. PHPStan types
+     * $wpdb->prefix as a plain string so it cannot derive that on its own
+     * - the annotation asserts it. It holds: the prefix comes from
+     * wp-config.php and the suffix is a class constant, so no part of this
+     * is reachable from user input.
+     */
+    public static function tableName(wpdb $wpdb): string
+    {
+        // Asserted on the prefix rather than on the concatenation: PHPStan
+        // infers the joined string as non-falsy-string, which literal-string
+        // is not a subtype of, so a @var on the result is rejected outright.
+        /** @var literal-string $prefix */
+        $prefix = $wpdb->prefix;
+
+        return $prefix . TsmlPasswordCredentialTable::TABLE_NAME;
+    }
+
+    public function find(string $email): ?PasswordCredential
+    {
+        $table = self::tableName($this->wpdb);
+        $row = $this->wpdb->get_row($this->wpdb->prepare(
+            "SELECT email, password_hash, reset_token_hash, reset_expires_at,
+                    failed_attempts, locked_until, updated_at
+               FROM {$table}
+              WHERE email = %s
+              LIMIT 1",
+            $email,
+        ), ARRAY_A);
+
+        return is_array($row) ? $this->hydrate($row) : null;
+    }
+
+    public function all(int $limit = 500): array
+    {
+        $table = self::tableName($this->wpdb);
+
+        // Ordered by updated_at rather than by email: what an admin is
+        // looking at this screen for is recent activity - who has just
+        // been locked out, whose reset is outstanding - and an
+        // alphabetical list buries that.
+        $sql = $this->wpdb->prepare(
+            "SELECT email, password_hash, reset_token_hash, reset_expires_at,
+                    failed_attempts, locked_until, updated_at
+               FROM {$table}
+              ORDER BY updated_at DESC
+              LIMIT %d",
+            max(1, $limit),
+        );
+
+        if ($sql === null) {
+            throw new LogicException('Failed to prepare the credential listing query.');
+        }
+
+        $rows = $this->wpdb->get_results($sql, ARRAY_A);
+
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $credentials = [];
+
+        foreach ($rows as $row) {
+            if (is_array($row)) {
+                $credentials[] = $this->hydrate($row);
+            }
+        }
+
+        return $credentials;
+    }
+
+    public function findByResetTokenHash(string $tokenHash): ?PasswordCredential
+    {
+        // An empty hash would otherwise match every reset-free row; refuse
+        // it outright so a blank token can never resolve to a credential.
+        if ($tokenHash === '') {
+            return null;
+        }
+
+        $table = self::tableName($this->wpdb);
+        $row = $this->wpdb->get_row($this->wpdb->prepare(
+            "SELECT email, password_hash, reset_token_hash, reset_expires_at,
+                    failed_attempts, locked_until, updated_at
+               FROM {$table}
+              WHERE reset_token_hash = %s
+              LIMIT 1",
+            $tokenHash,
+        ), ARRAY_A);
+
+        return is_array($row) ? $this->hydrate($row) : null;
+    }
+
+    public function upsertPasswordHash(string $email, string $passwordHash, int $now): void
+    {
+        $table = self::tableName($this->wpdb);
+
+        // Setting a password clears any pending reset token and unlocks the
+        // account in the same statement — a successful set/reset is a clean
+        // slate.
+        $sql = $this->wpdb->prepare(
+            "INSERT INTO {$table}
+                 (email, password_hash, reset_token_hash, reset_expires_at,
+                  failed_attempts, locked_until, updated_at)
+             VALUES (%s, %s, '', 0, 0, 0, %d)
+             ON DUPLICATE KEY UPDATE
+                 password_hash = VALUES(password_hash),
+                 reset_token_hash = '',
+                 reset_expires_at = 0,
+                 failed_attempts = 0,
+                 locked_until = 0,
+                 updated_at = VALUES(updated_at)",
+            $email,
+            $passwordHash,
+            $now,
+        );
+
+        if ($sql === null) {
+            throw new LogicException('Failed to prepare the password upsert query.');
+        }
+
+        $this->wpdb->query($sql);
+    }
+
+    public function storeResetToken(string $email, string $tokenHash, int $expiresAt, int $now): void
+    {
+        $table = self::tableName($this->wpdb);
+
+        $sql = $this->wpdb->prepare(
+            "INSERT INTO {$table}
+                 (email, reset_token_hash, reset_expires_at, updated_at)
+             VALUES (%s, %s, %d, %d)
+             ON DUPLICATE KEY UPDATE
+                 reset_token_hash = VALUES(reset_token_hash),
+                 reset_expires_at = VALUES(reset_expires_at),
+                 updated_at = VALUES(updated_at)",
+            $email,
+            $tokenHash,
+            $expiresAt,
+            $now,
+        );
+
+        if ($sql === null) {
+            throw new LogicException('Failed to prepare the reset-token store query.');
+        }
+
+        $this->wpdb->query($sql);
+    }
+
+    public function clearResetToken(string $email, int $now): void
+    {
+        $table = self::tableName($this->wpdb);
+
+        $sql = $this->wpdb->prepare(
+            "UPDATE {$table}
+                SET reset_token_hash = '', reset_expires_at = 0, updated_at = %d
+              WHERE email = %s",
+            $now,
+            $email,
+        );
+
+        if ($sql === null) {
+            throw new LogicException('Failed to prepare the reset-token clear query.');
+        }
+
+        $this->wpdb->query($sql);
+    }
+
+    public function recordFailedAttempt(string $email, int $failedAttempts, int $lockedUntil, int $now): void
+    {
+        $table = self::tableName($this->wpdb);
+
+        // UPDATE only — an unknown email has no password to guess, so we
+        // never create a row for it (that would leak existence and let an
+        // attacker seed the table).
+        $sql = $this->wpdb->prepare(
+            "UPDATE {$table}
+                SET failed_attempts = %d, locked_until = %d, updated_at = %d
+              WHERE email = %s",
+            $failedAttempts,
+            $lockedUntil,
+            $now,
+            $email,
+        );
+
+        if ($sql === null) {
+            throw new LogicException('Failed to prepare the failed-attempt query.');
+        }
+
+        $this->wpdb->query($sql);
+    }
+
+    public function resetFailedAttempts(string $email, int $now): void
+    {
+        $table = self::tableName($this->wpdb);
+
+        $sql = $this->wpdb->prepare(
+            "UPDATE {$table}
+                SET failed_attempts = 0, locked_until = 0, updated_at = %d
+              WHERE email = %s",
+            $now,
+            $email,
+        );
+
+        if ($sql === null) {
+            throw new LogicException('Failed to prepare the attempt-reset query.');
+        }
+
+        $this->wpdb->query($sql);
+    }
+
+    public function delete(string $email): void
+    {
+        $this->wpdb->delete(self::tableName($this->wpdb), ['email' => $email], ['%s']);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function hydrate(array $row): PasswordCredential
+    {
+        return new PasswordCredential(
+            (string) $row['email'],
+            (string) $row['password_hash'],
+            (string) $row['reset_token_hash'],
+            (int) $row['reset_expires_at'],
+            (int) $row['failed_attempts'],
+            (int) $row['locked_until'],
+            (int) $row['updated_at'],
+        );
+    }
+}

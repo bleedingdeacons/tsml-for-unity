@@ -69,6 +69,14 @@ if (!defined('TSML_FOR_UNITY_VERSION')) {
 // carries OBJECT, OBJECT_K, ARRAY_A and ARRAY_N, along with the *_IN_SECONDS
 // family.
 
+// TsmlPasswordCredentialRepository type-hints wpdb, which WordPress
+// declares and this suite does not load. FakeWpdb cannot stand in for it:
+// it is final, so it cannot be aliased to the name a type-hint resolves.
+// WpdbStub exists for that, and is the same trick Reach and Unity use.
+if (!class_exists('wpdb')) {
+    class_alias(\TsmlForUnity\Tests\Support\WpdbStub::class, 'wpdb');
+}
+
 if (!defined('TSML_FOR_UNITY_PATH')) {
     define('TSML_FOR_UNITY_PATH', dirname(__DIR__) . '/');
 }
