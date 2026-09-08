@@ -9,6 +9,7 @@ use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Members\TsmlMemberFactory;
 use TsmlForUnity\Members\TsmlMemberFields;
 use Unity\Members\Interfaces\Member;
+use Unity\Members\PreferredContact;
 use Unity\Members\ResponderCertification;
 
 /**
@@ -48,6 +49,8 @@ class TsmlMemberFactoryTest extends TestCase
             TsmlMemberFields::FIELD_HOMEGROUP_GSR => true,
             TsmlMemberFields::FIELD_MEETING_PO => null,
             TsmlMemberFields::FIELD_MOBILE_NUMBER => '555-1234',
+            TsmlMemberFields::FIELD_LANDLINE_NUMBER => '0117 496 0000',
+            TsmlMemberFields::FIELD_PREFERRED_CONTACT => 'Landline',
             TsmlMemberFields::FIELD_TWELFTH_STEPPER => true,
             TsmlMemberFields::FIELD_TELEPHONE_RESPONDER => true,
             TsmlMemberFields::FIELD_RESPONDER_CERTIFICATION => 'Certified',
@@ -72,6 +75,8 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertNull($member->getMeetingPO());
         $this->assertSame('john@example.com', $member->getPersonalEmail());
         $this->assertSame('555-1234', $member->getMobileNumber());
+        $this->assertSame('0117 496 0000', $member->getLandlineNumber());
+        $this->assertSame(PreferredContact::Landline, $member->getPreferredContact());
         $this->assertTrue($member->isTwelfthStepper());
         $this->assertTrue($member->isTelephoneResponder());
         $this->assertSame(ResponderCertification::Certified, $member->getResponderCertification());
@@ -220,6 +225,10 @@ class TsmlMemberFactoryTest extends TestCase
             TsmlMemberFields::FIELD_HOMEGROUP_GSR => false,
             TsmlMemberFields::FIELD_MEETING_PO => null,
             TsmlMemberFields::FIELD_MOBILE_NUMBER => '',
+            TsmlMemberFields::FIELD_LANDLINE_NUMBER => '',
+            // Conditional logic hides this field for a member with no
+            // landline, so ACF returns nothing for it.
+            TsmlMemberFields::FIELD_PREFERRED_CONTACT => null,
             TsmlMemberFields::FIELD_TWELFTH_STEPPER => false,
             TsmlMemberFields::FIELD_TELEPHONE_RESPONDER => false,
             // Conditional logic hides this field for a non-responder, so ACF
@@ -253,6 +262,97 @@ class TsmlMemberFactoryTest extends TestCase
             TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_METHOD => '',
             TsmlMemberFields::FIELD_GDPR_ACCEPTANCE_STATEMENT => '',
         ]);
+    }
+
+    /**
+     * @test
+     */
+    public function a_member_with_no_landline_reads_back_as_preferring_mobile(): void
+    {
+        $postId = 400;
+
+        $this->mockDefaultFields($postId, [
+            TsmlMemberFields::FIELD_MOBILE_NUMBER => '07700 900123',
+            TsmlMemberFields::FIELD_LANDLINE_NUMBER => '',
+        ]);
+
+        $member = $this->factory->createFromSource($postId);
+
+        $this->assertSame('', $member->getLandlineNumber());
+        $this->assertSame(PreferredContact::Mobile, $member->getPreferredContact());
+    }
+
+    /**
+     * ACF keeps the last saved value of a field its conditional logic later
+     * hides, so deleting a member's landline leaves 'Landline' in postmeta.
+     * Reading that back as-is would point the helpline at a number that is
+     * no longer there.
+     *
+     * @test
+     */
+    public function a_stale_landline_preference_is_dropped_when_the_number_goes(): void
+    {
+        $postId = 401;
+
+        $this->mockDefaultFields($postId, [
+            TsmlMemberFields::FIELD_MOBILE_NUMBER => '07700 900123',
+            TsmlMemberFields::FIELD_LANDLINE_NUMBER => '',
+            TsmlMemberFields::FIELD_PREFERRED_CONTACT => 'Landline',
+        ]);
+
+        $member = $this->factory->createFromSource($postId);
+
+        $this->assertSame(PreferredContact::Mobile, $member->getPreferredContact());
+    }
+
+    /**
+     * @test
+     */
+    public function a_member_with_a_landline_keeps_the_saved_preference(): void
+    {
+        $postId = 402;
+
+        $this->mockDefaultFields($postId, [
+            TsmlMemberFields::FIELD_LANDLINE_NUMBER => '0117 496 0000',
+            TsmlMemberFields::FIELD_PREFERRED_CONTACT => 'Landline',
+        ]);
+
+        $member = $this->factory->createFromSource($postId);
+
+        $this->assertSame(PreferredContact::Landline, $member->getPreferredContact());
+    }
+
+    /**
+     * createNew() settles the same invariant as createFromSource(), because
+     * an importer can hand it a preference with no number behind it —
+     * Reconcile does exactly that when a spreadsheet column is blank.
+     *
+     * @test
+     */
+    public function create_new_refuses_a_landline_preference_with_no_landline(): void
+    {
+        $member = $this->factory->createNew(
+            id: 403,
+            landlineNumber: '',
+            preferredContact: PreferredContact::Landline
+        );
+
+        $this->assertSame(PreferredContact::Mobile, $member->getPreferredContact());
+    }
+
+    /**
+     * @test
+     */
+    public function create_new_keeps_a_landline_preference_that_has_a_number(): void
+    {
+        $member = $this->factory->createNew(
+            id: 404,
+            landlineNumber: '0117 496 0000',
+            preferredContact: PreferredContact::Landline
+        );
+
+        $this->assertSame('0117 496 0000', $member->getLandlineNumber());
+        $this->assertSame(PreferredContact::Landline, $member->getPreferredContact());
     }
 
     /**

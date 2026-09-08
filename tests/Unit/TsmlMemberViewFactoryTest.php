@@ -8,6 +8,7 @@ use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Groups\TsmlGroup;
 use TsmlForUnity\Members\TsmlMember;
 use TsmlForUnity\Members\TsmlMemberViewFactory;
+use Unity\Members\PreferredContact;
 use TsmlForUnity\Positions\TsmlPosition;
 use Unity\Groups\Interfaces\GroupRepository;
 use Unity\Members\Interfaces\MemberRepository;
@@ -44,6 +45,9 @@ class TsmlMemberViewFactoryTest extends TestCase
             id: 1,
             anonymousName: 'John D.',
             personalEmail: 'john@example.com',
+            mobileNumber: '07700 900123',
+            landlineNumber: '0117 496 0000',
+            preferredContact: PreferredContact::Landline,
             homeGroup: 10,
             intergroupPosition: 5,
             intergroupPositionRotation: '2026-01-01',
@@ -63,6 +67,11 @@ class TsmlMemberViewFactoryTest extends TestCase
 
         $this->assertCount(1, $views);
         $this->assertSame('John D.', $views[0]->getAnonymousName());
+        // TsmlMemberView is built positionally, so a field inserted mid-list
+        // rebinds every argument after it. Assert across the join.
+        $this->assertSame('07700 900123', $views[0]->getMobileNumber());
+        $this->assertSame('0117 496 0000', $views[0]->getLandlineNumber());
+        $this->assertSame(PreferredContact::Landline, $views[0]->getPreferredContact());
         $this->assertSame('Tuesday Group', $views[0]->getHomeGroupName());
         $this->assertSame('Intergroup Chair', $views[0]->getPositionName());
         $this->assertSame('2026-01-01', $views[0]->getRotationDate());

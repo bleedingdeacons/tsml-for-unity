@@ -7,6 +7,7 @@ namespace TsmlForUnity\Tests\Unit;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Members\TsmlMember;
 use Unity\Members\Interfaces\Member;
+use Unity\Members\PreferredContact;
 
 /**
  * Tests for TsmlMember entity
@@ -44,6 +45,8 @@ class TsmlMemberTest extends TestCase
         $this->assertNull($member->getMeetingPO());
         $this->assertEquals('', $member->getPersonalEmail());
         $this->assertEquals('', $member->getMobileNumber());
+        $this->assertEquals('', $member->getLandlineNumber());
+        $this->assertSame(PreferredContact::Mobile, $member->getPreferredContact());
         $this->assertFalse($member->isTwelfthStepper());
         $this->assertFalse($member->isTelephoneResponder());
         $this->assertEquals('', $member->getArea());
@@ -73,6 +76,8 @@ class TsmlMemberTest extends TestCase
             meetingPO: 200,
             personalEmail: 'john.personal@example.com',
             mobileNumber: '+1234567890',
+            landlineNumber: '0117 496 0000',
+            preferredContact: PreferredContact::Landline,
             twelfthStepper: true,
             telephoneResponder: true,
             area: 'North London',
@@ -96,6 +101,8 @@ class TsmlMemberTest extends TestCase
         $this->assertEquals(200, $member->getMeetingPO());
         $this->assertEquals('john.personal@example.com', $member->getPersonalEmail());
         $this->assertEquals('+1234567890', $member->getMobileNumber());
+        $this->assertEquals('0117 496 0000', $member->getLandlineNumber());
+        $this->assertSame(PreferredContact::Landline, $member->getPreferredContact());
         $this->assertTrue($member->isTwelfthStepper());
         $this->assertTrue($member->isTelephoneResponder());
         $this->assertEquals('North London', $member->getArea());
@@ -158,6 +165,25 @@ class TsmlMemberTest extends TestCase
         $this->assertEmpty($member->getAnonymousName());
         $this->assertEmpty($member->getPersonalEmail());
         $this->assertEmpty($member->getMobileNumber());
+    }
+
+    /**
+     * The entity carries what it is given: the landline rule is settled at
+     * the boundaries — the factory on the way in, the repository on the way
+     * out, the revisor when a revision touches either field — and not in the
+     * constructor, so that with() stays a plain field-level copy.
+     *
+     * @test
+     */
+    public function the_entity_itself_holds_no_landline_invariant(): void
+    {
+        $member = new TsmlMember(
+            id: 1,
+            landlineNumber: '',
+            preferredContact: PreferredContact::Landline
+        );
+
+        $this->assertSame(PreferredContact::Landline, $member->getPreferredContact());
     }
 
     /**

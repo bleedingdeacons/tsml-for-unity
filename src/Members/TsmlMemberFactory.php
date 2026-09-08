@@ -11,6 +11,7 @@ if (!defined('ABSPATH')) {
 
 use Unity\Members\Interfaces\MemberFactory;
 use Unity\Members\Interfaces\Member;
+use Unity\Members\PreferredContact;
 use Unity\Members\ResponderCertification;
 use function get_field;
 use function get_the_title;
@@ -92,7 +93,11 @@ class TsmlMemberFactory implements MemberFactory
         $post = get_post($id);
         $updated = ($post && isset($post->post_modified_gmt)) ? $post->post_modified_gmt : '';
 
-        // Named arguments: the constructor takes 23 parameters, so a positional
+        // The landline decides the preferred contact, so read it before
+        // building the member rather than inline in the argument list.
+        $landlineNumber = (string) (get_field(TsmlMemberFields::FIELD_LANDLINE_NUMBER, $id) ?? '');
+
+        // Named arguments: the constructor takes 25 parameters, so a positional
         // call silently rebinds every argument after any parameter later
         // inserted into the middle of the signature. That has happened before.
         return new TsmlMember(
@@ -108,6 +113,14 @@ class TsmlMemberFactory implements MemberFactory
             meetingPO: get_field(TsmlMemberFields::FIELD_MEETING_PO, $id) ?? null,
             personalEmail: get_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $id) ?? '',
             mobileNumber: get_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $id) ?? '',
+            landlineNumber: $landlineNumber,
+            // Radio field hidden by conditional logic unless the member has a
+            // landline, so a member without one reads back as Mobile — as does
+            // one whose landline was deleted after the choice was saved.
+            preferredContact: PreferredContact::resolve(
+                get_field(TsmlMemberFields::FIELD_PREFERRED_CONTACT, $id),
+                $landlineNumber
+            ),
             twelfthStepper: (bool) (get_field(TsmlMemberFields::FIELD_TWELFTH_STEPPER, $id) ?? false),
             telephoneResponder: (bool) (get_field(TsmlMemberFields::FIELD_TELEPHONE_RESPONDER, $id) ?? false),
             // Radio field hidden by conditional logic unless the member is a
@@ -148,6 +161,8 @@ class TsmlMemberFactory implements MemberFactory
      * @param mixed  $meetingPO                    Meeting PO reference
      * @param string             $personalEmail   Personal email
      * @param string             $mobileNumber    Mobile number
+     * @param string             $landlineNumber  Landline number
+     * @param PreferredContact   $preferredContact Which number to ring; Mobile when there is no landline
      * @param bool               $twelfthStepper  12th-step availability flag
      * @param bool               $telephoneResponder Telephone responder availability flag
      * @param ResponderCertification $responderCertification Certification stage; None unless a responder
@@ -174,6 +189,8 @@ class TsmlMemberFactory implements MemberFactory
         mixed $meetingPO = null,
         string $personalEmail = '',
         string $mobileNumber = '',
+        string $landlineNumber = '',
+        PreferredContact $preferredContact = PreferredContact::Mobile,
         bool $twelfthStepper = false,
         bool $telephoneResponder = false,
         ResponderCertification $responderCertification = ResponderCertification::None,
@@ -200,6 +217,11 @@ class TsmlMemberFactory implements MemberFactory
             meetingPO: $meetingPO,
             personalEmail: $personalEmail,
             mobileNumber: $mobileNumber,
+            landlineNumber: $landlineNumber,
+            // A caller can ask for Landline while passing no landline —
+            // Reconcile does exactly that when a spreadsheet column is blank.
+            // Settle it here so the member cannot be built inconsistent.
+            preferredContact: PreferredContact::resolve($preferredContact->value, $landlineNumber),
             twelfthStepper: $twelfthStepper,
             telephoneResponder: $telephoneResponder,
             responderCertification: $responderCertification,

@@ -35,6 +35,8 @@ final class TsmlMemberFields
     public const FIELD_MEETING_PO = 'home-layout-group_meeting_po';
     public const FIELD_PERSONAL_EMAIL = 'about-layout-group_personal-email';
     public const FIELD_MOBILE_NUMBER = 'about-layout-group_mobile-number';
+    public const FIELD_LANDLINE_NUMBER = 'about-layout-group_landline-number';
+    public const FIELD_PREFERRED_CONTACT = 'service-layout-group_responder-preferred-contact';
 
     public const FIELD_GDPR_ACCEPTED = 'gdpr-compliance-group_gdpr_accepted';
     public const FIELD_GDPR_ACCEPTED_AT = 'gdpr-compliance-group_gdpr_accepted_at';
@@ -44,6 +46,8 @@ final class TsmlMemberFields
 
     public const KEY_PERSONAL_EMAIL = 'field_67d0eabc277cb';
     public const KEY_MOBILE_NUMBER = 'field_67d0eaea7cdea';
+    public const KEY_LANDLINE_NUMBER = 'field_6a9d9c807e60f';
+    public const KEY_PREFERRED_CONTACT = 'field_6a9d9cca03a8b';
 
     public const KEY_TWELFTH_STEPPER = 'field_6a01f55ebbad1';
     public const KEY_TELEPHONE_RESPONDER = 'field_6a0b8f2fa3e88';

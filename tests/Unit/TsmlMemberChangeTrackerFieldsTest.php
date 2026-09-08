@@ -12,6 +12,7 @@ use TsmlForUnity\Members\TsmlMemberFields;
 use Unity\Testing\Doubles\MemberStub;
 use TsmlForUnity\Tests\TestCase;
 use Unity\Members\Interfaces\MemberRepository;
+use Unity\Members\PreferredContact;
 use Unity\Members\ResponderCertification;
 
 /**
@@ -128,6 +129,8 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
             'gsr flag'               => [['isGSR' => true]],
             'meeting po'             => [['meetingPO' => 99]],
             'mobile number'          => [['mobileNumber' => '07700 900123']],
+            'landline number'        => [['landlineNumber' => '0117 496 0000']],
+            'preferred contact'      => [['preferredContact' => PreferredContact::Landline]],
             'twelfth stepper'        => [['twelfthStepper' => true]],
             'telephone responder'    => [['telephoneResponder' => true]],
             'responder certification' => [['responderCertification' => ResponderCertification::Certified]],

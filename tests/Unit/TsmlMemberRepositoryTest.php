@@ -12,6 +12,7 @@ use Unity\Testing\Doubles\MemberStub;
 use TsmlForUnity\Tests\TestCase;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberFactory;
+use Unity\Members\PreferredContact;
 
 /**
  * Tests for TsmlMemberRepository's domain event firing.
@@ -339,7 +340,7 @@ class TsmlMemberRepositoryTest extends TestCase
             })
             ->andReturn([$postId]);
 
-        $expected = new MemberStub($postId, 'Anon', false, false, '', 0, '', 0, false, null, '', '', false, true);
+        $expected = new MemberStub(id: $postId, anonymousName: 'Anon', telephoneResponder: true);
         $this->factory->expects($this->once())
             ->method('createFromSource')
             ->with($postId)
@@ -361,5 +362,78 @@ class TsmlMemberRepositoryTest extends TestCase
         $this->factory->expects($this->never())->method('createFromSource');
 
         $this->assertSame([], $this->repository->findTelephoneResponders());
+    }
+
+    // ─── updateFields() writes the landline and the preference ──────
+
+    /**
+     * Capture every update_field() call as fieldName => value.
+     *
+     * @param array<string, mixed> $captured Filled in by reference.
+     */
+    private function captureUpdateFieldCalls(array &$captured): void
+    {
+        Functions\expect('update_field')->andReturnUsing(
+            static function (string $field, mixed $value, int $postId) use (&$captured): bool {
+                $captured[$field] = $value;
+                return true;
+            }
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function update_writes_the_landline_and_the_preferred_contact(): void
+    {
+        $postId = 5100;
+        $member = new MemberStub(
+            id: $postId,
+            landlineNumber: '0117 496 0000',
+            preferredContact: PreferredContact::Landline
+        );
+
+        $this->stubExistingPost($postId);
+        $this->factory->method('createFromSource')->willReturn($member);
+        Functions\expect('wp_update_post')->once()->andReturn($postId);
+
+        $captured = [];
+        $this->captureUpdateFieldCalls($captured);
+
+        $this->repository->update($member);
+
+        $this->assertSame('0117 496 0000', $captured[TsmlMemberFields::FIELD_LANDLINE_NUMBER]);
+        // ACF stores the radio's choice value, not the enum case.
+        $this->assertSame('Landline', $captured[TsmlMemberFields::FIELD_PREFERRED_CONTACT]);
+    }
+
+    /**
+     * A Member can be built by hand — through the REST API, or an importer —
+     * saying Landline with no landline to ring. The stored value is what the
+     * admin form and the forwarding side read back, so it is settled on the
+     * way in rather than left for every reader to second-guess.
+     *
+     * @test
+     */
+    public function update_writes_mobile_when_the_preference_has_no_landline_behind_it(): void
+    {
+        $postId = 5101;
+        $member = new MemberStub(
+            id: $postId,
+            landlineNumber: '',
+            preferredContact: PreferredContact::Landline
+        );
+
+        $this->stubExistingPost($postId);
+        $this->factory->method('createFromSource')->willReturn($member);
+        Functions\expect('wp_update_post')->once()->andReturn($postId);
+
+        $captured = [];
+        $this->captureUpdateFieldCalls($captured);
+
+        $this->repository->update($member);
+
+        $this->assertSame('', $captured[TsmlMemberFields::FIELD_LANDLINE_NUMBER]);
+        $this->assertSame('Mobile', $captured[TsmlMemberFields::FIELD_PREFERRED_CONTACT]);
     }
 }
