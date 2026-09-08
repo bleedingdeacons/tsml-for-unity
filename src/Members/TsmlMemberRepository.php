@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
 use Unity\Members\Interfaces\MemberFactory;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberRepository;
+use Unity\Members\PreferredContact;
 use function do_action;
 use function get_post;
 use function get_posts;
@@ -373,6 +374,20 @@ class TsmlMemberRepository implements MemberRepository
         update_field(TsmlMemberFields::FIELD_MEETING_PO, $member->getMeetingPO(), $postId);
         update_field(TsmlMemberFields::FIELD_PERSONAL_EMAIL, $member->getPersonalEmail(), $postId);
         update_field(TsmlMemberFields::FIELD_MOBILE_NUMBER, $member->getMobileNumber(), $postId);
+        update_field(TsmlMemberFields::FIELD_LANDLINE_NUMBER, $member->getLandlineNumber(), $postId);
+        // ACF stores the radio field's choice value, not the enum case.
+        // Routed through resolve() rather than written straight out: a Member
+        // built by hand can still say Landline with no landline to ring, and
+        // the stored value is what the admin form and the forwarding side
+        // read back.
+        update_field(
+            TsmlMemberFields::FIELD_PREFERRED_CONTACT,
+            PreferredContact::resolve(
+                $member->getPreferredContact()->value,
+                $member->getLandlineNumber()
+            )->value,
+            $postId
+        );
         update_field(TsmlMemberFields::FIELD_TWELFTH_STEPPER, $member->isTwelfthStepper(), $postId);
         update_field(TsmlMemberFields::FIELD_TELEPHONE_RESPONDER, $member->isTelephoneResponder(), $postId);
         // ACF stores the radio field's choice value, not the enum case.

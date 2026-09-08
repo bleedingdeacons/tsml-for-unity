@@ -242,38 +242,8 @@ class TsmlMemberChangeTrackerTest extends TestCase
 
         // Original: not a responder. Updated: is a responder. Everything
         // else is identical so the only diff lives in the new flag.
-        $original = new MemberStub(
-            $postId,
-            'Anon',
-            false,
-            false,
-            '',
-            0,
-            '',
-            0,
-            false,
-            null,
-            '',
-            '',
-            false,
-            false
-        );
-        $updated = new MemberStub(
-            $postId,
-            'Anon',
-            false,
-            false,
-            '',
-            0,
-            '',
-            0,
-            false,
-            null,
-            '',
-            '',
-            false,
-            true
-        );
+        $original = new MemberStub(id: $postId, anonymousName: 'Anon', telephoneResponder: false);
+        $updated = new MemberStub(id: $postId, anonymousName: 'Anon', telephoneResponder: true);
 
         $this->stubPostTypeGuard($postId);
         $this->stubTitleSyncIsNoop($postId, 'Anon');

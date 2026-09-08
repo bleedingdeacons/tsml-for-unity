@@ -7,6 +7,7 @@ namespace TsmlForUnity\Tests\Unit;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Members\TsmlMemberView;
 use Unity\Members\Interfaces\MemberView;
+use Unity\Members\PreferredContact;
 use Unity\Members\ResponderCertification;
 
 /**
@@ -35,6 +36,8 @@ class TsmlMemberViewTest extends TestCase
         $this->assertSame('', $view->getAnonymousName());
         $this->assertSame('', $view->getPersonalEmail());
         $this->assertSame('', $view->getMobileNumber());
+        $this->assertSame('', $view->getLandlineNumber());
+        $this->assertSame(PreferredContact::Mobile, $view->getPreferredContact());
         $this->assertSame(0, $view->getHomeGroupId());
         $this->assertSame('', $view->getHomeGroupName());
         $this->assertFalse($view->hasHomeGroup());
@@ -60,6 +63,8 @@ class TsmlMemberViewTest extends TestCase
             anonymousName: 'John D.',
             personalEmail: 'john@example.com',
             mobileNumber: '0700 111',
+            landlineNumber: '0117 496 0000',
+            preferredContact: PreferredContact::Landline,
             homeGroupId: 10,
             homeGroupName: 'Tuesday Group',
             isGSR: true,
@@ -77,6 +82,8 @@ class TsmlMemberViewTest extends TestCase
         $this->assertSame('John D.', $view->getAnonymousName());
         $this->assertSame('john@example.com', $view->getPersonalEmail());
         $this->assertSame('0700 111', $view->getMobileNumber());
+        $this->assertSame('0117 496 0000', $view->getLandlineNumber());
+        $this->assertSame(PreferredContact::Landline, $view->getPreferredContact());
         $this->assertSame(10, $view->getHomeGroupId());
         $this->assertSame('Tuesday Group', $view->getHomeGroupName());
         $this->assertTrue($view->hasHomeGroup());

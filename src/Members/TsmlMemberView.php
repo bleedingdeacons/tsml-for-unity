@@ -10,6 +10,7 @@ if (!defined('ABSPATH')) {
 }
 
 use Unity\Members\Interfaces\MemberView;
+use Unity\Members\PreferredContact;
 use Unity\Members\ResponderCertification;
 
 /**
@@ -21,6 +22,8 @@ class TsmlMemberView implements MemberView
     private string $anonymousName;
     private string $personalEmail;
     private string $mobileNumber;
+    private string $landlineNumber;
+    private PreferredContact $preferredContact;
     private int $homeGroupId;
     private string $homeGroupName;
     private bool $isGSR;
@@ -41,6 +44,8 @@ class TsmlMemberView implements MemberView
      * @param string             $anonymousName   Anonymous name
      * @param string             $personalEmail   Personal email address
      * @param string             $mobileNumber    Mobile phone number
+     * @param string             $landlineNumber  Landline phone number
+     * @param PreferredContact   $preferredContact Which number to ring
      * @param int                $homeGroupId     Home group post ID (0 if none)
      * @param string             $homeGroupName   Home group name (empty if none)
      * @param bool               $isGSR           GSR flag
@@ -58,6 +63,8 @@ class TsmlMemberView implements MemberView
         string $anonymousName = '',
         string $personalEmail = '',
         string $mobileNumber = '',
+        string $landlineNumber = '',
+        PreferredContact $preferredContact = PreferredContact::Mobile,
         int $homeGroupId = 0,
         string $homeGroupName = '',
         bool $isGSR = false,
@@ -74,6 +81,8 @@ class TsmlMemberView implements MemberView
         $this->anonymousName = $anonymousName;
         $this->personalEmail = $personalEmail;
         $this->mobileNumber = $mobileNumber;
+        $this->landlineNumber = $landlineNumber;
+        $this->preferredContact = $preferredContact;
         $this->homeGroupId = $homeGroupId;
         $this->homeGroupName = $homeGroupName;
         $this->isGSR = $isGSR;
@@ -117,6 +126,22 @@ class TsmlMemberView implements MemberView
     public function getMobileNumber(): string
     {
         return $this->mobileNumber;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getLandlineNumber(): string
+    {
+        return $this->landlineNumber;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getPreferredContact(): PreferredContact
+    {
+        return $this->preferredContact;
     }
 
     /**

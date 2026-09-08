@@ -120,6 +120,8 @@ class TsmlMemberViewFactory implements MemberViewFactory
             $member->getAnonymousName(),
             $member->getPersonalEmail(),
             $member->getMobileNumber(),
+            $member->getLandlineNumber(),
+            $member->getPreferredContact(),
             $homeGroupId,
             $homeGroupName,
             $member->isGSR(),

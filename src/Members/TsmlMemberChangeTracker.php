@@ -287,6 +287,14 @@ class TsmlMemberChangeTracker implements MemberChangeTracker
             return true;
         }
 
+        if ($originalMember->getLandlineNumber() !== $updatedMember->getLandlineNumber()) {
+            return true;
+        }
+
+        if ($originalMember->getPreferredContact() !== $updatedMember->getPreferredContact()) {
+            return true;
+        }
+
         if ($originalMember->isTwelfthStepper() !== $updatedMember->isTwelfthStepper()) {
             return true;
         }

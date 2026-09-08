@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
 use InvalidArgumentException;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberRevisor;
+use Unity\Members\PreferredContact;
 use Unity\Members\ResponderCertification;
 
 /**
@@ -20,7 +21,7 @@ use Unity\Members\ResponderCertification;
  * Turns "keep unless named" into the collected changes, then hands them to
  * {@see TsmlMember::with()}.
  *
- * Delegating to with() rather than assembling a 23-argument createNew() call
+ * Delegating to with() rather than assembling a 25-argument createNew() call
  * here is the whole point. A hand-written argument list would reintroduce
  * exactly the bug this class exists to prevent: add a field to Member, forget
  * to add it to that list, and every revised member silently loses it. with()
@@ -47,6 +48,8 @@ class TsmlMemberRevisor implements MemberRevisor
         ?bool $isGSR = null,
         ?string $personalEmail = null,
         ?string $mobileNumber = null,
+        ?string $landlineNumber = null,
+        ?PreferredContact $preferredContact = null,
         ?bool $twelfthStepper = null,
         ?bool $telephoneResponder = null,
         ?ResponderCertification $responderCertification = null,
@@ -84,6 +87,8 @@ class TsmlMemberRevisor implements MemberRevisor
             'isGSR'                      => $isGSR,
             'personalEmail'              => $personalEmail,
             'mobileNumber'               => $mobileNumber,
+            'landlineNumber'             => $landlineNumber,
+            'preferredContact'           => $preferredContact,
             'twelfthStepper'             => $twelfthStepper,
             'telephoneResponder'         => $telephoneResponder,
             'responderCertification'     => $responderCertification,
@@ -96,6 +101,21 @@ class TsmlMemberRevisor implements MemberRevisor
             'gdprAcceptanceStatement'    => $gdprAcceptanceStatement,
         ];
 
-        return $base->with(array_filter($changes, static fn ($v): bool => $v !== null));
+        $revised = $base->with(array_filter($changes, static fn ($v): bool => $v !== null));
+
+        // Revising the landline away has to take the preference with it, and
+        // that is not expressible as a "keep unless named" carry-over: a
+        // caller clearing the landline names one field and would leave the
+        // other saying Landline. Settle it once both values are known.
+        // Only that direction is automatic — adding a landline does not
+        // promote it over the mobile, which stays a deliberate choice.
+        $resolved = PreferredContact::resolve(
+            $revised->getPreferredContact()->value,
+            $revised->getLandlineNumber()
+        );
+
+        return $resolved === $revised->getPreferredContact()
+            ? $revised
+            : $revised->with(['preferredContact' => $resolved]);
     }
 }

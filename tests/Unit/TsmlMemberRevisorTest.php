@@ -11,6 +11,7 @@ use TsmlForUnity\Members\TsmlMemberRevisor;
 use Unity\Testing\Doubles\MemberStub;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberRevisor;
+use Unity\Members\PreferredContact;
 
 /**
  * Unit tests for TsmlMemberRevisor
@@ -193,6 +194,78 @@ class TsmlMemberRevisorTest extends TestCase
         $this->revisor->revise(new MemberStub(id: 1), mobileNumber: '07999999999');
     }
 
+    // ─── the landline and the preference it governs ─────────────────
+
+    /**
+     * @test
+     */
+    public function revising_the_landline_alone_leaves_the_preference_alone(): void
+    {
+        $revised = $this->revisor->revise($this->member(), landlineNumber: '01179611111');
+
+        $this->assertSame('01179611111', $revised->getLandlineNumber());
+        $this->assertSame(PreferredContact::Landline, $revised->getPreferredContact());
+    }
+
+    /**
+     * The one case "keep unless named" cannot express: a caller clearing the
+     * landline names one field, and leaving the other saying Landline would
+     * point the helpline at a number that is no longer there.
+     *
+     * @test
+     */
+    public function clearing_the_landline_takes_the_preference_with_it(): void
+    {
+        $revised = $this->revisor->revise($this->member(), landlineNumber: '');
+
+        $this->assertSame('', $revised->getLandlineNumber());
+        $this->assertSame(PreferredContact::Mobile, $revised->getPreferredContact());
+    }
+
+    /**
+     * Only that one direction is automatic. Gaining a landline does not
+     * promote it over the mobile — that stays a deliberate choice.
+     *
+     * @test
+     */
+    public function adding_a_landline_does_not_promote_it(): void
+    {
+        $base = $this->member();
+        $withoutLandline = $this->revisor->revise($base, landlineNumber: '');
+
+        $revised = $this->revisor->revise($withoutLandline, landlineNumber: '01179622222');
+
+        $this->assertSame('01179622222', $revised->getLandlineNumber());
+        $this->assertSame(PreferredContact::Mobile, $revised->getPreferredContact());
+    }
+
+    /**
+     * @test
+     */
+    public function the_preference_can_be_revised_on_its_own(): void
+    {
+        $revised = $this->revisor->revise($this->member(), preferredContact: PreferredContact::Mobile);
+
+        $this->assertSame(PreferredContact::Mobile, $revised->getPreferredContact());
+        $this->assertSame('01179600000', $revised->getLandlineNumber());
+    }
+
+    /**
+     * Naming both at once still ends up consistent: the landline decides.
+     *
+     * @test
+     */
+    public function a_preference_named_alongside_an_empty_landline_is_refused(): void
+    {
+        $revised = $this->revisor->revise(
+            $this->member(),
+            landlineNumber: '',
+            preferredContact: PreferredContact::Landline
+        );
+
+        $this->assertSame(PreferredContact::Mobile, $revised->getPreferredContact());
+    }
+
     private function member(): TsmlMember
     {
         return new TsmlMember(
@@ -208,6 +281,8 @@ class TsmlMemberRevisorTest extends TestCase
             meetingPO: null,
             personalEmail: 'john@example.com',
             mobileNumber: '07700900000',
+            landlineNumber: '01179600000',
+            preferredContact: PreferredContact::Landline,
             twelfthStepper: true,
             telephoneResponder: true,
             area: 'North',

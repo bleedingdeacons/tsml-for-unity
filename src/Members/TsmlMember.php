@@ -10,6 +10,7 @@ if (!defined('ABSPATH')) {
 }
 
 use Unity\Members\Interfaces\Member;
+use Unity\Members\PreferredContact;
 use Unity\Members\ResponderCertification;
 
 /**
@@ -41,6 +42,8 @@ class TsmlMember implements Member
      * @param mixed              $meetingPO                Meeting PO reference
      * @param string             $personalEmail            Personal email address
      * @param string             $mobileNumber             Mobile phone number
+     * @param string             $landlineNumber           Landline phone number
+     * @param PreferredContact   $preferredContact         Which number to ring; Mobile when there is no landline
      * @param bool               $twelfthStepper           Available for 12th-step calls
      * @param bool               $telephoneResponder       Available as a telephone responder
      * @param ResponderCertification $responderCertification Certification stage; None unless a responder
@@ -66,6 +69,8 @@ class TsmlMember implements Member
         private readonly mixed $meetingPO = null, // Need to removed
         private readonly string $personalEmail = '',
         private readonly string $mobileNumber = '',
+        private readonly string $landlineNumber = '',
+        private readonly PreferredContact $preferredContact = PreferredContact::Mobile,
         private readonly bool $twelfthStepper = false,
         private readonly bool $telephoneResponder = false,
         private readonly ResponderCertification $responderCertification = ResponderCertification::None,
@@ -103,6 +108,8 @@ class TsmlMember implements Member
             'meetingPO'                  => $this->meetingPO,
             'personalEmail'              => $this->personalEmail,
             'mobileNumber'               => $this->mobileNumber,
+            'landlineNumber'             => $this->landlineNumber,
+            'preferredContact'           => $this->preferredContact,
             'twelfthStepper'             => $this->twelfthStepper,
             'telephoneResponder'         => $this->telephoneResponder,
             'responderCertification'     => $this->responderCertification,
@@ -194,6 +201,16 @@ class TsmlMember implements Member
     public function getMobileNumber(): string
     {
         return $this->mobileNumber;
+    }
+
+    public function getLandlineNumber(): string
+    {
+        return $this->landlineNumber;
+    }
+
+    public function getPreferredContact(): PreferredContact
+    {
+        return $this->preferredContact;
     }
 
     public function isTwelfthStepper(): bool
