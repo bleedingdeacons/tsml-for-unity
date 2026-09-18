@@ -75,9 +75,11 @@ use Unity\Locations\Interfaces\LocationRepository;
 use Unity\Meetings\Interfaces\Meeting;
 use Unity\Meetings\Interfaces\MeetingFactory;
 use Unity\Meetings\Interfaces\MeetingRepository;
+use Unity\Members\CachingMemberRepository;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberChangeTracker;
 use Unity\Members\Interfaces\MemberFactory;
+use Unity\Members\MemberCacheInvalidator;
 use Unity\Members\Interfaces\MemberRevisor;
 use Unity\Members\Interfaces\MemberRepository;
 use Unity\Members\Interfaces\MemberViewFactory;
@@ -300,6 +302,35 @@ class Plugin
 
 
     /**
+     * Hook the member cache to WordPress's own post and meta actions.
+     *
+     * Only does anything when the registered repository turned out to be
+     * Unity's caching decorator — with no object cache to wrap, there is
+     * nothing to invalidate.
+     *
+     * Called on unity/loaded rather than at registration time because it has
+     * to resolve the repository, and resolving during unity/register_services
+     * would build it before the container is finished.
+     *
+     * @param ContainerInterface $container Unity's PSR-11 dependency container
+     * @return void
+     */
+    public static function registerMemberCacheInvalidator(ContainerInterface $container): void
+    {
+        if (!class_exists(MemberCacheInvalidator::class) || !$container->has(MemberRepository::class)) {
+            return;
+        }
+
+        $repository = $container->get(MemberRepository::class);
+
+        if (!$repository instanceof CachingMemberRepository) {
+            return;
+        }
+
+        (new MemberCacheInvalidator($repository, TsmlMemberFields::POST_TYPE))->register();
+    }
+
+    /**
      * Register the TSML factories with Unity's dependency container
      *
      * @param ContainerInterface $container Unity's PSR-11 dependency container
@@ -465,6 +496,20 @@ class Plugin
             );
 
             // Register Member Repository
+            //
+            // Wrapped in Unity's caching decorator when there is a cache to
+            // wrap it with. Building a member is ~25 get_field() calls, and
+            // the reads outnumber the writes heavily — Fellowship rebuilds
+            // every member each time somebody opens Compose in the Link app.
+            // Without a persistent object cache behind Cache the entries die
+            // with the request and this costs a little bookkeeping; with one
+            // it is the difference that route notices.
+            //
+            // class_exists() rather than an unconditional reference: a site
+            // on a Unity that predates the decorator has nothing to wrap
+            // with, and naming the class outright would fatal rather than
+            // degrade. Same call the PasswordCredentialRepository block above
+            // makes.
             $container->register(
                 MemberRepository::class,
                 function (ContainerInterface $container) {
@@ -472,7 +517,13 @@ class Plugin
                         ? $container->get(MemberFactory::class)
                         : null;
 
-                    return new TsmlMemberRepository($memberFactory);
+                    $repository = new TsmlMemberRepository($memberFactory);
+
+                    if (!class_exists(CachingMemberRepository::class) || !$container->has(Cache::class)) {
+                        return $repository;
+                    }
+
+                    return new CachingMemberRepository($repository, $container->get(Cache::class));
                 }
             );
 
