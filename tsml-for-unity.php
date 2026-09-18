@@ -70,6 +70,11 @@ add_action('unity/loaded', function ($container) {
             return;
         }
 
+        // Clear the member cache whenever a member changes, however it
+        // changed. A no-op unless the container handed back Unity's caching
+        // repository, which it only does when an object cache is present.
+        \TsmlForUnity\Plugin::registerMemberCacheInvalidator($container);
+
         /**
          * Fires after TSML for Unity is fully loaded.
          */
