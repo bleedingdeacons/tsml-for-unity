@@ -11,7 +11,6 @@ if (!defined('ABSPATH')) {
 
 use TsmlForUnity\Meetings\TsmlMeetingFields;
 
-use Unity\Core\Interfaces\Cache;
 use Unity\Meetings\Interfaces\MeetingFactory;
 use Unity\Meetings\Interfaces\Meeting;
 use Unity\Meetings\Interfaces\MeetingRepository;
@@ -23,24 +22,22 @@ use Unity\Meetings\Interfaces\MeetingRepository;
  */
 class TsmlMeetingRepository implements MeetingRepository
 {
-    private const CACHE_GROUP = 'unity_meetings';
-    private const CACHE_TTL = 3600; // 1 hour
-
     private MeetingFactory $factory;
-    private ?Cache $cache;
 
     /**
      * TsmlMeetingRepository constructor.
      *
+     * Reads WordPress directly and caches nothing. It used to hold an
+     * hour-long cache of its own that nothing ever invalidated, which was
+     * invisible until an object cache made entries outlive the request;
+     * caching now lives in Unity's CachingMeetingRepository, which wraps this
+     * one and is cleared by PostTypeCacheInvalidator.
+     *
      * @param MeetingFactory $factory Meeting factory
-     * @param Cache|null $cache Optional cache implementation
      */
-    public function __construct(
-        MeetingFactory $factory,
-        ?Cache $cache = null
-    ) {
+    public function __construct(MeetingFactory $factory)
+    {
         $this->factory = $factory;
-        $this->cache = $cache;
     }
 
     /**
@@ -52,30 +49,12 @@ class TsmlMeetingRepository implements MeetingRepository
             return null;
         }
 
-        // Try cache first
-        $cacheKey = "meeting_{$id}";
-        if ($this->cache) {
-            $cached = $this->cache->get($cacheKey, self::CACHE_GROUP);
-            if ($cached !== false) {
-                return $cached;
-            }
-        }
-
-        // Get post
         $post = get_post($id);
         if (!$post || $post->post_type !== TsmlMeetingFields::POST_TYPE) {
             return null;
         }
 
-        // Create meeting from post
-        $meeting = $this->createMeetingFromPost($post);
-
-        // Cache result
-        if ($meeting && $this->cache) {
-            $this->cache->set($cacheKey, $meeting, self::CACHE_GROUP, self::CACHE_TTL);
-        }
-
-        return $meeting;
+        return $this->createMeetingFromPost($post);
     }
 
     /**

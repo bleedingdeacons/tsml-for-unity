@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use TsmlForUnity\Meetings\TsmlMeetingFields;
+use TsmlForUnity\Meetings\TsmlMeetingRepository;
 use TsmlForUnity\Members\TsmlMemberFields;
 use TsmlForUnity\Members\TsmlMemberRepository;
 use TsmlForUnity\Plugin;
@@ -11,13 +13,15 @@ use TsmlForUnity\Tests\Support\WpdbStub;
 use TsmlForUnity\Tests\TestCase;
 use Unity\Core\Interfaces\Cache;
 use Unity\Core\Interfaces\Configuration;
+use Unity\Meetings\CachingMeetingRepository;
+use Unity\Meetings\Interfaces\MeetingRepository;
 use Unity\Members\CachingMemberRepository;
 use Unity\Members\Interfaces\MemberRepository;
 use Unity\Testing\Doubles\FakeContainer;
 use Unity\Testing\Doubles\InMemoryCache;
 
 /**
- * Wiring for Unity's member cache.
+ * Wiring for Unity's member and meeting caches.
  *
  * Two halves that are only correct together: the repository is wrapped when
  * there is a cache to wrap it with, and the invalidator is hooked so that a
@@ -26,7 +30,7 @@ use Unity\Testing\Doubles\InMemoryCache;
  *
  * @covers \TsmlForUnity\Plugin
  */
-class MemberCacheWiringTest extends TestCase
+class CacheWiringTest extends TestCase
 {
     private FakeContainer $container;
 
@@ -120,6 +124,64 @@ class MemberCacheWiringTest extends TestCase
     {
         Plugin::registerMemberCacheInvalidator($this->container);
 
+        $this->assertActionNotAdded('updated_post_meta');
+    }
+
+    /**
+     * @test
+     */
+    public function the_meeting_repository_is_wrapped_when_a_cache_is_available(): void
+    {
+        $this->container->prime(Cache::class, new InMemoryCache());
+
+        Plugin::registerWithUnity($this->container);
+
+        $this->assertInstanceOf(CachingMeetingRepository::class, $this->container->get(MeetingRepository::class));
+    }
+
+    /**
+     * @test
+     */
+    public function the_bare_meeting_repository_is_registered_when_there_is_no_cache(): void
+    {
+        Plugin::registerWithUnity($this->container);
+
+        $repository = $this->container->get(MeetingRepository::class);
+
+        $this->assertInstanceOf(TsmlMeetingRepository::class, $repository);
+        $this->assertNotInstanceOf(CachingMeetingRepository::class, $repository);
+    }
+
+    /**
+     * @test
+     */
+    public function the_meeting_invalidator_hooks_the_meeting_post_type(): void
+    {
+        $this->container->prime(Cache::class, new InMemoryCache());
+        Plugin::registerWithUnity($this->container);
+
+        Plugin::registerCacheInvalidators($this->container);
+
+        // MeetingRepository is read-only, so this is the only thing that can
+        // ever clear a cached meeting. Without it, an edited meeting keeps
+        // serving its old day and time.
+        $this->assertActionAdded('save_post_' . TsmlMeetingFields::POST_TYPE);
+        $this->assertActionAdded('updated_post_meta');
+
+        // And the member half is hooked by the same call.
+        $this->assertActionAdded('save_post_' . TsmlMemberFields::POST_TYPE);
+    }
+
+    /**
+     * @test
+     */
+    public function no_meeting_hooks_without_a_cache(): void
+    {
+        Plugin::registerWithUnity($this->container);
+
+        Plugin::registerCacheInvalidators($this->container);
+
+        $this->assertActionNotAdded('save_post_' . TsmlMeetingFields::POST_TYPE);
         $this->assertActionNotAdded('updated_post_meta');
     }
 }

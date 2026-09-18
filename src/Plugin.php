@@ -57,6 +57,7 @@ use Unity\Committees\Interfaces\CommitteeRepository;
 use Unity\Contacts\Interfaces\ContactFactory;
 use Unity\Core\Interfaces\Cache;
 use Unity\Core\Interfaces\Configuration;
+use Unity\Core\PostTypeCacheInvalidator;
 use Unity\Groups\Interfaces\Group;
 use Unity\Groups\Interfaces\GroupChangeTracker;
 use Unity\Groups\Interfaces\GroupFactory;
@@ -72,6 +73,7 @@ use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingOfficerAttendanceReposi
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingRepository;
 use Unity\Locations\Interfaces\LocationFactory;
 use Unity\Locations\Interfaces\LocationRepository;
+use Unity\Meetings\CachingMeetingRepository;
 use Unity\Meetings\Interfaces\Meeting;
 use Unity\Meetings\Interfaces\MeetingFactory;
 use Unity\Meetings\Interfaces\MeetingRepository;
@@ -302,15 +304,29 @@ class Plugin
 
 
     /**
+     * Hook every cache this plugin registered to WordPress's post and meta
+     * actions.
+     *
+     * Called on unity/loaded rather than at registration time because each
+     * one has to resolve its repository to find out whether caching is in
+     * play at all, and resolving during unity/register_services would build
+     * it before the container is finished.
+     *
+     * @param ContainerInterface $container Unity's PSR-11 dependency container
+     * @return void
+     */
+    public static function registerCacheInvalidators(ContainerInterface $container): void
+    {
+        self::registerMemberCacheInvalidator($container);
+        self::registerMeetingCacheInvalidator($container);
+    }
+
+    /**
      * Hook the member cache to WordPress's own post and meta actions.
      *
      * Only does anything when the registered repository turned out to be
      * Unity's caching decorator — with no object cache to wrap, there is
      * nothing to invalidate.
-     *
-     * Called on unity/loaded rather than at registration time because it has
-     * to resolve the repository, and resolving during unity/register_services
-     * would build it before the container is finished.
      *
      * @param ContainerInterface $container Unity's PSR-11 dependency container
      * @return void
@@ -328,6 +344,32 @@ class Plugin
         }
 
         (new MemberCacheInvalidator($repository, TsmlMemberFields::POST_TYPE))->register();
+    }
+
+    /**
+     * Hook the meeting cache to the same actions.
+     *
+     * Matters more than the member one: MeetingRepository is read-only, so
+     * nothing else can ever invalidate a cached meeting. Without this hooked,
+     * a meeting edited in the admin keeps serving its old day and time until
+     * the entry expires.
+     *
+     * @param ContainerInterface $container Unity's PSR-11 dependency container
+     * @return void
+     */
+    public static function registerMeetingCacheInvalidator(ContainerInterface $container): void
+    {
+        if (!class_exists(PostTypeCacheInvalidator::class) || !$container->has(MeetingRepository::class)) {
+            return;
+        }
+
+        $repository = $container->get(MeetingRepository::class);
+
+        if (!$repository instanceof CachingMeetingRepository) {
+            return;
+        }
+
+        (new PostTypeCacheInvalidator($repository, TsmlMeetingFields::POST_TYPE))->register();
     }
 
     /**
@@ -420,6 +462,13 @@ class Plugin
             );
 
             // Register Meeting Repository
+            //
+            // Wrapped in Unity's caching decorator when there is a cache to
+            // wrap it with, exactly as the member repository below is. The
+            // repository itself no longer caches: it held an hour-long cache
+            // that nothing ever invalidated, so an edited meeting kept
+            // serving its old day and time once an object cache made entries
+            // outlive the request.
             $container->register(
                 MeetingRepository::class,
                 function (ContainerInterface $container) {
@@ -427,11 +476,13 @@ class Plugin
                         ? $container->get(MeetingFactory::class)
                         : null;
 
-                    $cache = $container->has(Cache::class)
-                        ? $container->get(Cache::class)
-                        : null;
+                    $repository = new TsmlMeetingRepository($meetingFactory);
 
-                    return new TsmlMeetingRepository($meetingFactory, $cache);
+                    if (!class_exists(CachingMeetingRepository::class) || !$container->has(Cache::class)) {
+                        return $repository;
+                    }
+
+                    return new CachingMeetingRepository($repository, $container->get(Cache::class));
                 }
             );
 
