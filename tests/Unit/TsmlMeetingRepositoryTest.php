@@ -8,7 +8,6 @@ use Brain\Monkey\Functions;
 use TsmlForUnity\Meetings\TsmlMeetingFields;
 use TsmlForUnity\Meetings\TsmlMeetingRepository;
 use TsmlForUnity\Tests\TestCase;
-use Unity\Core\Interfaces\Cache;
 use Unity\Meetings\Interfaces\Meeting;
 use Unity\Meetings\Interfaces\MeetingFactory;
 use Unity\Meetings\Interfaces\MeetingRepository;
@@ -138,41 +137,20 @@ class TsmlMeetingRepositoryTest extends TestCase
         $this->assertNull($this->repository->findById(7));
     }
 
-    // ─── findById caching ───────────────────────────────────────────
-
     /** @test */
-    public function a_cache_hit_short_circuits_the_post_lookup(): void
+    public function it_caches_nothing_of_its_own(): void
     {
-        $cached = $this->meeting();
-        $cache = $this->createMock(Cache::class);
-        $cache->expects($this->once())->method('get')->with('meeting_7', 'unity_meetings')->willReturn($cached);
-        $cache->expects($this->never())->method('set');
-
-        $this->factory->expects($this->never())->method('createFromSource');
-
-        $repository = new TsmlMeetingRepository($this->factory, $cache);
-
-        $this->assertSame($cached, $repository->findById(7));
-    }
-
-    /** @test */
-    public function a_cache_miss_falls_through_and_stores_the_result(): void
-    {
-        $built = $this->meeting();
-        $cache = $this->createMock(Cache::class);
-        // WordPress's cache API signals "not found" with false.
-        $cache->expects($this->once())->method('get')->willReturn(false);
-        $cache->expects($this->once())
-            ->method('set')
-            ->with('meeting_7', $built, 'unity_meetings', 3600);
-
-        Functions\expect('get_post')->andReturn($this->post(7));
+        // It used to hold an hour-long cache that nothing ever invalidated,
+        // so an edited meeting kept serving its old day and time once an
+        // object cache made entries outlive the request. Caching now lives in
+        // Unity's CachingMeetingRepository, which wraps this one and is
+        // cleared by PostTypeCacheInvalidator.
+        Functions\expect('get_post')->twice()->andReturn($this->post(7));
         $this->stubPostMeta();
-        $this->factory->method('createFromSource')->willReturn($built);
+        $this->factory->method('createFromSource')->willReturn($this->meeting());
 
-        $repository = new TsmlMeetingRepository($this->factory, $cache);
-
-        $this->assertSame($built, $repository->findById(7));
+        $this->repository->findById(7);
+        $this->repository->findById(7);
     }
 
     // ─── findAll ────────────────────────────────────────────────────
