@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Contacts\TsmlContact;
 use TsmlForUnity\Contacts\TsmlContactFactory;
@@ -11,23 +13,18 @@ use Unity\Contacts\Interfaces\Contact;
 
 /**
  * Tests for TsmlContact and TsmlContactFactory
- *
- * @covers \TsmlForUnity\Contacts\TsmlContact
- * @covers \TsmlForUnity\Contacts\TsmlContactFactory
  */
+#[CoversClass(\TsmlForUnity\Contacts\TsmlContact::class)]
+#[CoversClass(\TsmlForUnity\Contacts\TsmlContactFactory::class)]
 class TsmlContactTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function contact_implements_the_interface(): void
     {
         $this->assertInstanceOf(Contact::class, new TsmlContact());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function contact_defaults_to_empty_strings(): void
     {
         $contact = new TsmlContact();
@@ -38,9 +35,7 @@ class TsmlContactTest extends TestCase
         $this->assertSame('', $contact->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function contact_exposes_constructor_values(): void
     {
         $contact = new TsmlContact('Jane Doe', 'jane@example.com', '0700 123456', '2026-06-01');
@@ -51,9 +46,7 @@ class TsmlContactTest extends TestCase
         $this->assertSame('2026-06-01', $contact->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function factory_creates_from_a_source_array(): void
     {
         $contact = (new TsmlContactFactory())->createFromSource([
@@ -68,9 +61,7 @@ class TsmlContactTest extends TestCase
         $this->assertSame('0800 999', $contact->getPhone());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function factory_tolerates_missing_source_keys(): void
     {
         $contact = (new TsmlContactFactory())->createFromSource([]);
@@ -80,9 +71,7 @@ class TsmlContactTest extends TestCase
         $this->assertSame('', $contact->getPhone());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function factory_create_builds_from_explicit_arguments(): void
     {
         $contact = (new TsmlContactFactory())->create('Al', 'al@example.com', '111');
@@ -92,9 +81,7 @@ class TsmlContactTest extends TestCase
         $this->assertSame('111', $contact->getPhone());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function factory_create_defaults_to_an_empty_contact(): void
     {
         $contact = (new TsmlContactFactory())->create();

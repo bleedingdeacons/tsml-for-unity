@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Actions;
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
+use function Brain\Monkey\Actions\expectDone;
 use Exception;
 use TsmlForUnity\Members\TsmlMemberChangeTracker;
 use TsmlForUnity\Members\TsmlMemberFields;
@@ -23,14 +27,13 @@ use Unity\Members\ResponderCertification;
  * fires, so Scrutiny records nothing and downstream caches never
  * invalidate. Every tracked field therefore gets its own case, which is
  * also what stops a field being quietly dropped from the chain later.
- *
- * @covers \TsmlForUnity\Members\TsmlMemberChangeTracker
  */
+#[CoversClass(\TsmlForUnity\Members\TsmlMemberChangeTracker::class)]
 class TsmlMemberChangeTrackerFieldsTest extends TestCase
 {
     private const POST_ID = 42;
 
-    /** @var MemberRepository&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var MemberRepository&MockObject */
     private $repository;
 
     private TsmlMemberChangeTracker $tracker;
@@ -46,7 +49,7 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
         // that is true of Brain Monkey as it was of WP_Mock — so a per-test
         // override registered later would never be consulted.
         $this->postType = TsmlMemberFields::POST_TYPE;
-        Functions\expect('get_post_type')->andReturnUsing(fn (): string => $this->postType);
+        expect('get_post_type')->andReturnUsing(fn (): string => $this->postType);
 
         $this->repository = $this->createMock(MemberRepository::class);
         $this->tracker = new TsmlMemberChangeTracker($this->repository);
@@ -65,9 +68,9 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
     /** post_title already matches, so the sync is a no-op. */
     private function stubTitleSyncIsNoop(string $existingTitle = ''): void
     {
-        Functions\expect('get_post')
+        expect('get_post')
             ->andReturn((object) ['ID' => self::POST_ID, 'post_title' => $existingTitle]);
-        Functions\expect('wp_update_post')->andReturn(self::POST_ID);
+        expect('wp_update_post')->andReturn(self::POST_ID);
     }
 
     /** The tracker's static snapshot, or null once released. */
@@ -90,14 +93,12 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
     }
 
     // ─── field-level change detection ───────────────────────────────
-
     /**
      * Each case changes exactly one tracked field, so the resulting
      * unity/member_changing proves that field is part of the comparison.
-     *
-     * @test
-     * @dataProvider changedFieldProvider
      */
+    #[DataProvider('changedFieldProvider')]
+    #[Test]
     public function changing_a_tracked_field_fires_member_changing(array $updatedArgs): void
     {
         $this->stubTitleSyncIsNoop();
@@ -105,7 +106,7 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
         $original = new MemberStub(self::POST_ID);
         $updated  = new MemberStub(self::POST_ID, ...$updatedArgs);
 
-        Actions\expectDone('unity/member_changing')->once()->with($updated, $original);
+        expectDone('unity/member_changing')->once()->with($updated, $original);
 
         $this->runSave($original, $updated);
 
@@ -139,7 +140,7 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
         ];
     }
 
-    /** @test */
+    #[Test]
     public function an_identical_member_fires_no_change_event(): void
     {
         $this->stubTitleSyncIsNoop();
@@ -153,16 +154,15 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
     }
 
     // ─── title sync ─────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function a_renamed_member_has_its_post_title_synced(): void
     {
         // The stored title still holds the previous name.
-        Functions\expect('get_post')
+        expect('get_post')
             ->andReturn((object) ['ID' => self::POST_ID, 'post_title' => 'Old Name']);
 
         $captured = [];
-        Functions\expect('wp_update_post')->andReturnUsing(
+        expect('wp_update_post')->andReturnUsing(
             function (array $args) use (&$captured): int {
                 $captured = $args;
 
@@ -178,14 +178,14 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
         $this->assertSame('New Name', $captured['post_title'] ?? null);
     }
 
-    /** @test */
+    #[Test]
     public function a_name_needing_escaping_is_encoded_into_the_post_title(): void
     {
-        Functions\expect('get_post')
+        expect('get_post')
             ->andReturn((object) ['ID' => self::POST_ID, 'post_title' => 'plain']);
 
         $captured = [];
-        Functions\expect('wp_update_post')->andReturnUsing(
+        expect('wp_update_post')->andReturnUsing(
             function (array $args) use (&$captured): int {
                 $captured = $args;
 
@@ -204,8 +204,7 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
     }
 
     // ─── guards and failure paths ───────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function capturing_a_post_of_another_type_is_ignored(): void
     {
         $this->postType = 'page';
@@ -216,7 +215,7 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
         $this->assertTrue(true, 'returned before reading the member');
     }
 
-    /** @test */
+    #[Test]
     public function a_capture_failure_is_swallowed(): void
     {
         $this->repository->method('findById')->willThrowException(new Exception('boom'));
@@ -226,7 +225,7 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
         $this->assertTrue(true, 'a failed capture must not abort the save');
     }
 
-    /** @test */
+    #[Test]
     public function checking_a_post_of_another_type_is_ignored(): void
     {
         $this->postType = 'page';
@@ -237,7 +236,7 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
         $this->assertTrue(true, 'returned before comparing');
     }
 
-    /** @test */
+    #[Test]
     public function a_check_without_a_captured_original_stops_quietly(): void
     {
         $this->repository->expects($this->never())->method('findById');
@@ -247,7 +246,7 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
         $this->assertTrue(true, 'no comparison without a snapshot');
     }
 
-    /** @test */
+    #[Test]
     public function a_check_that_cannot_reload_the_member_clears_the_snapshot(): void
     {
         $this->repository->method('findById')
@@ -263,7 +262,7 @@ class TsmlMemberChangeTrackerFieldsTest extends TestCase
         $this->assertNull($original);
     }
 
-    /** @test */
+    #[Test]
     public function a_check_failure_clears_the_snapshot_and_is_swallowed(): void
     {
         $this->repository->method('findById')

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceTable;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceTable;
 use TsmlForUnity\Tests\TestCase;
@@ -13,10 +15,9 @@ use TsmlForUnity\Tests\TestCase;
  * Tests for the two attendance table managers (name resolution, upgrade
  * gating and drop). createTable() is not exercised because it require()s a
  * WordPress core file that does not exist in the unit environment.
- *
- * @covers \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceTable
- * @covers \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceTable
  */
+#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceTable::class)]
+#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceTable::class)]
 class TsmlIntergroupMeetingAttendanceTableTest extends TestCase
 {
     /** @var object The previous global $wpdb, restored in tearDown. */
@@ -42,9 +43,7 @@ class TsmlIntergroupMeetingAttendanceTableTest extends TestCase
         parent::tearDown();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function group_table_name_is_prefixed(): void
     {
         $this->assertSame(
@@ -53,9 +52,7 @@ class TsmlIntergroupMeetingAttendanceTableTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function officer_table_name_is_prefixed(): void
     {
         $this->assertSame(
@@ -64,12 +61,10 @@ class TsmlIntergroupMeetingAttendanceTableTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function maybe_upgrade_does_nothing_when_the_installed_version_matches(): void
     {
-        Functions\expect('get_option')
+        expect('get_option')
             ->with(TsmlIntergroupMeetingGroupAttendanceTable::DB_VERSION_OPTION)
             ->andReturn(TsmlIntergroupMeetingGroupAttendanceTable::DB_VERSION);
 
@@ -80,13 +75,11 @@ class TsmlIntergroupMeetingAttendanceTableTest extends TestCase
         $this->assertTrue(true);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function group_drop_table_issues_a_drop_and_clears_the_version_option(): void
     {
-        Functions\expect('esc_sql')->andReturnUsing(fn ($v) => $v);
-        Functions\expect('delete_option')
+        expect('esc_sql')->andReturnUsing(fn ($v) => $v);
+        expect('delete_option')
             ->once()
             ->with(TsmlIntergroupMeetingGroupAttendanceTable::DB_VERSION_OPTION)
             ->andReturn(true);
@@ -96,13 +89,11 @@ class TsmlIntergroupMeetingAttendanceTableTest extends TestCase
         $this->assertTrue(true);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function officer_drop_table_issues_a_drop_and_clears_the_version_option(): void
     {
-        Functions\expect('esc_sql')->andReturnUsing(fn ($v) => $v);
-        Functions\expect('delete_option')
+        expect('esc_sql')->andReturnUsing(fn ($v) => $v);
+        expect('delete_option')
             ->once()
             ->with(TsmlIntergroupMeetingOfficerAttendanceTable::DB_VERSION_OPTION)
             ->andReturn(true);

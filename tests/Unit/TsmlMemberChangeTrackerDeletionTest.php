@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Actions;
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
+use function Brain\Monkey\Actions\expectDone;
 use Exception;
 use TsmlForUnity\Members\TsmlMemberChangeTracker;
 use TsmlForUnity\Members\TsmlMemberFields;
@@ -28,14 +31,13 @@ use Unity\Members\Interfaces\MemberRepository;
  *
  * Actions are asserted through Brain Monkey's own expectations rather than
  * by stubbing do_action(), which Brain Monkey defines itself.
- *
- * @covers \TsmlForUnity\Members\TsmlMemberChangeTracker
  */
+#[CoversClass(\TsmlForUnity\Members\TsmlMemberChangeTracker::class)]
 class TsmlMemberChangeTrackerDeletionTest extends TestCase
 {
     use ActionExpectations;
 
-    /** @var MemberRepository&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var MemberRepository&MockObject */
     private $repository;
 
     private TsmlMemberChangeTracker $tracker;
@@ -49,10 +51,10 @@ class TsmlMemberChangeTrackerDeletionTest extends TestCase
         $this->tracker = new TsmlMemberChangeTracker($this->repository);
     }
 
-    /** @test */
+    #[Test]
     public function a_post_of_another_type_is_ignored(): void
     {
-        Functions\expect('get_post_type')->andReturn('page');
+        expect('get_post_type')->andReturn('page');
 
         // Bailing before the lookup is the observable behaviour: nothing is
         // read, so nothing can be announced.
@@ -63,57 +65,57 @@ class TsmlMemberChangeTrackerDeletionTest extends TestCase
         $this->assertTrue(true, 'returned without raising the event');
     }
 
-    /** @test */
+    #[Test]
     public function deleting_a_member_fires_the_event_with_the_member_as_it_was(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlMemberFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlMemberFields::POST_TYPE);
 
         $member = $this->createMock(Member::class);
         $this->repository->expects($this->once())->method('findById')->with(5)->willReturn($member);
 
         // Listeners need the pre-deletion snapshot, so the member travels
         // with the event.
-        Actions\expectDone('unity/member_deleted')->once()->with(5, $member);
+        expectDone('unity/member_deleted')->once()->with(5, $member);
 
         $this->tracker->onMemberDeleted(5);
     }
 
-    /** @test */
+    #[Test]
     public function a_member_that_can_no_longer_be_loaded_still_fires_the_event(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlMemberFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlMemberFields::POST_TYPE);
 
         // findById() returning null is not an error — the row may already
         // be gone — so the event still fires, carrying null.
         $this->repository->method('findById')->willReturn(null);
 
-        Actions\expectDone('unity/member_deleted')->once()->with(5, null);
+        expectDone('unity/member_deleted')->once()->with(5, null);
 
         $this->tracker->onMemberDeleted(5);
 
         $this->assertTrue(true, 'the event fired with a null member');
     }
 
-    /** @test */
+    #[Test]
     public function a_repository_failure_does_not_escape_and_still_fires_the_event(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlMemberFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlMemberFields::POST_TYPE);
 
         // A partially-removed record can make the lookup throw; the hook
         // must swallow it rather than derail WordPress's delete routine.
         $this->repository->method('findById')->willThrowException(new Exception('row vanished'));
 
-        Actions\expectDone('unity/member_deleted')->once()->with(5, null);
+        expectDone('unity/member_deleted')->once()->with(5, null);
 
         $this->tracker->onMemberDeleted(5);
 
         $this->assertTrue(true, 'the exception did not escape');
     }
 
-    /** @test */
+    #[Test]
     public function the_event_is_not_raised_for_a_post_type_that_merely_resembles_a_member(): void
     {
-        Functions\expect('get_post_type')->andReturn('intergroup-member-archive');
+        expect('get_post_type')->andReturn('intergroup-member-archive');
 
         $this->expectActionNotFired('unity/member_deleted', 5, null);
 

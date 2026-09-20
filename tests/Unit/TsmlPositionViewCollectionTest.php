@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Members\TsmlMember;
 use TsmlForUnity\Positions\TsmlPosition;
@@ -12,14 +14,11 @@ use TsmlForUnity\Positions\TsmlPositionViewCollection;
 
 /**
  * Tests for TsmlPositionViewCollection
- *
- * @covers \TsmlForUnity\Positions\TsmlPositionViewCollection
  */
+#[CoversClass(\TsmlForUnity\Positions\TsmlPositionViewCollection::class)]
 class TsmlPositionViewCollectionTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function an_empty_collection_counts_zero(): void
     {
         $collection = new TsmlPositionViewCollection();
@@ -28,9 +27,7 @@ class TsmlPositionViewCollectionTest extends TestCase
         $this->assertSame([], $collection->getAll());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_separates_filled_from_vacant_positions(): void
     {
         $filled = $this->view('Chair', 'chair@example.com', member: $this->member('John D.'));
@@ -42,9 +39,7 @@ class TsmlPositionViewCollectionTest extends TestCase
         $this->assertSame([$vacant], array_values($collection->getVacantPositions()->getAll()));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function rotating_soon_selects_positions_within_the_window(): void
     {
         $soon = $this->view('Chair', 'c@example.com', member: $this->memberRotatingIn(10));
@@ -57,9 +52,7 @@ class TsmlPositionViewCollectionTest extends TestCase
         $this->assertSame([$soon], $rotatingSoon);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function overdue_selects_positions_past_their_rotation_date(): void
     {
         $overdue = $this->view('Treas', 't@example.com', member: $this->memberRotatingIn(-5));
@@ -70,9 +63,7 @@ class TsmlPositionViewCollectionTest extends TestCase
         $this->assertSame([$overdue], array_values($collection->getOverduePositions()->getAll()));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function sort_by_days_until_rotation_puts_nearest_first_and_nulls_last(): void
     {
         $far     = $this->view('Far', 'f@example.com', member: $this->memberRotatingIn(400));
@@ -86,9 +77,7 @@ class TsmlPositionViewCollectionTest extends TestCase
         $this->assertSame([$soon, $far, $noDate], $sorted);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function sort_by_days_descending_reverses_the_order(): void
     {
         $far  = $this->view('Far', 'f@example.com', member: $this->memberRotatingIn(400));
@@ -99,9 +88,7 @@ class TsmlPositionViewCollectionTest extends TestCase
         $this->assertSame([$far, $soon], $collection->sortByDaysUntilRotation(false)->getAll());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function sort_by_name_orders_by_position_long_name(): void
     {
         $zebra = $this->view('Zebra', 'z@example.com', longName: 'Zebra');
@@ -113,9 +100,7 @@ class TsmlPositionViewCollectionTest extends TestCase
         $this->assertSame([$zebra, $alpha], $collection->sortByName(false)->getAll());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function sort_by_title_orders_by_short_description(): void
     {
         $b = $this->view('B title', 'b@example.com');
@@ -126,9 +111,7 @@ class TsmlPositionViewCollectionTest extends TestCase
         $this->assertSame([$a, $b], $collection->sortByTitle()->getAll());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function sort_by_email_orders_by_position_email(): void
     {
         $b = $this->view('Chair', 'b@example.com');
@@ -140,9 +123,7 @@ class TsmlPositionViewCollectionTest extends TestCase
         $this->assertSame([$b, $a], $collection->sortByEmail(false)->getAll());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function filter_applies_an_arbitrary_predicate(): void
     {
         $filled = $this->view('Chair', 'c@example.com', member: $this->member('John'));

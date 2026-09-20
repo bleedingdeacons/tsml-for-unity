@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\IntergroupMeetings\AcfFieldKeyResolver;
 use TsmlForUnity\Positions\TsmlPositionView;
 use TsmlForUnity\Tests\TestCase;
@@ -19,10 +23,9 @@ use Unity\Positions\Interfaces\Position;
  * loaded, and must not overwrite a good cached mapping with an empty one —
  * doing so would leave every downstream lookup falling back to hardcoded
  * constants.
- *
- * @covers \TsmlForUnity\IntergroupMeetings\AcfFieldKeyResolver
- * @covers \TsmlForUnity\Positions\TsmlPositionView
  */
+#[CoversClass(\TsmlForUnity\IntergroupMeetings\AcfFieldKeyResolver::class)]
+#[CoversClass(\TsmlForUnity\Positions\TsmlPositionView::class)]
 class AcfFieldKeyResolverResolveTest extends TestCase
 {
     /** Options written by the stubbed update_option(). */
@@ -33,13 +36,13 @@ class AcfFieldKeyResolverResolveTest extends TestCase
         parent::setUp();
 
         $this->written = [];
-        Functions\expect('update_option')
+        expect('update_option')
             ->andReturnUsing(function (string $name, $value, $autoload = null): bool {
                 $this->written[$name] = $value;
 
                 return true;
             });
-        Functions\expect('get_option')->andReturnUsing(
+        expect('get_option')->andReturnUsing(
             fn (string $name, $default = false) => $this->written[$name] ?? $default
         );
     }
@@ -51,15 +54,14 @@ class AcfFieldKeyResolverResolveTest extends TestCase
      * ACF-unavailable branch — so defining it here would break that test.
      * (This is also why tests/bootstrap.php leaves the shared `acf` stub
      * group out.)
-     *
-     * @test
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
      */
+    #[PreserveGlobalState(false)]
+    #[Test]
+    #[RunInSeparateProcess]
     public function resolving_caches_a_key_for_every_field_acf_knows(): void
     {
         // ACF answers with a field array carrying the generated key.
-        Functions\expect('acf_get_field')
+        expect('acf_get_field')
             ->andReturnUsing(static fn (string $name): array => ['key' => 'field_' . md5($name), 'name' => $name]);
 
         $mapping = AcfFieldKeyResolver::resolve();
@@ -79,14 +81,13 @@ class AcfFieldKeyResolverResolveTest extends TestCase
      * ACF-unavailable branch — so defining it here would break that test.
      * (This is also why tests/bootstrap.php leaves the shared `acf` stub
      * group out.)
-     *
-     * @test
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
      */
+    #[PreserveGlobalState(false)]
+    #[Test]
+    #[RunInSeparateProcess]
     public function a_resolved_key_is_returned_by_get_key(): void
     {
-        Functions\expect('acf_get_field')
+        expect('acf_get_field')
             ->andReturnUsing(static fn (string $name): array => ['key' => 'field_resolved', 'name' => $name]);
 
         $mapping = AcfFieldKeyResolver::resolve();
@@ -102,15 +103,14 @@ class AcfFieldKeyResolverResolveTest extends TestCase
      * ACF-unavailable branch — so defining it here would break that test.
      * (This is also why tests/bootstrap.php leaves the shared `acf` stub
      * group out.)
-     *
-     * @test
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
      */
+    #[PreserveGlobalState(false)]
+    #[Test]
+    #[RunInSeparateProcess]
     public function fields_acf_cannot_resolve_are_left_out_of_the_mapping(): void
     {
         // A field ACF does not know returns null; one with no key is useless.
-        Functions\expect('acf_get_field')->andReturn(null);
+        expect('acf_get_field')->andReturn(null);
 
         $mapping = AcfFieldKeyResolver::resolve();
 
@@ -124,14 +124,13 @@ class AcfFieldKeyResolverResolveTest extends TestCase
      * ACF-unavailable branch — so defining it here would break that test.
      * (This is also why tests/bootstrap.php leaves the shared `acf` stub
      * group out.)
-     *
-     * @test
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
      */
+    #[PreserveGlobalState(false)]
+    #[Test]
+    #[RunInSeparateProcess]
     public function nothing_is_cached_when_no_field_resolves(): void
     {
-        Functions\expect('acf_get_field')->andReturn(['name' => 'x']); // no 'key'
+        expect('acf_get_field')->andReturn(['name' => 'x']); // no 'key'
 
         AcfFieldKeyResolver::resolve();
 
@@ -142,7 +141,7 @@ class AcfFieldKeyResolverResolveTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function a_position_view_exposes_the_position_it_wraps(): void
     {
         $position = $this->createMock(Position::class);

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Contacts\TsmlContact;
 use TsmlForUnity\Groups\TsmlGroup;
@@ -11,22 +13,17 @@ use Unity\Groups\Interfaces\Group;
 
 /**
  * Tests for TsmlGroup entity
- *
- * @covers \TsmlForUnity\Groups\TsmlGroup
  */
+#[CoversClass(\TsmlForUnity\Groups\TsmlGroup::class)]
 class TsmlGroupTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_group_interface(): void
     {
         $this->assertInstanceOf(Group::class, new TsmlGroup(id: 1));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_defaults_every_optional_field(): void
     {
         $group = new TsmlGroup(id: 7);
@@ -48,9 +45,7 @@ class TsmlGroupTest extends TestCase
         $this->assertSame('', $group->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_exposes_every_field_passed_to_the_constructor(): void
     {
         $contact = new TsmlContact('Jane', 'jane@example.com', '0700', '2026-01-01');
@@ -90,9 +85,7 @@ class TsmlGroupTest extends TestCase
         $this->assertSame('2026-06-01 10:00:00', $group->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function is_valid_requires_a_title(): void
     {
         $this->assertFalse((new TsmlGroup(id: 0))->isValid());
@@ -103,9 +96,7 @@ class TsmlGroupTest extends TestCase
         $this->assertTrue((new TsmlGroup(id: 3, title: 'Named'))->isValid());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function has_contribution_options_is_true_when_any_handle_is_set(): void
     {
         $this->assertFalse((new TsmlGroup(id: 1))->hasContributionOptions());

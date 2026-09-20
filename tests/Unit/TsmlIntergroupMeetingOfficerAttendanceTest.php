@@ -4,20 +4,19 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendance;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingOfficerAttendance;
 
 /**
  * Tests for TsmlIntergroupMeetingOfficerAttendance entity
- *
- * @covers \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendance
  */
+#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendance::class)]
 class TsmlIntergroupMeetingOfficerAttendanceTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_intergroup_meeting_officer_attendance_interface(): void
     {
         $attendance = new TsmlIntergroupMeetingOfficerAttendance();
@@ -25,9 +24,7 @@ class TsmlIntergroupMeetingOfficerAttendanceTest extends TestCase
         $this->assertInstanceOf(IntergroupMeetingOfficerAttendance::class, $attendance);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_can_be_instantiated_with_default_values(): void
     {
         $attendance = new TsmlIntergroupMeetingOfficerAttendance();
@@ -40,9 +37,7 @@ class TsmlIntergroupMeetingOfficerAttendanceTest extends TestCase
         $this->assertEquals('', $attendance->getOfficerName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_can_be_instantiated_with_all_values(): void
     {
         $attendance = new TsmlIntergroupMeetingOfficerAttendance(
@@ -62,9 +57,7 @@ class TsmlIntergroupMeetingOfficerAttendanceTest extends TestCase
         $this->assertEquals('John D.', $attendance->getOfficerName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_stores_position_name_as_plain_text(): void
     {
         $attendance = new TsmlIntergroupMeetingOfficerAttendance(
@@ -76,9 +69,7 @@ class TsmlIntergroupMeetingOfficerAttendanceTest extends TestCase
         $this->assertEquals('Secretary', $attendance->getPositionName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_stores_officer_name_as_plain_text(): void
     {
         $attendance = new TsmlIntergroupMeetingOfficerAttendance(
@@ -90,9 +81,7 @@ class TsmlIntergroupMeetingOfficerAttendanceTest extends TestCase
         $this->assertEquals('Mary K.', $attendance->getOfficerName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_empty_strings_for_text_fields(): void
     {
         $attendance = new TsmlIntergroupMeetingOfficerAttendance(
@@ -105,9 +94,7 @@ class TsmlIntergroupMeetingOfficerAttendanceTest extends TestCase
         $this->assertEmpty($attendance->getOfficerName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_stores_officer_id_as_integer(): void
     {
         $attendance = new TsmlIntergroupMeetingOfficerAttendance(
@@ -119,9 +106,7 @@ class TsmlIntergroupMeetingOfficerAttendanceTest extends TestCase
         $this->assertEquals(55, $attendance->getOfficerId());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_stores_intergroup_meeting_id_as_integer(): void
     {
         $attendance = new TsmlIntergroupMeetingOfficerAttendance(

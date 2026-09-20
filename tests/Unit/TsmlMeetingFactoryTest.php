@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\Meetings\TsmlMeeting;
 use TsmlForUnity\Meetings\TsmlMeetingFactory;
 use TsmlForUnity\Tests\TestCase;
 use Unity\Contacts\Interfaces\Contact;
 
-/**
- * @covers \TsmlForUnity\Meetings\TsmlMeetingFactory
- */
+#[CoversClass(\TsmlForUnity\Meetings\TsmlMeetingFactory::class)]
 class TsmlMeetingFactoryTest extends TestCase
 {
     private TsmlMeetingFactory $factory;
@@ -56,22 +55,22 @@ class TsmlMeetingFactoryTest extends TestCase
         ];
 
         // Mock WordPress functions
-        Functions\expect('get_permalink')
+        expect('get_permalink')
             ->once()
             ->with(123)
             ->andReturn('https://example.com/meetings/morning-serenity/');
 
-        Functions\expect('get_post_status')
+        expect('get_post_status')
             ->once()
             ->with(123)
             ->andReturn('publish');
 
-        Functions\expect('get_post_custom')
+        expect('get_post_custom')
             ->once()
             ->with(123)
             ->andReturn([]);
 
-        Functions\expect('is_serialized')
+        expect('is_serialized')
             ->andReturn(false);
 
         $this->stubPostLookups(123);
@@ -115,17 +114,17 @@ class TsmlMeetingFactoryTest extends TestCase
             'attendance_option' => 'online',
         ];
 
-        Functions\expect('get_permalink')
+        expect('get_permalink')
             ->once()
             ->with(456)
             ->andReturn('https://example.com/meetings/online-meeting/');
 
-        Functions\expect('get_post_status')
+        expect('get_post_status')
             ->once()
             ->with(456)
             ->andReturn('publish');
 
-        Functions\expect('get_post_custom')
+        expect('get_post_custom')
             ->once()
             ->with(456)
             ->andReturn([
@@ -133,7 +132,7 @@ class TsmlMeetingFactoryTest extends TestCase
                 'conference_url_notes' => ['Password: 12345'],
             ]);
 
-        Functions\expect('is_serialized')
+        expect('is_serialized')
             ->andReturn(false);
 
         $this->stubPostLookups(456);
@@ -210,17 +209,17 @@ class TsmlMeetingFactoryTest extends TestCase
             'location' => 'Test Location',
         ];
 
-        Functions\expect('get_permalink')
+        expect('get_permalink')
             ->once()
             ->with(789)
             ->andReturn('https://example.com/meetings/test-meeting/');
 
-        Functions\expect('get_post_status')
+        expect('get_post_status')
             ->once()
             ->with(789)
             ->andReturn('publish');
 
-        Functions\expect('get_post_custom')
+        expect('get_post_custom')
             ->once()
             ->with(789)
             ->andReturn([
@@ -232,7 +231,7 @@ class TsmlMeetingFactoryTest extends TestCase
                 'contact_2_phone' => ['555-5678'],
             ]);
 
-        Functions\expect('is_serialized')
+        expect('is_serialized')
             ->andReturn(false);
 
         $this->stubPostLookups(789);
@@ -265,12 +264,12 @@ class TsmlMeetingFactoryTest extends TestCase
      */
     private function stubPostLookups(int $id): void
     {
-        Functions\expect('get_post')
+        expect('get_post')
             ->with($id)
             ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
 
 
-        Functions\expect('get_post_meta')
+        expect('get_post_meta')
             ->andReturn('');
     }
 }

@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Actions;
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
+use function Brain\Monkey\Actions\expectDone;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeeting;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingChangeTracker;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFields;
@@ -15,14 +19,13 @@ use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingRepository;
 
 /**
  * Tests for TsmlIntergroupMeetingChangeTracker.
- *
- * @covers \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingChangeTracker
  */
+#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingChangeTracker::class)]
 class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
 {
     use ActionExpectations;
 
-    /** @var IntergroupMeetingRepository&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var IntergroupMeetingRepository&MockObject */
     private $repository;
 
     private TsmlIntergroupMeetingChangeTracker $tracker;
@@ -47,14 +50,14 @@ class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
 
     private function stubPostTypeGuard(int $postId): void
     {
-        Functions\expect('get_post_type')
+        expect('get_post_type')
             ->with($postId)
             ->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
     }
 
     private function stubTitleSyncIsNoop(int $postId, string $title): void
     {
-        Functions\expect('get_post')
+        expect('get_post')
             ->with($postId)
             ->andReturn((object) ['ID' => $postId, 'post_title' => $title]);
     }
@@ -82,9 +85,7 @@ class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
         return [$original, $updated];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function changing_the_title_fires_the_changing_hook(): void
     {
         [$original, $updated] = $this->runSave(
@@ -93,25 +94,23 @@ class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
         );
 
         // Title changed, so the title-sync path runs; allow the update.
-        Functions\expect('wp_update_post')->andReturn(42);
+        expect('wp_update_post')->andReturn(42);
 
-        Actions\expectDone('unity/intergroup_meeting_before_save')->once()->with(42, $original);
-        Actions\expectDone('unity/intergroup_meeting_changing')->once()->with($updated, $original);
-        Actions\expectDone('unity/intergroup_meeting_changed')->once()->with(42, $updated, $original);
+        expectDone('unity/intergroup_meeting_before_save')->once()->with(42, $original);
+        expectDone('unity/intergroup_meeting_changing')->once()->with($updated, $original);
+        expectDone('unity/intergroup_meeting_changed')->once()->with(42, $updated, $original);
 
         $this->tracker->captureOriginalMeeting(42);
         $this->tracker->checkForChanges(42);
     }
 
-    /**
-     * @test
-     * @dataProvider changedFieldProvider
-     */
+    #[DataProvider('changedFieldProvider')]
+    #[Test]
     public function each_tracked_field_triggers_a_change(array $originalArgs, array $updatedArgs): void
     {
         [$original, $updated] = $this->runSave($this->meeting($originalArgs), $this->meeting($updatedArgs));
 
-        Actions\expectDone('unity/intergroup_meeting_changing')->once()->with($updated, $original);
+        expectDone('unity/intergroup_meeting_changing')->once()->with($updated, $original);
 
         $this->tracker->captureOriginalMeeting(42);
         $this->tracker->checkForChanges(42);
@@ -129,9 +128,7 @@ class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
         ];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function reordered_attendees_are_not_a_change(): void
     {
         $original = $this->meeting(['groupAttendees' => [1, 2], 'officersAttending' => [3, 4]]);
@@ -144,40 +141,34 @@ class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
             ->willReturnOnConsecutiveCalls($original, $updated);
 
         $this->expectActionNotFired('unity/intergroup_meeting_changing', $updated, $original);
-        Actions\expectDone('unity/intergroup_meeting_changed')->once()->with(42, $updated, $original);
+        expectDone('unity/intergroup_meeting_changed')->once()->with(42, $updated, $original);
 
         $this->tracker->captureOriginalMeeting(42);
         $this->tracker->checkForChanges(42);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function capture_ignores_a_non_meeting_post_type(): void
     {
-        Functions\expect('get_post_type')->with(99)->andReturn('page');
+        expect('get_post_type')->with(99)->andReturn('page');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->captureOriginalMeeting(99);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function deleting_fires_the_deleted_hook_with_the_meeting(): void
     {
         $meeting = $this->meeting();
         $this->stubPostTypeGuard(42);
         $this->repository->expects($this->once())->method('findById')->with(42)->willReturn($meeting);
 
-        Actions\expectDone('unity/intergroup_meeting_deleted')->once()->with(42, $meeting);
+        expectDone('unity/intergroup_meeting_deleted')->once()->with(42, $meeting);
 
         $this->tracker->onIntergroupMeetingDeleted(42);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function deletion_fires_with_null_when_the_lookup_throws(): void
     {
         $this->stubPostTypeGuard(42);
@@ -185,17 +176,15 @@ class TsmlIntergroupMeetingChangeTrackerTest extends TestCase
             ->method('findById')
             ->willThrowException(new \RuntimeException('gone'));
 
-        Actions\expectDone('unity/intergroup_meeting_deleted')->once()->with(42, null);
+        expectDone('unity/intergroup_meeting_deleted')->once()->with(42, null);
 
         $this->tracker->onIntergroupMeetingDeleted(42);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function deleting_ignores_a_non_meeting_post_type(): void
     {
-        Functions\expect('get_post_type')->with(99)->andReturn('post');
+        expect('get_post_type')->with(99)->andReturn('post');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->onIntergroupMeetingDeleted(99);

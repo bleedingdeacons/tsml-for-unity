@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\Meetings\TsmlMeetingFields;
 use TsmlForUnity\Meetings\TsmlMeetingRepository;
 use TsmlForUnity\Tests\TestCase;
@@ -24,12 +27,11 @@ use WP_Post;
  *
  * The optional cache is exercised on both paths, since a stale or bypassed
  * cache is the kind of fault that only shows up under load.
- *
- * @covers \TsmlForUnity\Meetings\TsmlMeetingRepository
  */
+#[CoversClass(\TsmlForUnity\Meetings\TsmlMeetingRepository::class)]
 class TsmlMeetingRepositoryTest extends TestCase
 {
-    /** @var MeetingFactory&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var MeetingFactory&MockObject */
     private $factory;
 
     private TsmlMeetingRepository $repository;
@@ -60,7 +62,7 @@ class TsmlMeetingRepositoryTest extends TestCase
     /** Stub get_posts(), capturing the arguments it was called with. */
     private function stubGetPosts(array $posts): void
     {
-        Functions\expect('get_posts')->andReturnUsing(function (array $args) use ($posts): array {
+        expect('get_posts')->andReturnUsing(function (array $args) use ($posts): array {
             $this->capturedArgs = $args;
 
             return $posts;
@@ -69,7 +71,7 @@ class TsmlMeetingRepositoryTest extends TestCase
 
     private function stubPostMeta(array $meta = []): void
     {
-        Functions\expect('get_post_meta')->andReturn($meta);
+        expect('get_post_meta')->andReturn($meta);
     }
 
     private function meeting(bool $online = false): Meeting
@@ -80,25 +82,24 @@ class TsmlMeetingRepositoryTest extends TestCase
         return $meeting;
     }
 
-    /** @test */
+    #[Test]
     public function it_implements_the_repository_interface(): void
     {
         $this->assertInstanceOf(MeetingRepository::class, $this->repository);
     }
 
     // ─── findById ───────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function find_by_id_rejects_a_non_positive_id_without_touching_wordpress(): void
     {
         $this->assertNull($this->repository->findById(0));
         $this->assertNull($this->repository->findById(-1));
     }
 
-    /** @test */
+    #[Test]
     public function find_by_id_builds_a_meeting_from_the_post(): void
     {
-        Functions\expect('get_post')->andReturn($this->post(7));
+        expect('get_post')->andReturn($this->post(7));
         $this->stubPostMeta(['day' => ['2'], 'group_id' => ['99']]);
 
         $expected = $this->meeting();
@@ -121,23 +122,23 @@ class TsmlMeetingRepositoryTest extends TestCase
         $this->assertSame($expected, $this->repository->findById(7));
     }
 
-    /** @test */
+    #[Test]
     public function find_by_id_returns_null_when_the_post_is_missing(): void
     {
-        Functions\expect('get_post')->andReturn(null);
+        expect('get_post')->andReturn(null);
 
         $this->assertNull($this->repository->findById(7));
     }
 
-    /** @test */
+    #[Test]
     public function find_by_id_returns_null_for_a_post_of_the_wrong_type(): void
     {
-        Functions\expect('get_post')->andReturn($this->post(7, 'page'));
+        expect('get_post')->andReturn($this->post(7, 'page'));
 
         $this->assertNull($this->repository->findById(7));
     }
 
-    /** @test */
+    #[Test]
     public function it_caches_nothing_of_its_own(): void
     {
         // It used to hold an hour-long cache that nothing ever invalidated,
@@ -145,7 +146,7 @@ class TsmlMeetingRepositoryTest extends TestCase
         // object cache made entries outlive the request. Caching now lives in
         // Unity's CachingMeetingRepository, which wraps this one and is
         // cleared by PostTypeCacheInvalidator.
-        Functions\expect('get_post')->twice()->andReturn($this->post(7));
+        expect('get_post')->twice()->andReturn($this->post(7));
         $this->stubPostMeta();
         $this->factory->method('createFromSource')->willReturn($this->meeting());
 
@@ -154,8 +155,7 @@ class TsmlMeetingRepositoryTest extends TestCase
     }
 
     // ─── findAll ────────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function find_all_applies_the_documented_defaults(): void
     {
         $this->stubGetPosts([]);
@@ -169,7 +169,7 @@ class TsmlMeetingRepositoryTest extends TestCase
         $this->assertSame('ASC', $this->capturedArgs['order']);
     }
 
-    /** @test */
+    #[Test]
     public function caller_arguments_override_the_defaults(): void
     {
         $this->stubGetPosts([]);
@@ -180,7 +180,7 @@ class TsmlMeetingRepositoryTest extends TestCase
         $this->assertSame('DESC', $this->capturedArgs['order']);
     }
 
-    /** @test */
+    #[Test]
     public function find_all_builds_a_meeting_for_every_post(): void
     {
         $this->stubGetPosts([$this->post(1), $this->post(2)]);
@@ -190,7 +190,7 @@ class TsmlMeetingRepositoryTest extends TestCase
         $this->assertCount(2, $this->repository->findAll());
     }
 
-    /** @test */
+    #[Test]
     public function posts_the_factory_rejects_are_skipped(): void
     {
         $this->stubGetPosts([$this->post(1), $this->post(2)]);
@@ -203,8 +203,7 @@ class TsmlMeetingRepositoryTest extends TestCase
     }
 
     // ─── findByDay ──────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function find_by_day_adds_a_day_meta_query(): void
     {
         $this->stubGetPosts([]);
@@ -218,7 +217,7 @@ class TsmlMeetingRepositoryTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function find_by_day_ands_itself_onto_an_existing_meta_query(): void
     {
         $this->stubGetPosts([]);
@@ -231,7 +230,7 @@ class TsmlMeetingRepositoryTest extends TestCase
         $this->assertCount(3, $this->capturedArgs['meta_query'], 'existing clause + relation + day');
     }
 
-    /** @test */
+    #[Test]
     public function find_by_day_leaves_an_explicit_relation_alone(): void
     {
         $this->stubGetPosts([]);
@@ -244,8 +243,7 @@ class TsmlMeetingRepositoryTest extends TestCase
     }
 
     // ─── online / in person ─────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function find_online_keeps_only_online_meetings(): void
     {
         $this->stubGetPosts([$this->post(1), $this->post(2), $this->post(3)]);
@@ -263,7 +261,7 @@ class TsmlMeetingRepositoryTest extends TestCase
         $this->assertSame([0, 1], array_keys($online));
     }
 
-    /** @test */
+    #[Test]
     public function find_in_person_keeps_only_the_meetings_that_are_not_online(): void
     {
         $this->stubGetPosts([$this->post(1), $this->post(2)]);
@@ -280,8 +278,7 @@ class TsmlMeetingRepositoryTest extends TestCase
     }
 
     // ─── findByGroupId / findByLocationId ───────────────────────────
-
-    /** @test */
+    #[Test]
     public function find_by_group_id_adds_a_group_meta_query(): void
     {
         $this->stubGetPosts([]);
@@ -294,14 +291,14 @@ class TsmlMeetingRepositoryTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function find_by_group_id_rejects_a_non_positive_id(): void
     {
         $this->assertSame([], $this->repository->findByGroupId(0));
         $this->assertSame([], $this->repository->findByGroupId(-5));
     }
 
-    /** @test */
+    #[Test]
     public function find_by_location_id_adds_a_location_meta_query(): void
     {
         $this->stubGetPosts([]);
@@ -314,7 +311,7 @@ class TsmlMeetingRepositoryTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function find_by_location_id_rejects_a_non_positive_id(): void
     {
         $this->assertSame([], $this->repository->findByLocationId(0));
@@ -322,8 +319,7 @@ class TsmlMeetingRepositoryTest extends TestCase
     }
 
     // ─── search ─────────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function search_passes_the_keyword_through_as_a_post_search(): void
     {
         $this->stubGetPosts([]);
@@ -333,15 +329,14 @@ class TsmlMeetingRepositoryTest extends TestCase
         $this->assertSame('serenity', $this->capturedArgs['s']);
     }
 
-    /** @test */
+    #[Test]
     public function an_empty_search_returns_nothing_without_querying(): void
     {
         $this->assertSame([], $this->repository->search(''));
     }
 
     // ─── count ──────────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function count_asks_only_for_ids_and_returns_the_total(): void
     {
         $this->stubGetPosts([1, 2, 3, 4]);
@@ -352,7 +347,7 @@ class TsmlMeetingRepositoryTest extends TestCase
         $this->assertSame(-1, $this->capturedArgs['posts_per_page']);
     }
 
-    /** @test */
+    #[Test]
     public function count_honours_caller_arguments(): void
     {
         $this->stubGetPosts([1]);

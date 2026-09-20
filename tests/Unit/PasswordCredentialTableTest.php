@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use function Brain\Monkey\Functions\when;
 use TsmlForUnity\Auth\TsmlPasswordCredentialTable;
 use TsmlForUnity\Tests\Support\WpdbStub;
 use TsmlForUnity\Tests\TestCase;
@@ -22,9 +24,8 @@ use TsmlForUnity\Tests\TestCase;
  * copy has to be ordered by <code>updated_at</code> rather than by
  * whichever table happens to be read second, and it must never destroy
  * what it read.</p>
- *
- * @covers \TsmlForUnity\Auth\TsmlPasswordCredentialTable
  */
+#[CoversClass(\TsmlForUnity\Auth\TsmlPasswordCredentialTable::class)]
 class PasswordCredentialTableTest extends TestCase
 {
     private WpdbStub $wpdb;
@@ -45,16 +46,16 @@ class PasswordCredentialTableTest extends TestCase
         $GLOBALS['tsml_test_dbdelta'] = [];
         $this->options = [];
 
-        Functions\when('esc_sql')->returnArg();
-        Functions\when('get_option')
+        when('esc_sql')->returnArg();
+        when('get_option')
             ->alias(fn (string $name, $default = false) => $this->options[$name] ?? $default);
-        Functions\when('update_option')
+        when('update_option')
             ->alias(function (string $name, $value): bool {
                 $this->options[$name] = $value;
 
                 return true;
             });
-        Functions\when('delete_option')
+        when('delete_option')
             ->alias(function (string $name): bool {
                 unset($this->options[$name]);
 
@@ -86,13 +87,13 @@ class PasswordCredentialTableTest extends TestCase
         ));
     }
 
-    /** @test */
+    #[Test]
     public function the_table_name_is_prefixed(): void
     {
         $this->assertSame('wp_unity_credentials', TsmlPasswordCredentialTable::getTableName());
     }
 
-    /** @test */
+    #[Test]
     public function it_creates_the_table_keyed_on_the_address(): void
     {
         TsmlPasswordCredentialTable::createTable();
@@ -107,9 +108,8 @@ class PasswordCredentialTableTest extends TestCase
     /**
      * Only hashes. A database dump alone must yield neither a usable
      * password nor a usable reset link.
-     *
-     * @test
      */
+    #[Test]
     public function the_schema_holds_no_raw_secret(): void
     {
         TsmlPasswordCredentialTable::createTable();
@@ -122,7 +122,7 @@ class PasswordCredentialTableTest extends TestCase
         $this->assertStringNotContainsString('reset_token VARCHAR', $ddl);
     }
 
-    /** @test */
+    #[Test]
     public function creating_records_the_schema_version(): void
     {
         TsmlPasswordCredentialTable::createTable();
@@ -135,9 +135,8 @@ class PasswordCredentialTableTest extends TestCase
 
     /**
      * The gate. This runs on every load.
-     *
-     * @test
      */
+    #[Test]
     public function an_upgrade_is_skipped_when_the_version_matches(): void
     {
         $this->options[TsmlPasswordCredentialTable::DB_VERSION_OPTION] = TsmlPasswordCredentialTable::DB_VERSION;
@@ -147,7 +146,7 @@ class PasswordCredentialTableTest extends TestCase
         $this->assertSame([], $GLOBALS['tsml_test_dbdelta']);
     }
 
-    /** @test */
+    #[Test]
     public function an_upgrade_runs_when_the_version_differs(): void
     {
         $this->options[TsmlPasswordCredentialTable::DB_VERSION_OPTION] = '0.9';
@@ -161,9 +160,8 @@ class PasswordCredentialTableTest extends TestCase
      * A fresh site, or one that only ever ran Fellowship, has one or
      * neither of the old tables. A missing one is silence, not a failure,
      * and must not produce a copy against a table that is not there.
-     *
-     * @test
      */
+    #[Test]
     public function it_copies_nothing_when_there_is_nothing_to_copy(): void
     {
         $this->wpdb->nextVar = null;
@@ -173,7 +171,7 @@ class PasswordCredentialTableTest extends TestCase
         $this->assertSame([], $this->copies());
     }
 
-    /** @test */
+    #[Test]
     public function it_copies_from_an_old_table_that_exists(): void
     {
         // SHOW TABLES LIKE answers the name it was asked about.
@@ -192,9 +190,8 @@ class PasswordCredentialTableTest extends TestCase
      * with the tables swapped reaches the same answer. A member who set a
      * password in Reach and later in Fellowship holds two hashes, and
      * only one of them is the password they believe they have.
-     *
-     * @test
      */
+    #[Test]
     public function the_newer_password_wins(): void
     {
         $this->wpdb->nextVar = 'wp_reach_credentials';
@@ -218,9 +215,8 @@ class PasswordCredentialTableTest extends TestCase
      * This is the only copy of some members' passwords, and the upgrade
      * runs unattended on a page load. A bad one that has also destroyed
      * its source is not recoverable.
-     *
-     * @test
      */
+    #[Test]
     public function it_never_drops_the_tables_it_read(): void
     {
         $this->wpdb->nextVar = 'wp_reach_credentials';
@@ -237,9 +233,8 @@ class PasswordCredentialTableTest extends TestCase
 
     /**
      * Dropping is only ever the uninstall path, and it is explicit.
-     *
-     * @test
      */
+    #[Test]
     public function dropping_removes_the_table_and_forgets_the_version(): void
     {
         $this->options[TsmlPasswordCredentialTable::DB_VERSION_OPTION] = TsmlPasswordCredentialTable::DB_VERSION;

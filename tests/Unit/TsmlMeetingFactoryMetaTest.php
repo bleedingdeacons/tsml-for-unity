@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\Meetings\TsmlMeetingFactory;
 use TsmlForUnity\Tests\TestCase;
 
@@ -21,9 +24,8 @@ use TsmlForUnity\Tests\TestCase;
  * then the class name as a last resort), so each is exercised here: a
  * regression would otherwise surface as an object leaking into a value that
  * downstream code expects to be scalar.
- *
- * @covers \TsmlForUnity\Meetings\TsmlMeetingFactory
  */
+#[CoversClass(\TsmlForUnity\Meetings\TsmlMeetingFactory::class)]
 class TsmlMeetingFactoryMetaTest extends TestCase
 {
     private TsmlMeetingFactory $factory;
@@ -32,17 +34,17 @@ class TsmlMeetingFactoryMetaTest extends TestCase
     {
         parent::setUp();
 
-        Functions\expect('get_permalink')->andReturn('https://example.test/m/1');
-        Functions\expect('get_post_status')->andReturn('publish');
-        Functions\expect('get_post')
+        expect('get_permalink')->andReturn('https://example.test/m/1');
+        expect('get_post_status')->andReturn('publish');
+        expect('get_post')
             ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
-        Functions\expect('get_post_meta')->andReturn('');
+        expect('get_post_meta')->andReturn('');
 
         // Mirror WordPress's real serialization helpers so the branch the
         // factory takes is decided by the data, not by the stub.
-        Functions\expect('is_serialized')
+        expect('is_serialized')
             ->andReturnUsing(static fn ($v): bool => is_string($v) && @unserialize($v) !== false);
-        Functions\expect('maybe_unserialize')
+        expect('maybe_unserialize')
             ->andReturnUsing(static function ($v) {
                 if (!is_string($v)) {
                     return $v;
@@ -61,7 +63,7 @@ class TsmlMeetingFactoryMetaTest extends TestCase
      */
     private function meetingWithMeta(array $meta): ?object
     {
-        Functions\expect('get_post_custom')->andReturn($meta);
+        expect('get_post_custom')->andReturn($meta);
 
         return $this->factory->createFromSource([
             'id'       => 1,
@@ -72,13 +74,13 @@ class TsmlMeetingFactoryMetaTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function plain_scalar_meta_is_passed_through_untouched(): void
     {
         $this->assertNotNull($this->meetingWithMeta(['note' => ['just a string']]));
     }
 
-    /** @test */
+    #[Test]
     public function a_serialized_array_is_unserialized(): void
     {
         $this->assertNotNull($this->meetingWithMeta([
@@ -86,7 +88,7 @@ class TsmlMeetingFactoryMetaTest extends TestCase
         ]));
     }
 
-    /** @test */
+    #[Test]
     public function a_serialized_scalar_is_unserialized(): void
     {
         $this->assertNotNull($this->meetingWithMeta([
@@ -94,7 +96,7 @@ class TsmlMeetingFactoryMetaTest extends TestCase
         ]));
     }
 
-    /** @test */
+    #[Test]
     public function an_object_with_an_uppercase_id_property_is_reduced_to_that_id(): void
     {
         // The WP_Post shape: a public ID property.
@@ -104,7 +106,7 @@ class TsmlMeetingFactoryMetaTest extends TestCase
         $this->assertNotNull($this->meetingWithMeta(['linked' => [serialize($obj)]]));
     }
 
-    /** @test */
+    #[Test]
     public function an_object_with_a_lowercase_id_property_is_reduced_to_that_id(): void
     {
         $obj = new \stdClass();
@@ -113,7 +115,7 @@ class TsmlMeetingFactoryMetaTest extends TestCase
         $this->assertNotNull($this->meetingWithMeta(['linked' => [serialize($obj)]]));
     }
 
-    /** @test */
+    #[Test]
     public function an_object_exposing_get_id_is_reduced_through_it(): void
     {
         $this->assertNotNull($this->meetingWithMeta([
@@ -121,7 +123,7 @@ class TsmlMeetingFactoryMetaTest extends TestCase
         ]));
     }
 
-    /** @test */
+    #[Test]
     public function an_object_exposing_get_id_snake_case_is_reduced_through_it(): void
     {
         $this->assertNotNull($this->meetingWithMeta([
@@ -129,7 +131,7 @@ class TsmlMeetingFactoryMetaTest extends TestCase
         ]));
     }
 
-    /** @test */
+    #[Test]
     public function an_object_with_no_identifier_falls_back_to_its_class_name(): void
     {
         $this->assertNotNull($this->meetingWithMeta([
@@ -137,7 +139,7 @@ class TsmlMeetingFactoryMetaTest extends TestCase
         ]));
     }
 
-    /** @test */
+    #[Test]
     public function objects_nested_inside_a_serialized_array_are_reduced_too(): void
     {
         // The recursive path: objects buried in a nested structure must be
@@ -157,10 +159,9 @@ class TsmlMeetingFactoryMetaTest extends TestCase
     /**
      * The recursive reducer tries the same strategies as the top-level one,
      * in the same order, so each is driven through a nested structure too.
-     *
-     * @test
-     * @dataProvider nestedObjectProvider
      */
+    #[DataProvider('nestedObjectProvider')]
+    #[Test]
     public function each_identifier_strategy_works_on_a_nested_object(object $nestedObject): void
     {
         $this->assertNotNull($this->meetingWithMeta([
@@ -186,7 +187,7 @@ class TsmlMeetingFactoryMetaTest extends TestCase
         ];
     }
 
-    /** @test */
+    #[Test]
     public function meta_survives_when_serialization_helpers_are_missing(): void
     {
         // processMeta() bails out and returns the meta untouched rather than

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Locations\TsmlLocation;
 use TsmlForUnity\Meetings\TsmlMeeting;
@@ -11,22 +13,17 @@ use Unity\Meetings\Interfaces\Meeting;
 
 /**
  * Tests for TsmlMeeting entity
- *
- * @covers \TsmlForUnity\Meetings\TsmlMeeting
  */
+#[CoversClass(\TsmlForUnity\Meetings\TsmlMeeting::class)]
 class TsmlMeetingTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_meeting_interface(): void
     {
         $this->assertInstanceOf(Meeting::class, $this->minimalMeeting());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_exposes_every_required_field(): void
     {
         $location = new TsmlLocation(id: 3, name: 'Hall');
@@ -70,9 +67,7 @@ class TsmlMeetingTest extends TestCase
         $this->assertSame('2026-06-01 10:00:00', $meeting->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function optional_trailing_fields_default_to_empty(): void
     {
         $meeting = $this->minimalMeeting();
@@ -84,17 +79,13 @@ class TsmlMeetingTest extends TestCase
         $this->assertSame('', $meeting->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function location_may_be_null(): void
     {
         $this->assertNull($this->minimalMeeting()->getLocation());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function offline_meeting_reports_not_online(): void
     {
         $this->assertFalse($this->minimalMeeting()->isOnline());

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use function Brain\Monkey\Functions\expect;
 use Exception;
 use TsmlForUnity\Groups\TsmlGroupFactory;
 use TsmlForUnity\Groups\TsmlGroupFields;
@@ -24,9 +26,8 @@ use Unity\Meetings\Interfaces\MeetingRepository;
  * The meeting lookup is also allowed to fail — the repository is optional
  * and may throw — and a group must still be built rather than the whole
  * page dying because one lookup went wrong.
- *
- * @covers \TsmlForUnity\Groups\TsmlGroupFactory
  */
+#[CoversClass(\TsmlForUnity\Groups\TsmlGroupFactory::class)]
 class TsmlGroupFactoryMeetingsTest extends TestCase
 {
     private const GROUP_ID = 42;
@@ -35,15 +36,15 @@ class TsmlGroupFactoryMeetingsTest extends TestCase
     {
         parent::setUp();
 
-        Functions\expect('get_post')->andReturn((object) [
+        expect('get_post')->andReturn((object) [
             'ID'          => self::GROUP_ID,
             'post_title'  => 'Tuesday Group',
             'post_type'   => TsmlGroupFields::POST_TYPE,
             'post_status' => 'publish',
             'post_content' => '',
         ]);
-        Functions\expect('get_post_custom')->andReturn([]);
-        Functions\expect('get_permalink')->andReturn('https://example.test/group/42');
+        expect('get_post_custom')->andReturn([]);
+        expect('get_permalink')->andReturn('https://example.test/group/42');
     }
 
     private function contact(string $name, string $email = '', string $phone = ''): Contact
@@ -71,7 +72,7 @@ class TsmlGroupFactoryMeetingsTest extends TestCase
         return new TsmlGroupFactory(null, $repository);
     }
 
-    /** @test */
+    #[Test]
     public function contacts_from_meetings_are_added_to_the_group(): void
     {
         $repository = $this->createMock(MeetingRepository::class);
@@ -86,7 +87,7 @@ class TsmlGroupFactoryMeetingsTest extends TestCase
         $this->assertContains('Alex', $names);
     }
 
-    /** @test */
+    #[Test]
     public function the_same_contact_on_two_meetings_appears_once(): void
     {
         $repository = $this->createMock(MeetingRepository::class);
@@ -102,7 +103,7 @@ class TsmlGroupFactoryMeetingsTest extends TestCase
         $this->assertCount(1, $names, 'Matching contacts collapse to one entry.');
     }
 
-    /** @test */
+    #[Test]
     public function an_entirely_empty_meeting_contact_is_skipped(): void
     {
         $repository = $this->createMock(MeetingRepository::class);
@@ -119,7 +120,7 @@ class TsmlGroupFactoryMeetingsTest extends TestCase
         $this->assertSame(['Sam'], $names, 'A blank contact row is not a contact.');
     }
 
-    /** @test */
+    #[Test]
     public function distinct_meeting_contacts_are_all_kept(): void
     {
         $repository = $this->createMock(MeetingRepository::class);
@@ -135,7 +136,7 @@ class TsmlGroupFactoryMeetingsTest extends TestCase
         $this->assertCount(2, $group->getContacts());
     }
 
-    /** @test */
+    #[Test]
     public function a_group_is_still_built_without_a_meeting_repository(): void
     {
         // No repository at all: the group has no meetings, but must exist.
@@ -145,7 +146,7 @@ class TsmlGroupFactoryMeetingsTest extends TestCase
         $this->assertSame([], $group->getMeetings());
     }
 
-    /** @test */
+    #[Test]
     public function a_failing_meeting_lookup_leaves_the_group_without_meetings(): void
     {
         $repository = $this->createMock(MeetingRepository::class);
@@ -157,7 +158,7 @@ class TsmlGroupFactoryMeetingsTest extends TestCase
         $this->assertSame([], $group->getMeetings());
     }
 
-    /** @test */
+    #[Test]
     public function meetings_returned_by_the_repository_are_attached_to_the_group(): void
     {
         $repository = $this->createMock(MeetingRepository::class);

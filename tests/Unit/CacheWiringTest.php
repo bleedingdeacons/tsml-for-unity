@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Meetings\TsmlMeetingFields;
 use TsmlForUnity\Meetings\TsmlMeetingRepository;
 use TsmlForUnity\Members\TsmlMemberFields;
@@ -27,9 +29,8 @@ use Unity\Testing\Doubles\InMemoryCache;
  * there is a cache to wrap it with, and the invalidator is hooked so that a
  * member edited anywhere — the ACF screen, Reconcile, Scrutiny's pruner —
  * drops out of it.
- *
- * @covers \TsmlForUnity\Plugin
  */
+#[CoversClass(\TsmlForUnity\Plugin::class)]
 class CacheWiringTest extends TestCase
 {
     private FakeContainer $container;
@@ -56,9 +57,7 @@ class CacheWiringTest extends TestCase
         parent::tearDown();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function the_member_repository_is_wrapped_when_a_cache_is_available(): void
     {
         $this->container->prime(Cache::class, new InMemoryCache());
@@ -68,9 +67,7 @@ class CacheWiringTest extends TestCase
         $this->assertInstanceOf(CachingMemberRepository::class, $this->container->get(MemberRepository::class));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function the_bare_repository_is_registered_when_there_is_no_cache(): void
     {
         Plugin::registerWithUnity($this->container);
@@ -83,9 +80,7 @@ class CacheWiringTest extends TestCase
         $this->assertNotInstanceOf(CachingMemberRepository::class, $repository);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function the_invalidator_hooks_the_post_and_meta_actions_when_caching(): void
     {
         $this->container->prime(Cache::class, new InMemoryCache());
@@ -102,9 +97,7 @@ class CacheWiringTest extends TestCase
         $this->assertActionAdded('deleted_post_meta');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function nothing_is_hooked_when_the_repository_is_not_caching(): void
     {
         Plugin::registerWithUnity($this->container);
@@ -117,9 +110,7 @@ class CacheWiringTest extends TestCase
         $this->assertActionNotAdded('save_post_' . TsmlMemberFields::POST_TYPE);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function nothing_is_hooked_when_no_member_repository_is_registered(): void
     {
         Plugin::registerMemberCacheInvalidator($this->container);
@@ -127,9 +118,7 @@ class CacheWiringTest extends TestCase
         $this->assertActionNotAdded('updated_post_meta');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function the_meeting_repository_is_wrapped_when_a_cache_is_available(): void
     {
         $this->container->prime(Cache::class, new InMemoryCache());
@@ -139,9 +128,7 @@ class CacheWiringTest extends TestCase
         $this->assertInstanceOf(CachingMeetingRepository::class, $this->container->get(MeetingRepository::class));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function the_bare_meeting_repository_is_registered_when_there_is_no_cache(): void
     {
         Plugin::registerWithUnity($this->container);
@@ -152,9 +139,7 @@ class CacheWiringTest extends TestCase
         $this->assertNotInstanceOf(CachingMeetingRepository::class, $repository);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function the_meeting_invalidator_hooks_the_meeting_post_type(): void
     {
         $this->container->prime(Cache::class, new InMemoryCache());
@@ -172,9 +157,7 @@ class CacheWiringTest extends TestCase
         $this->assertActionAdded('save_post_' . TsmlMemberFields::POST_TYPE);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function no_meeting_hooks_without_a_cache(): void
     {
         Plugin::registerWithUnity($this->container);

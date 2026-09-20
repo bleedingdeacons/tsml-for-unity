@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\Groups\TsmlGroup;
 use TsmlForUnity\Groups\TsmlGroupFields;
 use TsmlForUnity\Groups\TsmlGroupRepository;
@@ -21,12 +24,11 @@ use Unity\Meetings\Interfaces\Meeting;
  * and update() have to bridge that gap. These tests pin the translation
  * down in both paths, because a regression there is silent — update_field()
  * accepts whatever it is handed.
- *
- * @covers \TsmlForUnity\Groups\TsmlGroupRepository
  */
+#[CoversClass(\TsmlForUnity\Groups\TsmlGroupRepository::class)]
 class TsmlGroupRepositoryTest extends TestCase
 {
-    /** @var GroupFactory&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var GroupFactory&MockObject */
     private $factory;
 
     private TsmlGroupRepository $repository;
@@ -43,7 +45,7 @@ class TsmlGroupRepositoryTest extends TestCase
      * Helper: a Meeting that knows only its ID — the sole property the
      * repository reads when building the MEETING field.
      *
-     * @return Meeting&\PHPUnit\Framework\MockObject\MockObject
+     * @return Meeting&MockObject
      */
     private function meetingWithId(int $id)
     {
@@ -62,7 +64,7 @@ class TsmlGroupRepositoryTest extends TestCase
      * regardless of what any one implementation ties together.
      *
      * @param Meeting[] $meetings
-     * @return Group&\PHPUnit\Framework\MockObject\MockObject
+     * @return Group&MockObject
      */
     private function groupWith(int $id, array $meetings, bool $valid = true, string $title = 'Tuesday Big Book')
     {
@@ -84,7 +86,7 @@ class TsmlGroupRepositoryTest extends TestCase
      */
     private function captureUpdateField(string $field, &$captured): void
     {
-        Functions\expect('update_field')
+        expect('update_field')
             ->withArgs(function ($key) use ($field) {
                 return $key === $field;
             })
@@ -94,17 +96,15 @@ class TsmlGroupRepositoryTest extends TestCase
             });
 
         // The other fields in the same save are not under test.
-        Functions\expect('update_field')->andReturn(true);
+        expect('update_field')->andReturn(true);
     }
 
     // ─── save() insert path writes meeting IDs ──────────────────────
-
     /**
      * Reaching the insert branch needs getId() === 0 — otherwise save()
      * delegates to update() — *and* isValid() === true.
-     *
-     * @test
      */
+    #[Test]
     public function save_insert_writes_meeting_ids_not_meeting_objects(): void
     {
         $newPostId = 4242;
@@ -116,7 +116,7 @@ class TsmlGroupRepositoryTest extends TestCase
             $this->meetingWithId(202),
         ]);
 
-        Functions\expect('wp_insert_post')->once()->andReturn($newPostId);
+        expect('wp_insert_post')->once()->andReturn($newPostId);
 
         $written = null;
         $this->captureUpdateField(TsmlGroupFields::MEETING, $written);
@@ -127,12 +127,10 @@ class TsmlGroupRepositoryTest extends TestCase
         $this->assertSame([200, 201, 202], $written);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function save_insert_writes_empty_array_when_group_has_no_meetings(): void
     {
-        Functions\expect('wp_insert_post')->once()->andReturn(4242);
+        expect('wp_insert_post')->once()->andReturn(4242);
 
         $written = null;
         $this->captureUpdateField(TsmlGroupFields::MEETING, $written);
@@ -141,9 +139,7 @@ class TsmlGroupRepositoryTest extends TestCase
         $this->assertSame([], $written);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function save_returns_false_for_invalid_group_without_inserting(): void
     {
         // No wp_insert_post expectation: a call would fail the test.
@@ -152,15 +148,13 @@ class TsmlGroupRepositoryTest extends TestCase
         $this->assertFalse($this->repository->save($group));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function save_returns_false_when_wp_insert_post_fails(): void
     {
         $group = $this->groupWith(0, [$this->meetingWithId(200)]);
 
         $error = new \WP_Error('db_error', 'the write failed');
-        Functions\expect('wp_insert_post')->once()->andReturn($error);
+        expect('wp_insert_post')->once()->andReturn($error);
 
         // No update_field expectation: the failure returns before any writes.
 
@@ -168,22 +162,20 @@ class TsmlGroupRepositoryTest extends TestCase
     }
 
     // ─── save() insert path accepts a real, unsaved TsmlGroup ───────
-
     /**
      * The insert tests above stub isValid() independently of the ID, so
      * they stayed green while no real TsmlGroup could reach the insert
      * branch at all: validity demanded id > 0, the branch demanded id 0.
      * These two pin the concrete class to the reachable combination.
-     *
-     * @test
      */
+    #[Test]
     public function save_inserts_a_new_unsaved_tsml_group(): void
     {
         $group = new TsmlGroup(0, 'Brand New Group');
 
         $this->assertTrue($group->isValid(), 'A titled, unsaved group must be valid');
 
-        Functions\expect('wp_insert_post')->once()->andReturn(4242);
+        expect('wp_insert_post')->once()->andReturn(4242);
 
         $written = null;
         $this->captureUpdateField(TsmlGroupFields::TITLE, $written);
@@ -192,9 +184,7 @@ class TsmlGroupRepositoryTest extends TestCase
         $this->assertSame('Brand New Group', $written);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function save_rejects_a_new_tsml_group_with_no_title(): void
     {
         // No wp_insert_post expectation: a titleless group must not insert.
@@ -202,10 +192,7 @@ class TsmlGroupRepositoryTest extends TestCase
     }
 
     // ─── update() path writes meeting IDs ───────────────────────────
-
-    /**
-     * @test
-     */
+    #[Test]
     public function update_writes_meeting_ids_not_meeting_objects(): void
     {
         $postId = 4242;
@@ -215,7 +202,7 @@ class TsmlGroupRepositoryTest extends TestCase
             $this->meetingWithId(301),
         ]);
 
-        Functions\expect('wp_update_post')->once()->andReturn($postId);
+        expect('wp_update_post')->once()->andReturn($postId);
 
         $written = null;
         $this->captureUpdateField(TsmlGroupFields::MEETING, $written);
@@ -226,9 +213,7 @@ class TsmlGroupRepositoryTest extends TestCase
         $this->assertSame([300, 301], $written);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function save_with_existing_id_delegates_to_update_and_writes_meeting_ids(): void
     {
         // save() with id > 0 must delegate to update() — observed via
@@ -237,7 +222,7 @@ class TsmlGroupRepositoryTest extends TestCase
 
         $group = $this->groupWith($postId, [$this->meetingWithId(300)]);
 
-        Functions\expect('wp_update_post')->once()->andReturn($postId);
+        expect('wp_update_post')->once()->andReturn($postId);
 
         $written = null;
         $this->captureUpdateField(TsmlGroupFields::MEETING, $written);
@@ -246,9 +231,7 @@ class TsmlGroupRepositoryTest extends TestCase
         $this->assertSame([300], $written);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function update_returns_false_for_zero_post_id_without_writing(): void
     {
         // Zero ID never reaches wp_update_post or update_field.
@@ -257,9 +240,7 @@ class TsmlGroupRepositoryTest extends TestCase
         $this->assertFalse($this->repository->update($group));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function update_returns_false_when_wp_update_post_fails(): void
     {
         $postId = 4242;
@@ -267,7 +248,7 @@ class TsmlGroupRepositoryTest extends TestCase
         $group = $this->groupWith($postId, [$this->meetingWithId(300)]);
 
         $error = new \WP_Error('db_error', 'the write failed');
-        Functions\expect('wp_update_post')->once()->andReturn($error);
+        expect('wp_update_post')->once()->andReturn($error);
 
         $this->assertFalse($this->repository->update($group));
     }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Groups\TsmlGroup;
 use TsmlForUnity\Groups\TsmlGroupViewFactory;
@@ -14,14 +16,11 @@ use Unity\Members\Interfaces\MemberRepository;
 
 /**
  * Tests for TsmlGroupViewFactory
- *
- * @covers \TsmlForUnity\Groups\TsmlGroupViewFactory
  */
+#[CoversClass(\TsmlForUnity\Groups\TsmlGroupViewFactory::class)]
 class TsmlGroupViewFactoryTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_the_factory_interface(): void
     {
         $factory = new TsmlGroupViewFactory(
@@ -32,9 +31,7 @@ class TsmlGroupViewFactoryTest extends TestCase
         $this->assertInstanceOf(GroupViewFactory::class, $factory);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_from_returns_null_for_a_missing_group(): void
     {
         $groups = $this->createMock(GroupRepository::class);
@@ -45,9 +42,7 @@ class TsmlGroupViewFactoryTest extends TestCase
         $this->assertNull($factory->createFrom(99));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_from_attaches_only_members_whose_home_group_matches(): void
     {
         $group = new TsmlGroup(
@@ -78,9 +73,7 @@ class TsmlGroupViewFactoryTest extends TestCase
         $this->assertSame([$inGroup], $view->getMembers());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_from_yields_no_members_when_none_match(): void
     {
         $group = new TsmlGroup(id: 10, title: 'Lonely Group');

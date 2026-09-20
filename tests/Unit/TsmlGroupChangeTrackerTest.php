@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Actions;
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
+use function Brain\Monkey\Actions\expectDone;
 use TsmlForUnity\Contacts\TsmlContact;
 use TsmlForUnity\Groups\TsmlGroup;
 use TsmlForUnity\Groups\TsmlGroupChangeTracker;
@@ -21,14 +25,13 @@ use Unity\Meetings\Interfaces\Meeting;
  * Covers the acf/save_post capture→check pair, the delete and hide hooks,
  * and the field-by-field diff in hasGroupChanged (including meeting-id and
  * contact comparisons).
- *
- * @covers \TsmlForUnity\Groups\TsmlGroupChangeTracker
  */
+#[CoversClass(\TsmlForUnity\Groups\TsmlGroupChangeTracker::class)]
 class TsmlGroupChangeTrackerTest extends TestCase
 {
     use ActionExpectations;
 
-    /** @var GroupRepository&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var GroupRepository&MockObject */
     private $repository;
 
     private TsmlGroupChangeTracker $tracker;
@@ -53,14 +56,14 @@ class TsmlGroupChangeTrackerTest extends TestCase
 
     private function stubPostTypeGuard(int $postId): void
     {
-        Functions\expect('get_post_type')
+        expect('get_post_type')
             ->with($postId)
             ->andReturn(TsmlGroupFields::POST_TYPE);
     }
 
     private function stubTitleSyncIsNoop(int $postId, string $existingTitle): void
     {
-        Functions\expect('get_post')
+        expect('get_post')
             ->with($postId)
             ->andReturn((object) ['ID' => $postId, 'post_title' => $existingTitle]);
     }
@@ -92,10 +95,7 @@ class TsmlGroupChangeTrackerTest extends TestCase
     }
 
     // ─── capture + check ────────────────────────────────────────────
-
-    /**
-     * @test
-     */
+    #[Test]
     public function editing_a_field_fires_group_changing(): void
     {
         [$original, $updated] = $this->runSave(
@@ -103,17 +103,15 @@ class TsmlGroupChangeTrackerTest extends TestCase
             $this->group(['email' => 'new@example.com'])
         );
 
-        Actions\expectDone('group_before_save')->once()->with(42, $original);
-        Actions\expectDone('unity/group_changing')->once()->with($updated, $original);
-        Actions\expectDone('unity/group_changed')->once()->with(42, $updated, $original);
+        expectDone('group_before_save')->once()->with(42, $original);
+        expectDone('unity/group_changing')->once()->with($updated, $original);
+        expectDone('unity/group_changed')->once()->with(42, $updated, $original);
 
         $this->tracker->captureOriginalGroup(42);
         $this->tracker->checkForChanges(42);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function saving_with_no_change_stays_quiet(): void
     {
         $original = $this->group();
@@ -126,27 +124,23 @@ class TsmlGroupChangeTrackerTest extends TestCase
             ->with(42)
             ->willReturnOnConsecutiveCalls($original, $updated);
 
-        Actions\expectDone('unity/group_changed')->once()->with(42, $updated, $original);
+        expectDone('unity/group_changed')->once()->with(42, $updated, $original);
         $this->expectActionNotFired('unity/group_changing', $updated, $original);
 
         $this->tracker->captureOriginalGroup(42);
         $this->tracker->checkForChanges(42);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function capture_ignores_a_non_group_post_type(): void
     {
-        Functions\expect('get_post_type')->with(99)->andReturn('page');
+        expect('get_post_type')->with(99)->andReturn('page');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->captureOriginalGroup(99);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function check_returns_early_without_a_captured_original(): void
     {
         $this->stubPostTypeGuard(42);
@@ -155,15 +149,13 @@ class TsmlGroupChangeTrackerTest extends TestCase
         $this->tracker->checkForChanges(42);
     }
 
-    /**
-     * @test
-     * @dataProvider changedFieldProvider
-     */
+    #[DataProvider('changedFieldProvider')]
+    #[Test]
     public function each_tracked_field_triggers_a_change(array $originalArgs, array $updatedArgs): void
     {
         [$original, $updated] = $this->runSave($this->group($originalArgs), $this->group($updatedArgs));
 
-        Actions\expectDone('unity/group_changing')->once()->with($updated, $original);
+        expectDone('unity/group_changing')->once()->with($updated, $original);
 
         $this->tracker->captureOriginalGroup(42);
         $this->tracker->checkForChanges(42);
@@ -186,9 +178,7 @@ class TsmlGroupChangeTrackerTest extends TestCase
         ];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function reordered_meeting_ids_are_not_a_change(): void
     {
         $m1 = $this->meeting(1);
@@ -204,15 +194,13 @@ class TsmlGroupChangeTrackerTest extends TestCase
             ->willReturnOnConsecutiveCalls($original, $updated);
 
         $this->expectActionNotFired('unity/group_changing', $updated, $original);
-        Actions\expectDone('unity/group_changed')->once()->with(42, $updated, $original);
+        expectDone('unity/group_changed')->once()->with(42, $updated, $original);
 
         $this->tracker->captureOriginalGroup(42);
         $this->tracker->checkForChanges(42);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function adding_a_meeting_is_a_change(): void
     {
         [$original, $updated] = $this->runSave(
@@ -220,15 +208,13 @@ class TsmlGroupChangeTrackerTest extends TestCase
             $this->group(['meetings' => [$this->meeting(1), $this->meeting(2)]])
         );
 
-        Actions\expectDone('unity/group_changing')->once()->with($updated, $original);
+        expectDone('unity/group_changing')->once()->with($updated, $original);
 
         $this->tracker->captureOriginalGroup(42);
         $this->tracker->checkForChanges(42);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function a_different_contact_is_a_change(): void
     {
         $a = new TsmlContact('Alice', 'alice@example.com', '111');
@@ -239,15 +225,13 @@ class TsmlGroupChangeTrackerTest extends TestCase
             $this->group(['contacts' => [$c]])
         );
 
-        Actions\expectDone('unity/group_changing')->once()->with($updated, $original);
+        expectDone('unity/group_changing')->once()->with($updated, $original);
 
         $this->tracker->captureOriginalGroup(42);
         $this->tracker->checkForChanges(42);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function reordered_contacts_are_not_a_change(): void
     {
         $a = new TsmlContact('Alice', 'alice@example.com', '111');
@@ -263,15 +247,13 @@ class TsmlGroupChangeTrackerTest extends TestCase
             ->willReturnOnConsecutiveCalls($original, $updated);
 
         $this->expectActionNotFired('unity/group_changing', $updated, $original);
-        Actions\expectDone('unity/group_changed')->once()->with(42, $updated, $original);
+        expectDone('unity/group_changed')->once()->with(42, $updated, $original);
 
         $this->tracker->captureOriginalGroup(42);
         $this->tracker->checkForChanges(42);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function a_different_contact_count_is_a_change(): void
     {
         $a = new TsmlContact('Alice', 'alice@example.com', '111');
@@ -282,42 +264,35 @@ class TsmlGroupChangeTrackerTest extends TestCase
             $this->group(['contacts' => [$a, $b]])
         );
 
-        Actions\expectDone('unity/group_changing')->once()->with($updated, $original);
+        expectDone('unity/group_changing')->once()->with($updated, $original);
 
         $this->tracker->captureOriginalGroup(42);
         $this->tracker->checkForChanges(42);
     }
 
     // ─── delete + hide hooks ────────────────────────────────────────
-
-    /**
-     * @test
-     */
+    #[Test]
     public function deleting_a_group_fires_group_deleted_with_the_captured_group(): void
     {
         $group = $this->group();
         $this->stubPostTypeGuard(42);
         $this->repository->expects($this->once())->method('findById')->with(42)->willReturn($group);
 
-        Actions\expectDone('unity/group_deleted')->once()->with(42, $group);
+        expectDone('unity/group_deleted')->once()->with(42, $group);
 
         $this->tracker->onGroupDeleted(42);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function deleting_ignores_a_non_group_post_type(): void
     {
-        Functions\expect('get_post_type')->with(99)->andReturn('post');
+        expect('get_post_type')->with(99)->andReturn('post');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->onGroupDeleted(99);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function deletion_still_fires_with_null_when_the_lookup_throws(): void
     {
         $this->stubPostTypeGuard(42);
@@ -325,28 +300,24 @@ class TsmlGroupChangeTrackerTest extends TestCase
             ->method('findById')
             ->willThrowException(new \RuntimeException('gone'));
 
-        Actions\expectDone('unity/group_deleted')->once()->with(42, null);
+        expectDone('unity/group_deleted')->once()->with(42, null);
 
         $this->tracker->onGroupDeleted(42);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function setting_a_group_to_private_fires_group_hidden(): void
     {
         $group = $this->group();
         $post = $this->wpPost(42);
         $this->repository->expects($this->once())->method('findById')->with(42)->willReturn($group);
 
-        Actions\expectDone('unity/group_hidden')->once()->with(42, $group);
+        expectDone('unity/group_hidden')->once()->with(42, $group);
 
         $this->tracker->onGroupHidden('private', 'publish', $post);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function a_status_change_that_is_not_a_hide_does_nothing(): void
     {
         $post = $this->wpPost(42);
@@ -358,9 +329,7 @@ class TsmlGroupChangeTrackerTest extends TestCase
         $this->tracker->onGroupHidden('private', 'private', $post);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function hiding_ignores_a_non_group_post_type(): void
     {
         $post = $this->wpPost(42, 'post');

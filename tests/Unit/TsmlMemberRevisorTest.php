@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\Test;
 use InvalidArgumentException;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Members\TsmlMember;
@@ -31,17 +32,13 @@ class TsmlMemberRevisorTest extends TestCase
         $this->revisor = new TsmlMemberRevisor();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_the_unity_contract(): void
     {
         $this->assertInstanceOf(MemberRevisor::class, $this->revisor);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_returns_a_member(): void
     {
         $revised = $this->revisor->revise($this->member(), mobileNumber: '07999999999');
@@ -49,9 +46,7 @@ class TsmlMemberRevisorTest extends TestCase
         $this->assertInstanceOf(Member::class, $revised);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function revising_one_field_changes_only_that_field(): void
     {
         $base = $this->member();
@@ -68,9 +63,8 @@ class TsmlMemberRevisorTest extends TestCase
     /**
      * The bug this whole contract exists to make impossible: changing a
      * mobile number must not erase the member's GDPR consent record.
-     *
-     * @test
      */
+    #[Test]
     public function revising_an_unrelated_field_preserves_gdpr_consent(): void
     {
         $revised = $this->revisor->revise($this->member(), mobileNumber: '07999999999');
@@ -86,9 +80,7 @@ class TsmlMemberRevisorTest extends TestCase
         $this->assertEquals(['accepts-male'], $revised->getAccepts());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function revising_nothing_returns_an_equal_member(): void
     {
         $base = $this->member();
@@ -96,9 +88,7 @@ class TsmlMemberRevisorTest extends TestCase
         $this->assertEquals($base->toArray(), $this->revisor->revise($base)->toArray());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_can_revise_several_fields_at_once(): void
     {
         $revised = $this->revisor->revise(
@@ -119,9 +109,8 @@ class TsmlMemberRevisorTest extends TestCase
      * changes are filtered on `!== null`, not on truthiness. If that ever
      * regressed to array_filter()'s default, revising a flag to false or a
      * string to '' would silently do nothing.
-     *
-     * @test
      */
+    #[Test]
     public function falsy_values_are_applied_not_treated_as_absent(): void
     {
         $base = $this->member();
@@ -144,9 +133,7 @@ class TsmlMemberRevisorTest extends TestCase
         $this->assertFalse($revised->isGdprAccepted());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_leaves_the_base_member_untouched(): void
     {
         $base   = $this->member();
@@ -157,9 +144,7 @@ class TsmlMemberRevisorTest extends TestCase
         $this->assertEquals($before, $base->toArray());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function id_and_updated_are_carried_over_and_cannot_be_revised(): void
     {
         $revised = $this->revisor->revise($this->member(), anonymousName: 'Jane B.');
@@ -168,9 +153,7 @@ class TsmlMemberRevisorTest extends TestCase
         $this->assertEquals('2026-04-27 15:45:00', $revised->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function meeting_po_is_carried_over(): void
     {
         $base    = $this->member()->with(['meetingPO' => 'PO-123']);
@@ -183,9 +166,8 @@ class TsmlMemberRevisorTest extends TestCase
      * The revisor delegates to TsmlMember::with(), so it cannot revise a
      * foreign Member implementation. Fail loudly rather than silently
      * reconstructing from getters, which would be drift-prone.
-     *
-     * @test
      */
+    #[Test]
     public function it_rejects_a_member_it_did_not_build(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -195,10 +177,7 @@ class TsmlMemberRevisorTest extends TestCase
     }
 
     // ─── the landline and the preference it governs ─────────────────
-
-    /**
-     * @test
-     */
+    #[Test]
     public function revising_the_landline_alone_leaves_the_preference_alone(): void
     {
         $revised = $this->revisor->revise($this->member(), landlineNumber: '01179611111');
@@ -211,9 +190,8 @@ class TsmlMemberRevisorTest extends TestCase
      * The one case "keep unless named" cannot express: a caller clearing the
      * landline names one field, and leaving the other saying Landline would
      * point the helpline at a number that is no longer there.
-     *
-     * @test
      */
+    #[Test]
     public function clearing_the_landline_takes_the_preference_with_it(): void
     {
         $revised = $this->revisor->revise($this->member(), landlineNumber: '');
@@ -225,9 +203,8 @@ class TsmlMemberRevisorTest extends TestCase
     /**
      * Only that one direction is automatic. Gaining a landline does not
      * promote it over the mobile — that stays a deliberate choice.
-     *
-     * @test
      */
+    #[Test]
     public function adding_a_landline_does_not_promote_it(): void
     {
         $base = $this->member();
@@ -239,9 +216,7 @@ class TsmlMemberRevisorTest extends TestCase
         $this->assertSame(PreferredContact::Mobile, $revised->getPreferredContact());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function the_preference_can_be_revised_on_its_own(): void
     {
         $revised = $this->revisor->revise($this->member(), preferredContact: PreferredContact::Mobile);
@@ -252,9 +227,8 @@ class TsmlMemberRevisorTest extends TestCase
 
     /**
      * Naming both at once still ends up consistent: the landline decides.
-     *
-     * @test
      */
+    #[Test]
     public function a_preference_named_alongside_an_empty_landline_is_refused(): void
     {
         $revised = $this->revisor->revise(

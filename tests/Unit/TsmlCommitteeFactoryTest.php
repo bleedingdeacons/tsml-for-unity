@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\Committees\TsmlCommitteeFactory;
 use TsmlForUnity\Committees\TsmlCommitteeFields;
 use TsmlForUnity\Tests\TestCase;
@@ -18,9 +20,8 @@ use WP_Term;
  * Two entry points: createFromSource() fetches a term by ID, createFromTerm()
  * hydrates one the caller already holds. Everything the first does beyond
  * fetching, the second does too, so the guards are tested on both.
- *
- * @covers \TsmlForUnity\Committees\TsmlCommitteeFactory
  */
+#[CoversClass(\TsmlForUnity\Committees\TsmlCommitteeFactory::class)]
 class TsmlCommitteeFactoryTest extends TestCase
 {
     private TsmlCommitteeFactory $factory;
@@ -49,17 +50,13 @@ class TsmlCommitteeFactoryTest extends TestCase
         ], $overrides));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_the_factory_interface(): void
     {
         $this->assertInstanceOf(CommitteeFactory::class, $this->factory);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_hydrates_every_field_from_the_term(): void
     {
         $committee = $this->factory->createFromTerm($this->term());
@@ -76,9 +73,8 @@ class TsmlCommitteeFactoryTest extends TestCase
     /**
      * Term names are stored HTML-encoded by WordPress, exactly as
      * TsmlPositionFactory decodes position names.
-     *
-     * @test
      */
+    #[Test]
     public function it_decodes_entities_in_the_name(): void
     {
         $committee = $this->factory->createFromTerm(
@@ -89,9 +85,7 @@ class TsmlCommitteeFactoryTest extends TestCase
         $this->assertSame('Health & Corrections', $committee->getName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_refuses_a_term_from_another_taxonomy(): void
     {
         $this->assertNull(
@@ -99,14 +93,12 @@ class TsmlCommitteeFactoryTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_from_source_fetches_the_term_and_hydrates_it(): void
     {
         $term = $this->term();
 
-        Functions\expect('get_term')
+        expect('get_term')
             ->once()
             ->with(7, TsmlCommitteeFields::TAXONOMY)
             ->andReturn($term);
@@ -117,12 +109,10 @@ class TsmlCommitteeFactoryTest extends TestCase
         $this->assertSame('telephones', $committee->getSlug());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_from_source_returns_null_for_a_missing_term(): void
     {
-        Functions\expect('get_term')->once()->andReturn(null);
+        expect('get_term')->once()->andReturn(null);
 
         $this->assertNull($this->factory->createFromSource(404));
     }
@@ -132,22 +122,19 @@ class TsmlCommitteeFactoryTest extends TestCase
      * separate is_wp_error() branch to test: a WP_Error is not a WP_Term, so
      * the instanceof check already refuses it, and a second guard would be a
      * condition no input could reach.
-     *
-     * @test
      */
+    #[Test]
     public function create_from_source_returns_null_for_an_error(): void
     {
-        Functions\expect('get_term')->once()->andReturn(new \WP_Error());
+        expect('get_term')->once()->andReturn(new \WP_Error());
 
         $this->assertNull($this->factory->createFromSource(7));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_from_source_rejects_a_non_positive_id_without_querying(): void
     {
-        Functions\expect('get_term')->never();
+        expect('get_term')->never();
 
         $this->assertNull($this->factory->createFromSource(0));
         $this->assertNull($this->factory->createFromSource(-1));

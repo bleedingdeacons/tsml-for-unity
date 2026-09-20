@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
 use LogicException;
 use Unity\Auth\PasswordCredential;
 use TsmlForUnity\Auth\TsmlPasswordCredentialRepository;
@@ -75,9 +77,7 @@ final class TsmlPasswordCredentialRepositoryTest extends TestCase
         ];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_names_its_table_from_the_site_prefix(): void
     {
         $this->wpdb->prefix = 'bd_';
@@ -88,9 +88,7 @@ final class TsmlPasswordCredentialRepositoryTest extends TestCase
         $this->assertSame('bd_unity_credentials', TsmlPasswordCredentialRepository::tableName($wpdb));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_hydrates_a_credential_from_a_row(): void
     {
         $this->wpdb->nextRow = self::row();
@@ -106,9 +104,7 @@ final class TsmlPasswordCredentialRepositoryTest extends TestCase
         $this->assertTrue($credential->hasPassword());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_answers_null_when_there_is_no_row(): void
     {
         $this->wpdb->nextRow = null;
@@ -119,9 +115,8 @@ final class TsmlPasswordCredentialRepositoryTest extends TestCase
     /**
      * An empty hash would match every reset-free row in the table, which
      * would hand a credential to a request carrying no token at all.
-     *
-     * @test
      */
+    #[Test]
     public function it_refuses_an_empty_reset_token_hash_without_querying(): void
     {
         $this->wpdb->nextRow = self::row();
@@ -130,9 +125,7 @@ final class TsmlPasswordCredentialRepositoryTest extends TestCase
         $this->assertSame([], $this->wpdb->queries);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_finds_a_credential_by_reset_token_hash(): void
     {
         $this->wpdb->nextRow = self::row();
@@ -147,9 +140,8 @@ final class TsmlPasswordCredentialRepositoryTest extends TestCase
      * Setting a password is a clean slate: any pending reset token goes,
      * and so does any lockout. All three in one statement, so a crash
      * between them is not a state that can exist.
-     *
-     * @test
      */
+    #[Test]
     public function setting_a_password_also_clears_the_token_and_the_lockout(): void
     {
         $this->repository->upsertPasswordHash('member@example.test', 'hashed', 1234);
@@ -164,9 +156,7 @@ final class TsmlPasswordCredentialRepositoryTest extends TestCase
         $this->assertStringContainsString('locked_until = 0', $sql);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function storing_a_reset_token_leaves_the_password_alone(): void
     {
         $this->repository->storeResetToken('member@example.test', 'tokenhash', 2000, 1000);
@@ -177,9 +167,7 @@ final class TsmlPasswordCredentialRepositoryTest extends TestCase
         $this->assertStringNotContainsString('password_hash', $sql);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function clearing_a_reset_token_empties_it(): void
     {
         $this->repository->clearResetToken('member@example.test', 1000);
@@ -194,9 +182,8 @@ final class TsmlPasswordCredentialRepositoryTest extends TestCase
      * An UPDATE, never an upsert. An unknown email has no password to
      * guess, and creating a row for one would both leak that the address
      * is unknown and let an attacker seed the table.
-     *
-     * @test
      */
+    #[Test]
     public function a_failed_attempt_never_creates_a_row(): void
     {
         $this->repository->recordFailedAttempt('nobody@example.test', 3, 9999, 1000);
@@ -207,9 +194,7 @@ final class TsmlPasswordCredentialRepositoryTest extends TestCase
         $this->assertStringNotContainsString('INSERT', $sql);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function a_successful_login_zeroes_the_counters(): void
     {
         $this->repository->resetFailedAttempts('member@example.test', 1000);
@@ -220,9 +205,7 @@ final class TsmlPasswordCredentialRepositoryTest extends TestCase
         $this->assertStringContainsString('locked_until = 0', $sql);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_deletes_by_email(): void
     {
         $this->repository->delete('member@example.test');
@@ -241,10 +224,10 @@ final class TsmlPasswordCredentialRepositoryTest extends TestCase
      * silently issuing no query and letting a caller believe a password or
      * a lockout counter had been stored.</p>
      *
-     * @test
-     * @dataProvider writeMethods
      * @param callable(TsmlPasswordCredentialRepository): void $write
      */
+    #[DataProvider('writeMethods')]
+    #[Test]
     public function every_write_refuses_to_run_on_an_unprepared_statement(callable $write): void
     {
         /** @var wpdb $wpdb */

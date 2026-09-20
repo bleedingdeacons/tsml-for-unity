@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Meetings\TsmlMeetingView;
 use Unity\Meetings\Interfaces\Meeting;
@@ -12,14 +14,11 @@ use Unity\Members\Interfaces\Member;
 
 /**
  * Tests for TsmlMeetingView
- *
- * @covers \TsmlForUnity\Meetings\TsmlMeetingView
  */
+#[CoversClass(\TsmlForUnity\Meetings\TsmlMeetingView::class)]
 class TsmlMeetingViewTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_meeting_view_interface(): void
     {
         $view = new TsmlMeetingView($this->createMock(Meeting::class), []);
@@ -27,9 +26,7 @@ class TsmlMeetingViewTest extends TestCase
         $this->assertInstanceOf(MeetingView::class, $view);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_exposes_the_meeting_and_members(): void
     {
         $meeting = $this->createMock(Meeting::class);
@@ -45,9 +42,8 @@ class TsmlMeetingViewTest extends TestCase
     /**
      * getGsrNames() maps each associated member to its name via the Member
      * contract (getAnonymousName()).
-     *
-     * @test
      */
+    #[Test]
     public function gsr_names_collects_each_members_name(): void
     {
         $memberA = $this->createMock(Member::class);
@@ -60,9 +56,7 @@ class TsmlMeetingViewTest extends TestCase
         $this->assertSame(['Alice A.', 'Bob B.'], $view->getGsrNames());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function gsr_names_is_empty_for_a_meeting_with_no_members(): void
     {
         $view = new TsmlMeetingView($this->createMock(Meeting::class), []);

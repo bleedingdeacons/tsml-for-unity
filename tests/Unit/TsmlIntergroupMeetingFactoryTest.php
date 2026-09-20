@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFactory;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFields;
 use TsmlForUnity\Tests\TestCase;
@@ -16,9 +18,8 @@ use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingFactory;
  * Exercises the ACF reads, the field-key fallback for posts lacking shadow
  * meta, the d/m/Y → Y-m-d date normalisation, and parsePostIds handling of
  * both numeric IDs and WP_Post objects.
- *
- * @covers \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFactory
  */
+#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFactory::class)]
 class TsmlIntergroupMeetingFactoryTest extends TestCase
 {
     private TsmlIntergroupMeetingFactory $factory;
@@ -29,17 +30,13 @@ class TsmlIntergroupMeetingFactoryTest extends TestCase
         $this->factory = new TsmlIntergroupMeetingFactory();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_the_factory_interface(): void
     {
         $this->assertInstanceOf(IntergroupMeetingFactory::class, $this->factory);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_builds_a_meeting_from_acf_fields_with_numeric_ids(): void
     {
         // One expectation, dispatching on the field name.
@@ -49,7 +46,7 @@ class TsmlIntergroupMeetingFactoryTest extends TestCase
         // function per test, and the first one registered answers every call
         // whatever its ->with() says. The failure is silent — every field comes
         // back as the title — so the mapping is spelled out instead.
-        Functions\expect('get_field')->andReturnUsing(
+        expect('get_field')->andReturnUsing(
             static fn (string $field, int $postId): mixed => match ($field) {
                 TsmlIntergroupMeetingFields::FIELD_MEETING_TITLE      => 'July Intergroup',
                 TsmlIntergroupMeetingFields::FIELD_ATTENDEES          => [1, 2],
@@ -59,7 +56,7 @@ class TsmlIntergroupMeetingFactoryTest extends TestCase
             }
         );
 
-        Functions\expect('get_post')->with(42)->andReturn(
+        expect('get_post')->with(42)->andReturn(
             (object) ['post_modified_gmt' => '2026-07-01 20:00:00']
         );
 
@@ -74,13 +71,11 @@ class TsmlIntergroupMeetingFactoryTest extends TestCase
         $this->assertSame('2026-07-01 20:00:00', $meeting->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_falls_back_to_the_post_title_and_field_key_and_keeps_unparseable_dates(): void
     {
         // ACF meeting_title is empty, so the WP post title is used.
-        Functions\expect('get_the_title')->with(42)->andReturn('Fallback Title');
+        expect('get_the_title')->with(42)->andReturn('Fallback Title');
 
         // One expectation, dispatching on the field name.
         //
@@ -92,7 +87,7 @@ class TsmlIntergroupMeetingFactoryTest extends TestCase
         // The name-based attendees read fails (no shadow meta), so the factory
         // retries by field key; the officers fail both ways. The date is not in
         // d/m/Y, so it is kept verbatim.
-        Functions\expect('get_field')->andReturnUsing(
+        expect('get_field')->andReturnUsing(
             fn (string $field, int $postId): mixed => match ($field) {
                 TsmlIntergroupMeetingFields::FIELD_MEETING_TITLE          => '',
                 TsmlIntergroupMeetingFields::FIELD_ATTENDEES              => false,
@@ -105,10 +100,10 @@ class TsmlIntergroupMeetingFactoryTest extends TestCase
         );
 
         // The key fallback resolves via the cached option (empty → hardcoded key).
-        Functions\expect('get_option')
+        expect('get_option')
             ->with('tsml_unity_acf_field_keys', [])->andReturn([]);
 
-        Functions\expect('get_post')->with(42)->andReturn(null);
+        expect('get_post')->with(42)->andReturn(null);
 
         $meeting = $this->factory->createFromSource(42);
 
@@ -121,9 +116,7 @@ class TsmlIntergroupMeetingFactoryTest extends TestCase
         $this->assertSame('', $meeting->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function an_empty_date_field_yields_an_empty_date(): void
     {
         // One expectation, dispatching on the field name.
@@ -133,7 +126,7 @@ class TsmlIntergroupMeetingFactoryTest extends TestCase
         // function per test, and the first one registered answers every call
         // whatever its ->with() says. The failure is silent — every field comes
         // back as the title — so the mapping is spelled out instead.
-        Functions\expect('get_field')->andReturnUsing(
+        expect('get_field')->andReturnUsing(
             static fn (string $field, int $postId): mixed => match ($field) {
                 TsmlIntergroupMeetingFields::FIELD_MEETING_TITLE      => 'Title',
                 TsmlIntergroupMeetingFields::FIELD_ATTENDEES          => [],
@@ -142,7 +135,7 @@ class TsmlIntergroupMeetingFactoryTest extends TestCase
                 default                                              => null,
             }
         );
-        Functions\expect('get_post')->with(42)->andReturn(null);
+        expect('get_post')->with(42)->andReturn(null);
 
         // Empty arrays are not false/null, so no key fallback and no get_option.
         $meeting = $this->factory->createFromSource(42);

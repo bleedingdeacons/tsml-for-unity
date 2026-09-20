@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceTable;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceTable;
 use TsmlForUnity\Tests\Support\FakeWpdb;
@@ -18,10 +20,9 @@ use TsmlForUnity\Tests\TestCase;
  * gate: maybeUpgrade() must run the DDL when the recorded version differs
  * and stay out of the way when it matches, because it is called on every
  * load and an unguarded dbDelta() on each request would be expensive.
- *
- * @covers \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceTable
- * @covers \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceTable
  */
+#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceTable::class)]
+#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceTable::class)]
 class AttendanceTableInstallerTest extends TestCase
 {
     private FakeWpdb $wpdb;
@@ -41,16 +42,16 @@ class AttendanceTableInstallerTest extends TestCase
         $GLOBALS['tsml_test_dbdelta'] = [];
         $this->options = [];
 
-        Functions\expect('esc_sql')->andReturnUsing(static fn ($v) => $v);
-        Functions\expect('get_option')
+        expect('esc_sql')->andReturnUsing(static fn ($v) => $v);
+        expect('get_option')
             ->andReturnUsing(fn (string $name, $default = false) => $this->options[$name] ?? $default);
-        Functions\expect('update_option')
+        expect('update_option')
             ->andReturnUsing(function (string $name, $value): bool {
                 $this->options[$name] = $value;
 
                 return true;
             });
-        Functions\expect('delete_option')
+        expect('delete_option')
             ->andReturnUsing(function (string $name): bool {
                 unset($this->options[$name]);
 
@@ -73,14 +74,13 @@ class AttendanceTableInstallerTest extends TestCase
     }
 
     // ══ group attendance table ════════════════════════════════════════
-
-    /** @test */
+    #[Test]
     public function the_group_table_name_is_prefixed(): void
     {
         $this->assertStringStartsWith('wp_', TsmlIntergroupMeetingGroupAttendanceTable::getTableName());
     }
 
-    /** @test */
+    #[Test]
     public function creating_the_group_table_issues_ddl_and_records_the_version(): void
     {
         TsmlIntergroupMeetingGroupAttendanceTable::createTable();
@@ -95,7 +95,7 @@ class AttendanceTableInstallerTest extends TestCase
         $this->assertNotEmpty($this->options, 'The schema version should be stored.');
     }
 
-    /** @test */
+    #[Test]
     public function dropping_the_group_table_removes_the_table_and_its_version(): void
     {
         TsmlIntergroupMeetingGroupAttendanceTable::createTable();
@@ -105,7 +105,7 @@ class AttendanceTableInstallerTest extends TestCase
         $this->assertSame([], $this->options, 'The stored version should be cleared.');
     }
 
-    /** @test */
+    #[Test]
     public function the_group_table_is_created_when_no_version_is_recorded(): void
     {
         TsmlIntergroupMeetingGroupAttendanceTable::maybeUpgrade();
@@ -113,7 +113,7 @@ class AttendanceTableInstallerTest extends TestCase
         $this->assertStringContainsString('CREATE TABLE', $this->lastDdl());
     }
 
-    /** @test */
+    #[Test]
     public function the_group_table_upgrade_is_skipped_when_the_version_matches(): void
     {
         // First call installs and records the version.
@@ -126,7 +126,7 @@ class AttendanceTableInstallerTest extends TestCase
         $this->assertSame([], $GLOBALS['tsml_test_dbdelta'], 'dbDelta should not run again.');
     }
 
-    /** @test */
+    #[Test]
     public function a_stale_group_table_version_triggers_an_upgrade(): void
     {
         TsmlIntergroupMeetingGroupAttendanceTable::maybeUpgrade();
@@ -142,14 +142,13 @@ class AttendanceTableInstallerTest extends TestCase
     }
 
     // ══ officer attendance table ══════════════════════════════════════
-
-    /** @test */
+    #[Test]
     public function the_officer_table_name_is_prefixed(): void
     {
         $this->assertStringStartsWith('wp_', TsmlIntergroupMeetingOfficerAttendanceTable::getTableName());
     }
 
-    /** @test */
+    #[Test]
     public function creating_the_officer_table_issues_ddl_and_records_the_version(): void
     {
         TsmlIntergroupMeetingOfficerAttendanceTable::createTable();
@@ -163,7 +162,7 @@ class AttendanceTableInstallerTest extends TestCase
         $this->assertNotEmpty($this->options);
     }
 
-    /** @test */
+    #[Test]
     public function dropping_the_officer_table_removes_the_table_and_its_version(): void
     {
         TsmlIntergroupMeetingOfficerAttendanceTable::createTable();
@@ -173,7 +172,7 @@ class AttendanceTableInstallerTest extends TestCase
         $this->assertSame([], $this->options);
     }
 
-    /** @test */
+    #[Test]
     public function the_officer_table_is_created_when_no_version_is_recorded(): void
     {
         TsmlIntergroupMeetingOfficerAttendanceTable::maybeUpgrade();
@@ -181,7 +180,7 @@ class AttendanceTableInstallerTest extends TestCase
         $this->assertStringContainsString('CREATE TABLE', $this->lastDdl());
     }
 
-    /** @test */
+    #[Test]
     public function the_officer_table_upgrade_is_skipped_when_the_version_matches(): void
     {
         TsmlIntergroupMeetingOfficerAttendanceTable::maybeUpgrade();

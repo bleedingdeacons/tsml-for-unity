@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+use Psr\Container\ContainerInterface;
+use PHPUnit\Framework\MockObject\MockObject;
 use TsmlForUnity\Tests\Support\WpdbStub;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Plugin;
@@ -33,14 +38,13 @@ use Unity\Positions\Interfaces\PositionRepository;
  * dependencies are optional, and what each constructor is handed. So these
  * tests use a resolving container double and then *build* every registered
  * service, which is the only way to prove the graph is constructible.
- *
- * @covers \TsmlForUnity\Plugin
  */
+#[CoversClass(\TsmlForUnity\Plugin::class)]
 class PluginTest extends TestCase
 {
     private FakeContainer $container;
 
-    /** @var Configuration&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var Configuration&MockObject */
     private $config;
 
     /** @var array<string, array> Field maps captured from setConfig(). */
@@ -81,16 +85,14 @@ class PluginTest extends TestCase
     }
 
     // ─── availability probes ────────────────────────────────────────
-
     /**
      * Unity is a require-dev path repository, so all of its contracts are
      * autoloadable in the suite and every probe should report available.
      * These are the guards that decide whether a service gets registered
      * at all, so a false negative would silently disable the integration.
-     *
-     * @test
-     * @dataProvider availabilityProbeProvider
      */
+    #[DataProvider('availabilityProbeProvider')]
+    #[Test]
     public function every_unity_availability_probe_reports_true(string $method): void
     {
         $this->assertTrue(Plugin::$method(), $method . '() should see Unity loaded');
@@ -122,7 +124,7 @@ class PluginTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function unity_is_available_checks_for_the_core_classes(): void
     {
         // These are concrete classes rather than interfaces, and only ship
@@ -132,13 +134,12 @@ class PluginTest extends TestCase
     }
 
     // ─── registerWithUnity ──────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function registration_is_skipped_for_a_container_that_cannot_register(): void
     {
         // A bare PSR-11 container has get()/has() but no register(); the
         // plugin must leave it alone rather than fatal.
-        $bare = new class implements \Psr\Container\ContainerInterface {
+        $bare = new class implements ContainerInterface {
             public function get(string $id): mixed
             {
                 return null;
@@ -155,7 +156,7 @@ class PluginTest extends TestCase
         $this->assertTrue(true, 'returned without touching the container');
     }
 
-    /** @test */
+    #[Test]
     public function it_registers_the_core_factories_and_repositories(): void
     {
         Plugin::registerWithUnity($this->container);
@@ -184,9 +185,8 @@ class PluginTest extends TestCase
      * The point of the exercise: build every service the plugin registered.
      * A closure that asks for a dependency the container cannot supply, or
      * passes the wrong thing to a constructor, only fails here.
-     *
-     * @test
      */
+    #[Test]
     public function every_registered_service_can_actually_be_built(): void
     {
         Plugin::registerWithUnity($this->container);
@@ -202,7 +202,7 @@ class PluginTest extends TestCase
         $this->assertGreaterThan(10, $built, 'the integration registers a substantial graph');
     }
 
-    /** @test */
+    #[Test]
     public function resolved_services_implement_the_unity_contracts_they_are_registered_against(): void
     {
         Plugin::registerWithUnity($this->container);
@@ -220,7 +220,7 @@ class PluginTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function services_are_resolved_once_and_reused(): void
     {
         Plugin::registerWithUnity($this->container);
@@ -232,8 +232,7 @@ class PluginTest extends TestCase
     }
 
     // ─── field-map configuration ────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function it_stores_the_tsml_field_maps_against_the_unity_contracts(): void
     {
         Plugin::registerWithUnity($this->container);
@@ -245,7 +244,7 @@ class PluginTest extends TestCase
         $this->assertSame('intergroup-member', $this->storedConfig[Member::class]['POST_TYPE']);
     }
 
-    /** @test */
+    #[Test]
     public function the_committee_field_map_carries_the_taxonomy_and_its_acf_fields(): void
     {
         Plugin::registerWithUnity($this->container);
@@ -270,7 +269,7 @@ class PluginTest extends TestCase
         $this->assertArrayHasKey('KEY_POSITION_COMMITTEES', $committeeConfig);
     }
 
-    /** @test */
+    #[Test]
     public function the_member_field_map_carries_the_acf_field_names_and_keys(): void
     {
         Plugin::registerWithUnity($this->container);
@@ -289,7 +288,7 @@ class PluginTest extends TestCase
         $this->assertArrayHasKey('KEY_RESPONDER_CERTIFICATION', $memberConfig);
     }
 
-    /** @test */
+    #[Test]
     public function a_field_map_is_stored_for_each_configured_contract(): void
     {
         Plugin::registerWithUnity($this->container);
@@ -313,9 +312,8 @@ class PluginTest extends TestCase
      * leaked into every later test in the process, so Plugin::logChannel()
      * ran as a side effect. That test is isolated now, so the channel name
      * needs saying out loud.
-     *
-     * @test
      */
+    #[Test]
     public function it_logs_under_its_own_channel(): void
     {
         $logChannel = new \ReflectionMethod(Plugin::class, 'logChannel');

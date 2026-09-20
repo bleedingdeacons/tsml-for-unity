@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
 use Exception;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingChangeTracker;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFields;
@@ -20,12 +23,11 @@ use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingRepository;
  * handed something it should ignore, or when the repository cannot answer
  * — it hooks ACF's save lifecycle and WordPress's delete routine, so a
  * failure has to be contained rather than propagated.
- *
- * @covers \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingChangeTracker
  */
+#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingChangeTracker::class)]
 class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
 {
-    /** @var IntergroupMeetingRepository&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var IntergroupMeetingRepository&MockObject */
     private $repository;
 
     private TsmlIntergroupMeetingChangeTracker $tracker;
@@ -53,10 +55,10 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
         return $this->createMock(IntergroupMeeting::class);
     }
 
-    /** @test */
+    #[Test]
     public function capturing_a_post_of_another_type_is_ignored(): void
     {
-        Functions\expect('get_post_type')->andReturn('page');
+        expect('get_post_type')->andReturn('page');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->captureOriginalMeeting(3);
@@ -64,10 +66,10 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
         $this->assertTrue(true, 'returned before reading the meeting');
     }
 
-    /** @test */
+    #[Test]
     public function a_capture_failure_is_swallowed(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
         $this->repository->method('findById')->willThrowException(new Exception('boom'));
 
         $this->tracker->captureOriginalMeeting(3);
@@ -75,10 +77,10 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
         $this->assertTrue(true, 'a failed capture must not abort the save');
     }
 
-    /** @test */
+    #[Test]
     public function checking_a_post_of_another_type_is_ignored(): void
     {
-        Functions\expect('get_post_type')->andReturn('page');
+        expect('get_post_type')->andReturn('page');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->checkForChanges(3);
@@ -86,10 +88,10 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
         $this->assertTrue(true, 'returned before comparing');
     }
 
-    /** @test */
+    #[Test]
     public function a_check_without_a_captured_original_stops_quietly(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
         // No captureOriginalMeeting() call, so there is nothing to compare.
         $this->repository->expects($this->never())->method('findById');
 
@@ -98,10 +100,10 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
         $this->assertTrue(true, 'no comparison without a snapshot');
     }
 
-    /** @test */
+    #[Test]
     public function a_check_that_cannot_reload_the_meeting_stops_quietly(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
 
         $this->repository->method('findById')
             ->willReturnOnConsecutiveCalls($this->meeting(), null);
@@ -112,10 +114,10 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
         $this->assertTrue(true, 'no event fired without an updated meeting');
     }
 
-    /** @test */
+    #[Test]
     public function a_check_failure_is_swallowed(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
 
         $this->repository->method('findById')
             ->willReturnOnConsecutiveCalls(
@@ -129,10 +131,10 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
         $this->assertTrue(true, 'a failed check must not abort the save');
     }
 
-    /** @test */
+    #[Test]
     public function deleting_a_post_of_another_type_is_ignored(): void
     {
-        Functions\expect('get_post_type')->andReturn('page');
+        expect('get_post_type')->andReturn('page');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->onIntergroupMeetingDeleted(3);
@@ -140,10 +142,10 @@ class TsmlIntergroupMeetingChangeTrackerFailureTest extends TestCase
         $this->assertTrue(true, 'only intergroup meetings raise the event');
     }
 
-    /** @test */
+    #[Test]
     public function a_repository_failure_during_deletion_is_contained(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlIntergroupMeetingFields::POST_TYPE);
         $this->repository->method('findById')->willThrowException(new Exception('row vanished'));
 
         $this->tracker->onIntergroupMeetingDeleted(3);

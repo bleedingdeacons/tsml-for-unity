@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\Locations\TsmlLocationFactory;
 use TsmlForUnity\Locations\TsmlLocationFields;
 use TsmlForUnity\Tests\TestCase;
 use Unity\Locations\Interfaces\Location;
 
-/**
- * @covers \TsmlForUnity\Locations\TsmlLocationFactory
- */
+#[CoversClass(\TsmlForUnity\Locations\TsmlLocationFactory::class)]
 class TsmlLocationFactoryTest extends TestCase
 {
     private TsmlLocationFactory $factory;
@@ -23,12 +23,10 @@ class TsmlLocationFactoryTest extends TestCase
         $this->factory = new TsmlLocationFactory();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_returns_null_when_post_does_not_exist(): void
     {
-        Functions\expect('get_post')
+        expect('get_post')
             ->once()
             ->with(999)
             ->andReturn(null);
@@ -38,9 +36,7 @@ class TsmlLocationFactoryTest extends TestCase
         $this->assertNull($result);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_returns_null_when_post_is_wrong_type(): void
     {
         $post = $this->createMockPost([
@@ -49,7 +45,7 @@ class TsmlLocationFactoryTest extends TestCase
             'post_title' => 'Wrong Post Type',
         ]);
 
-        Functions\expect('get_post')
+        expect('get_post')
             ->once()
             ->with(123)
             ->andReturn($post);
@@ -59,9 +55,7 @@ class TsmlLocationFactoryTest extends TestCase
         $this->assertNull($result);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_creates_location_from_valid_post(): void
     {
         $postId = 100;
@@ -83,31 +77,31 @@ class TsmlLocationFactoryTest extends TestCase
             TsmlLocationFields::TIMEZONE => ['America/Chicago'],
         ];
 
-        Functions\expect('get_post')
+        expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        Functions\expect('get_post_custom')
+        expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn($meta);
 
-        Functions\expect('maybe_unserialize')
+        expect('maybe_unserialize')
             ->andReturnUsing(function ($value) {
                 return $value;
             });
 
-        Functions\expect('wp_get_post_terms')
+        expect('wp_get_post_terms')
             ->once()
             ->with($postId, TsmlLocationFields::REGION_TAXONOMY, ['fields' => 'names'])
             ->andReturn(['Downtown']);
 
-        Functions\expect('get_posts')
+        expect('get_posts')
             ->once()
             ->andReturn([200, 201, 202]); // Meeting IDs
 
-        Functions\expect('get_permalink')
+        expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('https://example.com/location/community-center');
@@ -132,9 +126,7 @@ class TsmlLocationFactoryTest extends TestCase
         $this->assertEquals([200, 201, 202], $result->getMeetingIds());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_empty_meta(): void
     {
         $postId = 200;
@@ -144,25 +136,25 @@ class TsmlLocationFactoryTest extends TestCase
             'post_title' => 'Minimal Location',
         ]);
 
-        Functions\expect('get_post')
+        expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        Functions\expect('get_post_custom')
+        expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn([]);
 
-        Functions\expect('wp_get_post_terms')
+        expect('wp_get_post_terms')
             ->once()
             ->andReturn([]);
 
-        Functions\expect('get_posts')
+        expect('get_posts')
             ->once()
             ->andReturn([]);
 
-        Functions\expect('get_permalink')
+        expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('');
@@ -185,9 +177,7 @@ class TsmlLocationFactoryTest extends TestCase
         $this->assertEquals([], $result->getMeetingIds());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_null_coordinates(): void
     {
         $postId = 300;
@@ -203,30 +193,30 @@ class TsmlLocationFactoryTest extends TestCase
             // No latitude/longitude
         ];
 
-        Functions\expect('get_post')
+        expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        Functions\expect('get_post_custom')
+        expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn($meta);
 
-        Functions\expect('maybe_unserialize')
+        expect('maybe_unserialize')
             ->andReturnUsing(function ($value) {
                 return $value;
             });
 
-        Functions\expect('wp_get_post_terms')
+        expect('wp_get_post_terms')
             ->once()
             ->andReturn([]);
 
-        Functions\expect('get_posts')
+        expect('get_posts')
             ->once()
             ->andReturn([]);
 
-        Functions\expect('get_permalink')
+        expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('');
@@ -239,9 +229,7 @@ class TsmlLocationFactoryTest extends TestCase
         $this->assertFalse($result->hasCoordinates());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_multiple_regions_returning_first(): void
     {
         $postId = 400;
@@ -251,26 +239,26 @@ class TsmlLocationFactoryTest extends TestCase
             'post_title' => 'Multi-Region Location',
         ]);
 
-        Functions\expect('get_post')
+        expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        Functions\expect('get_post_custom')
+        expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn([]);
 
-        Functions\expect('wp_get_post_terms')
+        expect('wp_get_post_terms')
             ->once()
             ->with($postId, TsmlLocationFields::REGION_TAXONOMY, ['fields' => 'names'])
             ->andReturn(['North Side', 'Downtown', 'Metro Area']);
 
-        Functions\expect('get_posts')
+        expect('get_posts')
             ->once()
             ->andReturn([]);
 
-        Functions\expect('get_permalink')
+        expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('');
@@ -281,9 +269,7 @@ class TsmlLocationFactoryTest extends TestCase
         $this->assertEquals('North Side', $result->getRegion());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_false_permalink(): void
     {
         $postId = 500;
@@ -293,25 +279,25 @@ class TsmlLocationFactoryTest extends TestCase
             'post_title' => 'Test Location',
         ]);
 
-        Functions\expect('get_post')
+        expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        Functions\expect('get_post_custom')
+        expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn([]);
 
-        Functions\expect('wp_get_post_terms')
+        expect('wp_get_post_terms')
             ->once()
             ->andReturn([]);
 
-        Functions\expect('get_posts')
+        expect('get_posts')
             ->once()
             ->andReturn([]);
 
-        Functions\expect('get_permalink')
+        expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn(false);
@@ -322,9 +308,7 @@ class TsmlLocationFactoryTest extends TestCase
         $this->assertEquals('', $result->getLink());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_parses_valid_coordinates(): void
     {
         $postId = 600;
@@ -339,30 +323,30 @@ class TsmlLocationFactoryTest extends TestCase
             TsmlLocationFields::LONGITUDE => ['-0.1278'],
         ];
 
-        Functions\expect('get_post')
+        expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        Functions\expect('get_post_custom')
+        expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn($meta);
 
-        Functions\expect('maybe_unserialize')
+        expect('maybe_unserialize')
             ->andReturnUsing(function ($value) {
                 return $value;
             });
 
-        Functions\expect('wp_get_post_terms')
+        expect('wp_get_post_terms')
             ->once()
             ->andReturn([]);
 
-        Functions\expect('get_posts')
+        expect('get_posts')
             ->once()
             ->andReturn([]);
 
-        Functions\expect('get_permalink')
+        expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('');
@@ -375,9 +359,7 @@ class TsmlLocationFactoryTest extends TestCase
         $this->assertTrue($result->hasCoordinates());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_invalid_coordinates(): void
     {
         $postId = 700;
@@ -392,30 +374,30 @@ class TsmlLocationFactoryTest extends TestCase
             TsmlLocationFields::LONGITUDE => ['also-not-a-number'],
         ];
 
-        Functions\expect('get_post')
+        expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        Functions\expect('get_post_custom')
+        expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn($meta);
 
-        Functions\expect('maybe_unserialize')
+        expect('maybe_unserialize')
             ->andReturnUsing(function ($value) {
                 return $value;
             });
 
-        Functions\expect('wp_get_post_terms')
+        expect('wp_get_post_terms')
             ->once()
             ->andReturn([]);
 
-        Functions\expect('get_posts')
+        expect('get_posts')
             ->once()
             ->andReturn([]);
 
-        Functions\expect('get_permalink')
+        expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('');

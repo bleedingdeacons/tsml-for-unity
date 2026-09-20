@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\Meetings\TsmlMeetingFactory;
 use TsmlForUnity\Tests\TestCase;
 
@@ -20,9 +22,8 @@ use TsmlForUnity\Tests\TestCase;
  * The failure path matters too. createFromSource() wraps its work in a
  * try/catch and answers null, because a single malformed meeting must not
  * break a page listing a hundred of them.
- *
- * @covers \TsmlForUnity\Meetings\TsmlMeetingFactory
  */
+#[CoversClass(\TsmlForUnity\Meetings\TsmlMeetingFactory::class)]
 class TsmlMeetingFactoryTypesTest extends TestCase
 {
     private TsmlMeetingFactory $factory;
@@ -31,13 +32,13 @@ class TsmlMeetingFactoryTypesTest extends TestCase
     {
         parent::setUp();
 
-        Functions\expect('get_permalink')->andReturn('https://example.test/m/1');
-        Functions\expect('get_post_status')->andReturn('publish');
-        Functions\expect('get_post')
+        expect('get_permalink')->andReturn('https://example.test/m/1');
+        expect('get_post_status')->andReturn('publish');
+        expect('get_post')
             ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
-        Functions\expect('get_post_custom')->andReturn([]);
-        Functions\expect('is_serialized')->andReturn(false);
-        Functions\expect('maybe_unserialize')->andReturnUsing(static fn ($v) => $v);
+        expect('get_post_custom')->andReturn([]);
+        expect('is_serialized')->andReturn(false);
+        expect('maybe_unserialize')->andReturnUsing(static fn ($v) => $v);
 
         $this->factory = new TsmlMeetingFactory();
     }
@@ -56,12 +57,11 @@ class TsmlMeetingFactoryTypesTest extends TestCase
     /** Make get_post_meta() answer with the given stored type codes. */
     private function stubStoredTypes(mixed $types): void
     {
-        Functions\expect('get_post_meta')->andReturn($types);
+        expect('get_post_meta')->andReturn($types);
     }
 
     // ─── types from postmeta ────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function stored_type_codes_are_expanded_to_names(): void
     {
         $this->stubStoredTypes(['O', 'D']);
@@ -72,7 +72,7 @@ class TsmlMeetingFactoryTypesTest extends TestCase
         $this->assertContains('Open', $meeting->getTypes());
     }
 
-    /** @test */
+    #[Test]
     public function the_online_code_marks_the_meeting_online(): void
     {
         // 'ONL' is TSML's online marker.
@@ -83,7 +83,7 @@ class TsmlMeetingFactoryTypesTest extends TestCase
         $this->assertTrue($meeting->isOnline());
     }
 
-    /** @test */
+    #[Test]
     public function the_online_type_is_removed_from_the_type_list(): void
     {
         $this->stubStoredTypes(['ONL', 'O']);
@@ -96,7 +96,7 @@ class TsmlMeetingFactoryTypesTest extends TestCase
         $this->assertNotContains('Online', $meeting->getTypes());
     }
 
-    /** @test */
+    #[Test]
     public function unknown_stored_codes_are_discarded(): void
     {
         $this->stubStoredTypes(['NOT_A_CODE']);
@@ -107,7 +107,7 @@ class TsmlMeetingFactoryTypesTest extends TestCase
         $this->assertNotContains('NOT_A_CODE', $meeting->getTypes());
     }
 
-    /** @test */
+    #[Test]
     public function stored_types_that_are_not_an_array_are_ignored(): void
     {
         // Older data can hold a bare string rather than an array.
@@ -116,7 +116,7 @@ class TsmlMeetingFactoryTypesTest extends TestCase
         $this->assertNotNull($this->factory->createFromSource($this->source()));
     }
 
-    /** @test */
+    #[Test]
     public function empty_stored_types_are_ignored(): void
     {
         $this->stubStoredTypes([]);
@@ -124,7 +124,7 @@ class TsmlMeetingFactoryTypesTest extends TestCase
         $this->assertNotNull($this->factory->createFromSource($this->source()));
     }
 
-    /** @test */
+    #[Test]
     public function types_from_postmeta_and_from_the_source_are_both_included(): void
     {
         $this->stubStoredTypes(['O']);
@@ -144,9 +144,8 @@ class TsmlMeetingFactoryTypesTest extends TestCase
      * Deduplicating before expansion compared them as strings, found them
      * different, and kept both — which then expanded to 'Open' twice.
      * Expansion now happens first, so the dedup sees like for like.
-     *
-     * @test
      */
+    #[Test]
     public function a_type_present_in_both_postmeta_and_source_is_listed_once(): void
     {
         $this->stubStoredTypes(['O']);
@@ -162,7 +161,7 @@ class TsmlMeetingFactoryTypesTest extends TestCase
         $this->assertSame(['Open', 'Discussion'], array_values($types));
     }
 
-    /** @test */
+    #[Test]
     public function a_deduplicated_type_list_is_still_a_sequential_list(): void
     {
         // Removing a duplicate must not leave a gap in the keys: callers
@@ -177,8 +176,7 @@ class TsmlMeetingFactoryTypesTest extends TestCase
     }
 
     // ─── failure handling ───────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function a_non_positive_id_is_rejected_rather_than_built(): void
     {
         $this->stubStoredTypes([]);
@@ -188,12 +186,12 @@ class TsmlMeetingFactoryTypesTest extends TestCase
         $this->assertNull($this->factory->createFromSource($this->source(['id' => -3])));
     }
 
-    /** @test */
+    #[Test]
     public function postmeta_that_is_not_an_array_is_treated_as_empty(): void
     {
         $this->stubStoredTypes([]);
         // get_post_custom() can return false when a post has no meta.
-        Functions\expect('get_post_custom')->andReturn(false);
+        expect('get_post_custom')->andReturn(false);
 
         $this->assertNotNull(
             $this->factory->createFromSource($this->source()),

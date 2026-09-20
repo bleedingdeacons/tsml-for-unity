@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\Groups\TsmlGroupFactory;
 use TsmlForUnity\Groups\TsmlGroupFields;
 use TsmlForUnity\Tests\TestCase;
@@ -13,14 +16,12 @@ use Unity\Groups\Interfaces\Group;
 use Unity\Meetings\Interfaces\Meeting;
 use Unity\Meetings\Interfaces\MeetingRepository;
 
-/**
- * @covers \TsmlForUnity\Groups\TsmlGroupFactory
- */
+#[CoversClass(\TsmlForUnity\Groups\TsmlGroupFactory::class)]
 class TsmlGroupFactoryTest extends TestCase
 {
     private TsmlGroupFactory $factory;
 
-    /** @var MeetingRepository&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var MeetingRepository&MockObject */
     private $meetingRepository;
 
     protected function setUp(): void
@@ -34,12 +35,10 @@ class TsmlGroupFactoryTest extends TestCase
         $this->factory = new TsmlGroupFactory(null, $this->meetingRepository);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_returns_null_when_post_does_not_exist(): void
     {
-        Functions\expect('get_post')
+        expect('get_post')
             ->once()
             ->with(999)
             ->andReturn(null);
@@ -49,9 +48,7 @@ class TsmlGroupFactoryTest extends TestCase
         $this->assertNull($result);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_returns_null_when_post_is_wrong_type(): void
     {
         $post = $this->createMockPost([
@@ -60,7 +57,7 @@ class TsmlGroupFactoryTest extends TestCase
             'post_title' => 'Wrong Post Type',
         ]);
 
-        Functions\expect('get_post')
+        expect('get_post')
             ->once()
             ->with(123)
             ->andReturn($post);
@@ -70,9 +67,7 @@ class TsmlGroupFactoryTest extends TestCase
         $this->assertNull($result);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_creates_group_from_valid_post(): void
     {
         $postId = 100;
@@ -96,17 +91,17 @@ class TsmlGroupFactoryTest extends TestCase
             'contact_1_phone' => ['555-5678'],
         ];
 
-        Functions\expect('get_post')
+        expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        Functions\expect('get_post_custom')
+        expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn($meta);
 
-        Functions\expect('maybe_unserialize')
+        expect('maybe_unserialize')
             ->andReturnUsing(function ($value) {
                 return $value;
             });
@@ -119,7 +114,7 @@ class TsmlGroupFactoryTest extends TestCase
                 $this->createMeeting(202),
             ]);
 
-        Functions\expect('get_permalink')
+        expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('https://example.com/group/test-group');
@@ -144,9 +139,7 @@ class TsmlGroupFactoryTest extends TestCase
         $this->assertEquals(42, $result->getDistrictId());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_extracts_multiple_contacts(): void
     {
         $postId = 200;
@@ -168,22 +161,22 @@ class TsmlGroupFactoryTest extends TestCase
             'contact_3_phone' => ['555-3333'],
         ];
 
-        Functions\expect('get_post')
+        expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        Functions\expect('get_post_custom')
+        expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn($meta);
 
-        Functions\expect('maybe_unserialize')
+        expect('maybe_unserialize')
             ->andReturnUsing(function ($value) {
                 return $value;
             });
 
-        Functions\expect('get_permalink')
+        expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('');
@@ -211,9 +204,7 @@ class TsmlGroupFactoryTest extends TestCase
         $this->assertEquals('555-3333', $contacts[2]->getPhone());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_empty_meta(): void
     {
         $postId = 300;
@@ -223,17 +214,17 @@ class TsmlGroupFactoryTest extends TestCase
             'post_title' => 'Minimal Group',
         ]);
 
-        Functions\expect('get_post')
+        expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        Functions\expect('get_post_custom')
+        expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn([]);
 
-        Functions\expect('get_permalink')
+        expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('');
@@ -250,9 +241,7 @@ class TsmlGroupFactoryTest extends TestCase
         $this->assertEquals([], $result->getContacts());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_partial_contact_info(): void
     {
         $postId = 400;
@@ -269,22 +258,22 @@ class TsmlGroupFactoryTest extends TestCase
             // Missing name and phone for contact 2
         ];
 
-        Functions\expect('get_post')
+        expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        Functions\expect('get_post_custom')
+        expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn($meta);
 
-        Functions\expect('maybe_unserialize')
+        expect('maybe_unserialize')
             ->andReturnUsing(function ($value) {
                 return $value;
             });
 
-        Functions\expect('get_permalink')
+        expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn('');
@@ -307,9 +296,7 @@ class TsmlGroupFactoryTest extends TestCase
         $this->assertEquals('', $contacts[1]->getPhone());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_false_permalink(): void
     {
         $postId = 500;
@@ -319,17 +306,17 @@ class TsmlGroupFactoryTest extends TestCase
             'post_title' => 'Test',
         ]);
 
-        Functions\expect('get_post')
+        expect('get_post')
             ->once()
             ->with($postId)
             ->andReturn($post);
 
-        Functions\expect('get_post_custom')
+        expect('get_post_custom')
             ->once()
             ->with($postId)
             ->andReturn([]);
 
-        Functions\expect('get_permalink')
+        expect('get_permalink')
             ->once()
             ->with($postId)
             ->andReturn(false);
@@ -344,7 +331,7 @@ class TsmlGroupFactoryTest extends TestCase
      * Create a Meeting that reports the given ID and carries no contacts.
      *
      * @param int $id Meeting ID.
-     * @return Meeting&\PHPUnit\Framework\MockObject\MockObject
+     * @return Meeting&MockObject
      */
     private function createMeeting(int $id)
     {

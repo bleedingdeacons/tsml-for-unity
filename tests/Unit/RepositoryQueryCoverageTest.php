@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\Test;
+use function Brain\Monkey\Functions\expect;
 use Exception;
 use TsmlForUnity\Groups\TsmlGroupFactory;
 use TsmlForUnity\Groups\TsmlGroupFields;
@@ -48,7 +49,7 @@ class RepositoryQueryCoverageTest extends TestCase
         parent::setUp();
 
         // wp_parse_args is pure; mirror it rather than assert against a stub.
-        Functions\expect('wp_parse_args')
+        expect('wp_parse_args')
             ->andReturnUsing(static fn ($args, $defaults = []) => array_merge($defaults, (array) $args));
 
         $this->capturedArgs = [];
@@ -57,7 +58,7 @@ class RepositoryQueryCoverageTest extends TestCase
     /** Stub get_posts(), capturing the arguments and returning $posts. */
     private function stubGetPosts(array $posts): void
     {
-        Functions\expect('get_posts')->andReturnUsing(function ($args) use ($posts) {
+        expect('get_posts')->andReturnUsing(function ($args) use ($posts) {
             $this->capturedArgs = (array) $args;
 
             return $posts;
@@ -70,8 +71,7 @@ class RepositoryQueryCoverageTest extends TestCase
     }
 
     // ══ Group repository ══════════════════════════════════════════════
-
-    /** @test */
+    #[Test]
     public function group_find_by_id_delegates_straight_to_the_factory(): void
     {
         $group = $this->createMock(Group::class);
@@ -81,7 +81,7 @@ class RepositoryQueryCoverageTest extends TestCase
         $this->assertSame($group, (new TsmlGroupRepository($factory))->findById(7));
     }
 
-    /** @test */
+    #[Test]
     public function group_find_all_queries_published_groups_and_hydrates_each_post(): void
     {
         $this->stubGetPosts($this->postObjects(1, 2));
@@ -99,7 +99,7 @@ class RepositoryQueryCoverageTest extends TestCase
         $this->assertSame(-1, $this->capturedArgs['posts_per_page']);
     }
 
-    /** @test */
+    #[Test]
     public function group_find_all_skips_posts_without_an_id(): void
     {
         // A malformed row must not reach the factory as ID 0.
@@ -114,7 +114,7 @@ class RepositoryQueryCoverageTest extends TestCase
         $this->assertCount(1, (new TsmlGroupRepository($factory))->findAll());
     }
 
-    /** @test */
+    #[Test]
     public function group_find_all_drops_posts_the_factory_rejects(): void
     {
         $this->stubGetPosts($this->postObjects(1, 2));
@@ -126,7 +126,7 @@ class RepositoryQueryCoverageTest extends TestCase
         $this->assertCount(1, (new TsmlGroupRepository($factory))->findAll());
     }
 
-    /** @test */
+    #[Test]
     public function group_count_forces_an_ids_only_query(): void
     {
         $this->stubGetPosts([1, 2, 3]);
@@ -139,20 +139,20 @@ class RepositoryQueryCoverageTest extends TestCase
         $this->assertSame(-1, $this->capturedArgs['posts_per_page']);
     }
 
-    /** @test */
+    #[Test]
     public function group_count_is_zero_when_the_query_returns_nothing_usable(): void
     {
         // WordPress always hands back an array; wp-mocks types get_posts() that
         // way, so the old andReturn(null) is no longer expressible — and was
         // never reachable in production either.
-        Functions\expect('get_posts')->andReturn([]);
+        expect('get_posts')->andReturn([]);
 
         $repository = new TsmlGroupRepository($this->createMock(GroupFactory::class));
 
         $this->assertSame(0, $repository->count());
     }
 
-    /** @test */
+    #[Test]
     public function group_delete_is_explicitly_unimplemented(): void
     {
         $repository = new TsmlGroupRepository($this->createMock(GroupFactory::class));
@@ -164,8 +164,7 @@ class RepositoryQueryCoverageTest extends TestCase
     }
 
     // ══ Group factory setters ═════════════════════════════════════════
-
-    /** @test */
+    #[Test]
     public function group_factory_dependencies_can_be_supplied_after_construction(): void
     {
         $factory = new TsmlGroupFactory();
@@ -177,8 +176,7 @@ class RepositoryQueryCoverageTest extends TestCase
     }
 
     // ══ Position repository ═══════════════════════════════════════════
-
-    /** @test */
+    #[Test]
     public function position_find_by_id_delegates_straight_to_the_factory(): void
     {
         $position = $this->createMock(Position::class);
@@ -188,7 +186,7 @@ class RepositoryQueryCoverageTest extends TestCase
         $this->assertSame($position, (new TsmlPositionRepository($factory))->findById(9));
     }
 
-    /** @test */
+    #[Test]
     public function position_find_all_queries_published_positions(): void
     {
         $this->stubGetPosts($this->postObjects(1, 2, 3));
@@ -201,7 +199,7 @@ class RepositoryQueryCoverageTest extends TestCase
         $this->assertSame('publish', $this->capturedArgs['post_status']);
     }
 
-    /** @test */
+    #[Test]
     public function position_find_all_drops_posts_the_factory_rejects(): void
     {
         $this->stubGetPosts($this->postObjects(1, 2));
@@ -213,7 +211,7 @@ class RepositoryQueryCoverageTest extends TestCase
         $this->assertCount(1, (new TsmlPositionRepository($factory))->findAll());
     }
 
-    /** @test */
+    #[Test]
     public function position_count_asks_only_for_ids(): void
     {
         $this->stubGetPosts([1, 2]);
@@ -224,20 +222,20 @@ class RepositoryQueryCoverageTest extends TestCase
         $this->assertSame('ids', $this->capturedArgs['fields']);
     }
 
-    /** @test */
+    #[Test]
     public function position_count_is_zero_when_the_query_returns_nothing_usable(): void
     {
         // WordPress always hands back an array; wp-mocks types get_posts() that
         // way, so the old andReturn(null) is no longer expressible — and was
         // never reachable in production either.
-        Functions\expect('get_posts')->andReturn([]);
+        expect('get_posts')->andReturn([]);
 
         $repository = new TsmlPositionRepository($this->createMock(PositionFactory::class));
 
         $this->assertSame(0, $repository->count());
     }
 
-    /** @test */
+    #[Test]
     public function position_delete_is_explicitly_unimplemented(): void
     {
         $repository = new TsmlPositionRepository($this->createMock(PositionFactory::class));
@@ -249,8 +247,7 @@ class RepositoryQueryCoverageTest extends TestCase
     }
 
     // ══ Member repository ═════════════════════════════════════════════
-
-    /** @test */
+    #[Test]
     public function member_count_asks_only_for_ids(): void
     {
         $this->stubGetPosts([1, 2, 3, 4]);
@@ -262,49 +259,49 @@ class RepositoryQueryCoverageTest extends TestCase
         $this->assertSame('ids', $this->capturedArgs['fields']);
     }
 
-    /** @test */
+    #[Test]
     public function member_count_is_zero_when_the_query_returns_nothing_usable(): void
     {
         // WordPress always hands back an array; wp-mocks types get_posts() that
         // way, so the old andReturn(null) is no longer expressible — and was
         // never reachable in production either.
-        Functions\expect('get_posts')->andReturn([]);
+        expect('get_posts')->andReturn([]);
 
         $repository = new TsmlMemberRepository($this->createMock(MemberFactory::class));
 
         $this->assertSame(0, $repository->count());
     }
 
-    /** @test */
+    #[Test]
     public function creating_a_member_inserts_a_post_and_mirrors_the_name_into_acf(): void
     {
-        Functions\expect('wp_insert_post')->andReturn(77);
-        Functions\expect('update_field')->andReturn(true);
+        expect('wp_insert_post')->andReturn(77);
+        expect('update_field')->andReturn(true);
         // do_action() is not stubbed: Brain Monkey owns it, and overriding it
         // here would take the call out of the container every hook assertion
         // in this suite reads from.
-        Functions\expect('get_post')->andReturn(null);
+        expect('get_post')->andReturn(null);
 
         $repository = new TsmlMemberRepository($this->createMock(MemberFactory::class));
 
         $this->assertSame(77, $repository->create('Anonymous Alex'));
     }
 
-    /** @test */
+    #[Test]
     public function a_failed_member_insert_reports_zero(): void
     {
-        Functions\expect('wp_insert_post')->andReturn(new \WP_Error('db_error', 'the write failed'));
+        expect('wp_insert_post')->andReturn(new \WP_Error('db_error', 'the write failed'));
 
         $repository = new TsmlMemberRepository($this->createMock(MemberFactory::class));
 
         $this->assertSame(0, $repository->create('Anonymous Alex'));
     }
 
-    /** @test */
+    #[Test]
     public function deleting_a_member_forces_a_permanent_delete(): void
     {
         $captured = [];
-        Functions\expect('wp_delete_post')->andReturnUsing(
+        expect('wp_delete_post')->andReturnUsing(
             function ($id, $force = false) use (&$captured) {
                 $captured = [$id, $force];
 
@@ -318,10 +315,10 @@ class RepositoryQueryCoverageTest extends TestCase
         $this->assertSame([5, true], $captured, 'Members are hard-deleted, not trashed.');
     }
 
-    /** @test */
+    #[Test]
     public function a_failed_member_delete_reports_false(): void
     {
-        Functions\expect('wp_delete_post')->andReturn(false);
+        expect('wp_delete_post')->andReturn(false);
 
         $repository = new TsmlMemberRepository($this->createMock(MemberFactory::class));
 
@@ -329,8 +326,7 @@ class RepositoryQueryCoverageTest extends TestCase
     }
 
     // ══ Member factory ════════════════════════════════════════════════
-
-    /** @test */
+    #[Test]
     public function create_new_builds_a_member_from_explicit_values(): void
     {
         $member = (new TsmlMemberFactory())->createNew(
@@ -351,7 +347,7 @@ class RepositoryQueryCoverageTest extends TestCase
         $this->assertSame(ResponderCertification::Certified, $member->getResponderCertification());
     }
 
-    /** @test */
+    #[Test]
     public function create_new_defaults_every_optional_value(): void
     {
         $member = (new TsmlMemberFactory())->createNew(id: 1);

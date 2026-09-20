@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\Members\TsmlMemberFactory;
 use TsmlForUnity\Members\TsmlMemberFields;
 use TsmlForUnity\Tests\TestCase;
@@ -21,9 +23,8 @@ use WP_Post;
  *
  * The GDPR acceptance timestamp is stored by ACF in d/m/Y g:i a and
  * normalised to Y-m-d H:i:s so it parses and serialises predictably.
- *
- * @covers \TsmlForUnity\Members\TsmlMemberFactory
  */
+#[CoversClass(\TsmlForUnity\Members\TsmlMemberFactory::class)]
 class TsmlMemberFactoryPositionFieldTest extends TestCase
 {
     private const POST_ID = 123;
@@ -34,7 +35,7 @@ class TsmlMemberFactoryPositionFieldTest extends TestCase
     {
         parent::setUp();
 
-        Functions\expect('get_post')
+        expect('get_post')
             ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
 
         $this->factory = new TsmlMemberFactory();
@@ -46,7 +47,7 @@ class TsmlMemberFactoryPositionFieldTest extends TestCase
      */
     private function stubFields(array $values): void
     {
-        Functions\expect('get_field')->andReturnUsing(
+        expect('get_field')->andReturnUsing(
             static fn (string $field, int $id = 0) => $values[$field] ?? ''
         );
     }
@@ -57,8 +58,7 @@ class TsmlMemberFactoryPositionFieldTest extends TestCase
     }
 
     // ─── intergroup position shapes ─────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function a_post_object_field_yields_its_id(): void
     {
         $post = new WP_Post(['ID' => 55, 'post_type' => 'intergroup-position']);
@@ -67,7 +67,7 @@ class TsmlMemberFactoryPositionFieldTest extends TestCase
         $this->assertSame(55, $this->build()->getIntergroupPosition());
     }
 
-    /** @test */
+    #[Test]
     public function an_array_of_post_objects_yields_the_first_id(): void
     {
         // ACF returns an array when the field allows multiple selections.
@@ -78,7 +78,7 @@ class TsmlMemberFactoryPositionFieldTest extends TestCase
         $this->assertSame(61, $this->build()->getIntergroupPosition());
     }
 
-    /** @test */
+    #[Test]
     public function an_array_of_ids_yields_the_first_id(): void
     {
         // Configured to return ids rather than objects.
@@ -87,7 +87,7 @@ class TsmlMemberFactoryPositionFieldTest extends TestCase
         $this->assertSame(71, $this->build()->getIntergroupPosition());
     }
 
-    /** @test */
+    #[Test]
     public function a_bare_numeric_field_yields_that_id(): void
     {
         $this->stubFields([TsmlMemberFields::FIELD_INTERGROUP_POSITION => '81']);
@@ -95,7 +95,7 @@ class TsmlMemberFactoryPositionFieldTest extends TestCase
         $this->assertSame(81, $this->build()->getIntergroupPosition());
     }
 
-    /** @test */
+    #[Test]
     public function an_unset_position_field_means_no_position(): void
     {
         $this->stubFields([TsmlMemberFields::FIELD_INTERGROUP_POSITION => '']);
@@ -103,7 +103,7 @@ class TsmlMemberFactoryPositionFieldTest extends TestCase
         $this->assertSame(0, $this->build()->getIntergroupPosition());
     }
 
-    /** @test */
+    #[Test]
     public function an_array_holding_something_unrecognised_means_no_position(): void
     {
         // Neither a WP_Post nor numeric — better to report "no position"
@@ -114,8 +114,7 @@ class TsmlMemberFactoryPositionFieldTest extends TestCase
     }
 
     // ─── GDPR acceptance timestamp ──────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function an_acf_formatted_acceptance_time_is_normalised(): void
     {
         $this->stubFields([
@@ -125,7 +124,7 @@ class TsmlMemberFactoryPositionFieldTest extends TestCase
         $this->assertSame('2026-03-05 14:30:00', $this->build()->getGdprAcceptedAt());
     }
 
-    /** @test */
+    #[Test]
     public function an_unparseable_acceptance_time_is_preserved_as_stored(): void
     {
         // Rather than discard a value it cannot parse, the factory hands
@@ -137,7 +136,7 @@ class TsmlMemberFactoryPositionFieldTest extends TestCase
         $this->assertSame('sometime last Tuesday', $this->build()->getGdprAcceptedAt());
     }
 
-    /** @test */
+    #[Test]
     public function a_member_who_never_accepted_has_an_empty_timestamp(): void
     {
         $this->stubFields([TsmlMemberFields::FIELD_GDPR_ACCEPTED_AT => '']);

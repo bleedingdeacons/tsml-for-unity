@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Actions;
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
+use function Brain\Monkey\Actions\expectDone;
 use TsmlForUnity\Positions\TsmlPosition;
 use TsmlForUnity\Positions\TsmlPositionChangeTracker;
 use TsmlForUnity\Positions\TsmlPositionFields;
@@ -20,14 +24,13 @@ use Unity\Positions\Interfaces\PositionRepository;
  * priority 1, checkForChanges diffs and dispatches at priority 20. These
  * pin the routing between unity/position_changing (a real change) and the
  * quiet path (no change), plus the guards that make both early-return.
- *
- * @covers \TsmlForUnity\Positions\TsmlPositionChangeTracker
  */
+#[CoversClass(\TsmlForUnity\Positions\TsmlPositionChangeTracker::class)]
 class TsmlPositionChangeTrackerTest extends TestCase
 {
     use ActionExpectations;
 
-    /** @var PositionRepository&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var PositionRepository&MockObject */
     private $repository;
 
     private TsmlPositionChangeTracker $tracker;
@@ -52,14 +55,14 @@ class TsmlPositionChangeTrackerTest extends TestCase
 
     private function stubPostTypeGuard(int $postId): void
     {
-        Functions\expect('get_post_type')
+        expect('get_post_type')
             ->with($postId)
             ->andReturn(TsmlPositionFields::POST_TYPE);
     }
 
     private function stubTitleSyncIsNoop(int $postId, string $existingTitle): void
     {
-        Functions\expect('get_post')
+        expect('get_post')
             ->with($postId)
             ->andReturn((object) ['ID' => $postId, 'post_title' => $existingTitle]);
     }
@@ -77,9 +80,7 @@ class TsmlPositionChangeTrackerTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function editing_a_field_fires_position_changing(): void
     {
         $postId = 42;
@@ -97,17 +98,15 @@ class TsmlPositionChangeTrackerTest extends TestCase
             ->with($postId)
             ->willReturnOnConsecutiveCalls($original, $updated);
 
-        Actions\expectDone('unity/position_before_save')->once()->with($postId, $original);
-        Actions\expectDone('unity/position_changing')->once()->with($updated, $original);
-        Actions\expectDone('unity/position_changed')->once()->with($postId, $updated, $original);
+        expectDone('unity/position_before_save')->once()->with($postId, $original);
+        expectDone('unity/position_changing')->once()->with($updated, $original);
+        expectDone('unity/position_changed')->once()->with($postId, $updated, $original);
 
         $this->tracker->captureOriginalPosition($postId);
         $this->tracker->checkForChanges($postId);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function saving_with_no_field_changes_stays_quiet(): void
     {
         $postId = 42;
@@ -123,20 +122,18 @@ class TsmlPositionChangeTrackerTest extends TestCase
             ->willReturnOnConsecutiveCalls($original, $updated);
 
         // Only the catch-all "changed" event fires; "changing" stays silent.
-        Actions\expectDone('unity/position_changed')->once()->with($postId, $updated, $original);
+        expectDone('unity/position_changed')->once()->with($postId, $updated, $original);
         $this->expectActionNotFired('unity/position_changing', $updated, $original);
 
         $this->tracker->captureOriginalPosition($postId);
         $this->tracker->checkForChanges($postId);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function capture_ignores_a_non_position_post_type(): void
     {
         $postId = 99;
-        Functions\expect('get_post_type')->with($postId)->andReturn('page');
+        expect('get_post_type')->with($postId)->andReturn('page');
 
         // A wrong post type must not reach the repository.
         $this->repository->expects($this->never())->method('findById');
@@ -146,9 +143,7 @@ class TsmlPositionChangeTrackerTest extends TestCase
         $this->assertTrue(true);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function check_for_changes_returns_early_without_a_captured_original(): void
     {
         $postId = 42;
@@ -162,10 +157,8 @@ class TsmlPositionChangeTrackerTest extends TestCase
         $this->assertTrue(true);
     }
 
-    /**
-     * @test
-     * @dataProvider changedFieldProvider
-     */
+    #[DataProvider('changedFieldProvider')]
+    #[Test]
     public function each_tracked_field_triggers_a_change(TsmlPosition $original, TsmlPosition $updated): void
     {
         $postId = 42;
@@ -178,7 +171,7 @@ class TsmlPositionChangeTrackerTest extends TestCase
             ->with($postId)
             ->willReturnOnConsecutiveCalls($original, $updated);
 
-        Actions\expectDone('unity/position_changing')->once()->with($updated, $original);
+        expectDone('unity/position_changing')->once()->with($updated, $original);
 
         $this->tracker->captureOriginalPosition($postId);
         $this->tracker->checkForChanges($postId);

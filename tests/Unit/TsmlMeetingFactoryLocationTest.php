@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\Meetings\TsmlMeetingFactory;
 use TsmlForUnity\Tests\TestCase;
 use Unity\Contacts\Interfaces\ContactFactory;
@@ -21,9 +23,8 @@ use Unity\Locations\Interfaces\LocationRepository;
  * that yields nothing. Getting that precedence wrong would silently strip
  * addresses off every meeting, which is the sort of thing that looks fine
  * in a smoke test.
- *
- * @covers \TsmlForUnity\Meetings\TsmlMeetingFactory
  */
+#[CoversClass(\TsmlForUnity\Meetings\TsmlMeetingFactory::class)]
 class TsmlMeetingFactoryLocationTest extends TestCase
 {
     protected function setUp(): void
@@ -32,14 +33,14 @@ class TsmlMeetingFactoryLocationTest extends TestCase
 
         // createFromSource() refuses to run unless the whole WordPress post
         // API is present, so stub the lot once here rather than per test.
-        Functions\expect('get_permalink')->andReturn('https://example.test/location/5');
-        Functions\expect('get_post_status')->andReturn('publish');
-        Functions\expect('get_post_custom')->andReturn([]);
-        Functions\expect('is_serialized')
+        expect('get_permalink')->andReturn('https://example.test/location/5');
+        expect('get_post_status')->andReturn('publish');
+        expect('get_post_custom')->andReturn([]);
+        expect('is_serialized')
             ->andReturnUsing(static fn ($v): bool => is_string($v) && @unserialize($v) !== false);
-        Functions\expect('get_post')
+        expect('get_post')
             ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
-        Functions\expect('get_post_meta')->andReturn('');
+        expect('get_post_meta')->andReturn('');
     }
 
     /** The minimum source createFromSource() will accept. */
@@ -71,8 +72,7 @@ class TsmlMeetingFactoryLocationTest extends TestCase
     }
 
     // ─── setters ────────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function the_location_repository_can_be_supplied_after_construction(): void
     {
         $repository = $this->createMock(LocationRepository::class);
@@ -87,7 +87,7 @@ class TsmlMeetingFactoryLocationTest extends TestCase
         $this->assertSame('St Mary Hall', $meeting->getLocation()->getName());
     }
 
-    /** @test */
+    #[Test]
     public function the_contact_factory_can_be_supplied_after_construction(): void
     {
         $factory = new TsmlMeetingFactory();
@@ -96,7 +96,7 @@ class TsmlMeetingFactoryLocationTest extends TestCase
         $this->assertNotNull($factory->createFromSource($this->source()));
     }
 
-    /** @test */
+    #[Test]
     public function a_default_contact_factory_is_created_when_none_is_given(): void
     {
         // No contact factory injected; the factory should build its own
@@ -114,8 +114,7 @@ class TsmlMeetingFactoryLocationTest extends TestCase
     }
 
     // ─── location via repository ────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function a_resolved_location_supplies_every_address_component(): void
     {
         $repository = $this->createMock(LocationRepository::class);
@@ -139,7 +138,7 @@ class TsmlMeetingFactoryLocationTest extends TestCase
         $this->assertSame('https://example.test/location/5', $location->getLink());
     }
 
-    /** @test */
+    #[Test]
     public function an_unresolvable_location_id_falls_back_to_the_source_fields(): void
     {
         $repository = $this->createMock(LocationRepository::class);
@@ -156,7 +155,7 @@ class TsmlMeetingFactoryLocationTest extends TestCase
         $this->assertSame('2 Other Road', $meeting->getLocation()->getAddress());
     }
 
-    /** @test */
+    #[Test]
     public function a_zero_location_id_is_not_looked_up(): void
     {
         $repository = $this->createMock(LocationRepository::class);
@@ -168,7 +167,7 @@ class TsmlMeetingFactoryLocationTest extends TestCase
         $this->assertSame('Community Center', $meeting->getLocation()->getName());
     }
 
-    /** @test */
+    #[Test]
     public function without_a_repository_the_source_fields_are_used_directly(): void
     {
         $factory = new TsmlMeetingFactory();
@@ -194,7 +193,7 @@ class TsmlMeetingFactoryLocationTest extends TestCase
         $this->assertSame('Upstairs', $location->getNotes());
     }
 
-    /** @test */
+    #[Test]
     public function a_meeting_with_neither_a_name_nor_an_address_has_no_location(): void
     {
         $factory = new TsmlMeetingFactory();
@@ -219,8 +218,7 @@ class TsmlMeetingFactoryLocationTest extends TestCase
     }
 
     // ─── meta processing ────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function single_element_meta_arrays_are_flattened(): void
     {
         $factory = new TsmlMeetingFactory();
@@ -234,7 +232,7 @@ class TsmlMeetingFactoryLocationTest extends TestCase
         $this->assertNotNull($meeting);
     }
 
-    /** @test */
+    #[Test]
     public function serialized_meta_values_are_unserialized(): void
     {
         $factory = new TsmlMeetingFactory();
@@ -248,7 +246,7 @@ class TsmlMeetingFactoryLocationTest extends TestCase
         $this->assertIsArray($meeting->getTypes());
     }
 
-    /** @test */
+    #[Test]
     public function meeting_types_are_expanded_from_codes_to_names(): void
     {
         $factory = new TsmlMeetingFactory();
@@ -261,7 +259,7 @@ class TsmlMeetingFactoryLocationTest extends TestCase
         $this->assertContains('Open', $types);
     }
 
-    /** @test */
+    #[Test]
     public function an_unknown_type_code_is_preserved_as_given(): void
     {
         $factory = new TsmlMeetingFactory();
