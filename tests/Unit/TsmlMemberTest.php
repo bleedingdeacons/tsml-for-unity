@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Members\TsmlMember;
 use Unity\Members\Interfaces\Member;
@@ -11,14 +13,11 @@ use Unity\Members\PreferredContact;
 
 /**
  * Tests for TsmlMember entity
- *
- * @covers \TsmlForUnity\Members\TsmlMember
  */
+#[CoversClass(\TsmlForUnity\Members\TsmlMember::class)]
 class TsmlMemberTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_member_interface(): void
     {
         $member = new TsmlMember(id: 1);
@@ -26,9 +25,7 @@ class TsmlMemberTest extends TestCase
         $this->assertInstanceOf(Member::class, $member);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_can_be_instantiated_with_minimal_values(): void
     {
         $member = new TsmlMember(id: 1);
@@ -58,9 +55,7 @@ class TsmlMemberTest extends TestCase
         $this->assertEquals('', $member->getGdprAcceptanceStatement());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_can_be_instantiated_with_all_values(): void
     {
         $member = new TsmlMember(
@@ -114,9 +109,7 @@ class TsmlMemberTest extends TestCase
         $this->assertEquals('I agree to the privacy policy.', $member->getGdprAcceptanceStatement());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function gsr_flag_can_be_toggled(): void
     {
         $gsrMember = new TsmlMember(id: 1, isGSR: true);
@@ -126,9 +119,7 @@ class TsmlMemberTest extends TestCase
         $this->assertFalse($regularMember->isGSR());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function visibility_flags_work_independently(): void
     {
         $member1 = new TsmlMember(
@@ -150,9 +141,7 @@ class TsmlMemberTest extends TestCase
         $this->assertTrue($member2->showMemberProfile());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_empty_strings_for_optional_fields(): void
     {
         $member = new TsmlMember(
@@ -172,9 +161,8 @@ class TsmlMemberTest extends TestCase
      * the boundaries — the factory on the way in, the repository on the way
      * out, the revisor when a revision touches either field — and not in the
      * constructor, so that with() stays a plain field-level copy.
-     *
-     * @test
      */
+    #[Test]
     public function the_entity_itself_holds_no_landline_invariant(): void
     {
         $member = new TsmlMember(
@@ -186,9 +174,7 @@ class TsmlMemberTest extends TestCase
         $this->assertSame(PreferredContact::Landline, $member->getPreferredContact());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_stores_intergroup_position_as_integer(): void
     {
         $member = new TsmlMember(
@@ -200,9 +186,7 @@ class TsmlMemberTest extends TestCase
         $this->assertEquals(10, $member->getIntergroupPosition());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_stores_home_group_as_integer(): void
     {
         $member = new TsmlMember(
@@ -214,9 +198,7 @@ class TsmlMemberTest extends TestCase
         $this->assertEquals(42, $member->getHomeGroup());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function meeting_po_accepts_mixed_types(): void
     {
         $withInt = new TsmlMember(id: 1, meetingPO: 200);
@@ -228,9 +210,7 @@ class TsmlMemberTest extends TestCase
         $this->assertNull($withNull->getMeetingPO());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function twelfth_stepper_and_contact_fields_are_independent(): void
     {
         $stepper = new TsmlMember(
@@ -250,9 +230,7 @@ class TsmlMemberTest extends TestCase
         $this->assertSame([], $regular->getAccepts());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function telephone_responder_is_independent_of_twelfth_stepper(): void
     {
         $responderOnly = new TsmlMember(
@@ -288,9 +266,7 @@ class TsmlMemberTest extends TestCase
         $this->assertFalse($neither->isTelephoneResponder());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function gdpr_compliance_fields_are_independent(): void
     {
         $accepted = new TsmlMember(
@@ -318,14 +294,12 @@ class TsmlMemberTest extends TestCase
     }
 
     // ── toArray() / with() ─────────────────────────────────────────────
-
     /**
      * toArray()'s keys must stay identical to the constructor's parameter
      * names, because with() spreads the array as named arguments. If they
      * drift, with() throws "Unknown named parameter" — so pin them here.
-     *
-     * @test
      */
+    #[Test]
     public function to_array_keys_match_the_constructor_parameter_names(): void
     {
         $member = new TsmlMember(id: 1);
@@ -342,9 +316,7 @@ class TsmlMemberTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function to_array_round_trips_through_the_constructor(): void
     {
         $original = $this->fullyPopulatedMember();
@@ -354,9 +326,7 @@ class TsmlMemberTest extends TestCase
         $this->assertEquals($original->toArray(), $rebuilt->toArray());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function with_replaces_only_the_named_field(): void
     {
         $original = $this->fullyPopulatedMember();
@@ -375,9 +345,8 @@ class TsmlMemberTest extends TestCase
     /**
      * The failure mode this class exists to prevent: a partial update must
      * not silently erase the GDPR consent record.
-     *
-     * @test
      */
+    #[Test]
     public function with_preserves_gdpr_consent_when_changing_an_unrelated_field(): void
     {
         $member = $this->fullyPopulatedMember();
@@ -394,9 +363,7 @@ class TsmlMemberTest extends TestCase
         $this->assertEquals(['accepts-male'], $updated->getAccepts());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function with_can_replace_several_fields_at_once(): void
     {
         $member = $this->fullyPopulatedMember();
@@ -413,9 +380,7 @@ class TsmlMemberTest extends TestCase
         $this->assertEquals('john@example.com', $updated->getPersonalEmail());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function with_leaves_the_original_untouched(): void
     {
         $original = $this->fullyPopulatedMember();
@@ -426,9 +391,7 @@ class TsmlMemberTest extends TestCase
         $this->assertEquals($before, $original->toArray(), 'with() must not mutate the receiver.');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function with_no_changes_returns_an_equal_member(): void
     {
         $original = $this->fullyPopulatedMember();

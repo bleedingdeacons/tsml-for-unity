@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversTrait;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\Logger\HasLogger;
 use TsmlForUnity\Tests\TestCase;
 
@@ -25,9 +29,8 @@ class HasLoggerFixture
  *
  * The trait degrades to a no-op when Sentinel's wp_log() is unavailable, and
  * routes through a resolved channel when it is present.
- *
- * @covers \TsmlForUnity\Logger\HasLogger
  */
+#[CoversTrait(\TsmlForUnity\Logger\HasLogger::class)]
 class HasLoggerTest extends TestCase
 {
     protected function setUp(): void
@@ -52,9 +55,7 @@ class HasLoggerTest extends TestCase
         $prop->setValue(null, null);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function log_returns_null_when_wp_log_is_unavailable(): void
     {
         // wp_log() is not defined in the unit runtime.
@@ -62,9 +63,7 @@ class HasLoggerTest extends TestCase
         $this->assertNull(HasLoggerFixture::log());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function every_level_is_a_safe_no_op_without_a_channel(): void
     {
         // None of these should error even though there is no channel.
@@ -85,19 +84,18 @@ class HasLoggerTest extends TestCase
      * function for the lifetime of the process, and the two tests above assert
      * it is *absent* — so leaking the definition into the rest of the run
      * would take every other class that logs down with it.
-     *
-     * @test
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
      */
+    #[PreserveGlobalState(false)]
+    #[Test]
+    #[RunInSeparateProcess]
     public function it_resolves_and_caches_a_channel_when_wp_log_exists(): void
     {
         $channel = new \Sentinel_Log_Channel();
 
         // logChannel() sanitises the short class name before asking wp_log
         // for that channel.
-        Functions\expect('sanitize_key')->andReturnUsing(fn ($v) => strtolower($v));
-        Functions\expect('wp_log')->once()->with('hasloggerfixture')->andReturn($channel);
+        expect('sanitize_key')->andReturnUsing(fn ($v) => strtolower($v));
+        expect('wp_log')->once()->with('hasloggerfixture')->andReturn($channel);
 
         HasLoggerFixture::logError('boom');
         HasLoggerFixture::logInfo('fyi');

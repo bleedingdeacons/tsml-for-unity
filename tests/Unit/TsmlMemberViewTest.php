@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Members\TsmlMemberView;
 use Unity\Members\Interfaces\MemberView;
@@ -12,22 +14,17 @@ use Unity\Members\ResponderCertification;
 
 /**
  * Tests for TsmlMemberView
- *
- * @covers \TsmlForUnity\Members\TsmlMemberView
  */
+#[CoversClass(\TsmlForUnity\Members\TsmlMemberView::class)]
 class TsmlMemberViewTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_member_view_interface(): void
     {
         $this->assertInstanceOf(MemberView::class, new TsmlMemberView());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_applies_defaults_for_an_empty_view(): void
     {
         $view = new TsmlMemberView();
@@ -53,9 +50,7 @@ class TsmlMemberViewTest extends TestCase
         $this->assertSame([], $view->getAccepts());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_exposes_every_field_passed_to_the_constructor(): void
     {
         $view = new TsmlMemberView(
@@ -99,9 +94,7 @@ class TsmlMemberViewTest extends TestCase
         $this->assertSame(['phone', 'email'], $view->getAccepts());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function has_home_group_and_has_position_track_their_ids(): void
     {
         $withGroup = new TsmlMemberView(homeGroupId: 3);

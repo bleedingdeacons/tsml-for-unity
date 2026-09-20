@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Groups\TsmlGroup;
 use TsmlForUnity\Members\TsmlMember;
@@ -17,14 +19,11 @@ use Unity\Positions\Interfaces\PositionRepository;
 
 /**
  * Tests for TsmlMemberViewFactory
- *
- * @covers \TsmlForUnity\Members\TsmlMemberViewFactory
  */
+#[CoversClass(\TsmlForUnity\Members\TsmlMemberViewFactory::class)]
 class TsmlMemberViewFactoryTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_the_factory_interface(): void
     {
         $factory = new TsmlMemberViewFactory(
@@ -36,9 +35,7 @@ class TsmlMemberViewFactoryTest extends TestCase
         $this->assertInstanceOf(MemberViewFactory::class, $factory);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_resolves_group_and_position_names(): void
     {
         $member = new TsmlMember(
@@ -77,9 +74,7 @@ class TsmlMemberViewFactoryTest extends TestCase
         $this->assertSame('2026-01-01', $views[0]->getRotationDate());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_leaves_names_blank_when_a_member_has_no_group_or_position(): void
     {
         $member = new TsmlMember(id: 1, anonymousName: 'Solo');
@@ -102,9 +97,7 @@ class TsmlMemberViewFactoryTest extends TestCase
         $this->assertFalse($views[0]->hasPosition());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function a_deleted_group_or_position_resolves_to_an_empty_name(): void
     {
         $member = new TsmlMember(id: 1, homeGroup: 10, intergroupPosition: 5);
@@ -128,9 +121,7 @@ class TsmlMemberViewFactoryTest extends TestCase
         $this->assertTrue($views[0]->hasPosition());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_skips_non_positive_ids_and_missing_members(): void
     {
         $members = $this->createMock(MemberRepository::class);
@@ -151,9 +142,7 @@ class TsmlMemberViewFactoryTest extends TestCase
         $this->assertSame('Real', $views[0]->getAnonymousName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_resolves_a_shared_group_name_only_once_per_call(): void
     {
         $memberA = new TsmlMember(id: 1, homeGroup: 10);
@@ -184,9 +173,7 @@ class TsmlMemberViewFactoryTest extends TestCase
         $this->assertSame('Shared Group', $views[1]->getHomeGroupName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function an_empty_source_list_yields_no_views(): void
     {
         $factory = new TsmlMemberViewFactory(

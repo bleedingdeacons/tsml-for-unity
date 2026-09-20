@@ -4,20 +4,19 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendance;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingGroupAttendance;
 
 /**
  * Tests for TsmlIntergroupMeetingGroupAttendance entity
- *
- * @covers \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendance
  */
+#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendance::class)]
 class TsmlIntergroupMeetingGroupAttendanceTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_intergroup_meeting_attendance_interface(): void
     {
         $attendance = new TsmlIntergroupMeetingGroupAttendance();
@@ -25,9 +24,7 @@ class TsmlIntergroupMeetingGroupAttendanceTest extends TestCase
         $this->assertInstanceOf(IntergroupMeetingGroupAttendance::class, $attendance);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_can_be_instantiated_with_default_values(): void
     {
         $attendance = new TsmlIntergroupMeetingGroupAttendance();
@@ -42,9 +39,7 @@ class TsmlIntergroupMeetingGroupAttendanceTest extends TestCase
         $this->assertEquals('', $attendance->getGsrProxyName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_can_be_instantiated_with_all_values(): void
     {
         $attendance = new TsmlIntergroupMeetingGroupAttendance(
@@ -68,9 +63,7 @@ class TsmlIntergroupMeetingGroupAttendanceTest extends TestCase
         $this->assertEquals('Jane S.', $attendance->getGsrProxyName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function proxy_flag_defaults_to_false(): void
     {
         $attendance = new TsmlIntergroupMeetingGroupAttendance(
@@ -85,9 +78,7 @@ class TsmlIntergroupMeetingGroupAttendanceTest extends TestCase
         $this->assertEquals('', $attendance->getGsrProxyName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function proxy_name_is_independent_of_proxy_flag(): void
     {
         $attendance = new TsmlIntergroupMeetingGroupAttendance(
@@ -100,9 +91,7 @@ class TsmlIntergroupMeetingGroupAttendanceTest extends TestCase
         $this->assertEquals('Orphaned Name', $attendance->getGsrProxyName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_stores_meeting_group_as_plain_text(): void
     {
         $attendance = new TsmlIntergroupMeetingGroupAttendance(
@@ -114,9 +103,7 @@ class TsmlIntergroupMeetingGroupAttendanceTest extends TestCase
         $this->assertEquals('Tuesday Night Big Book Study', $attendance->getMeetingGroup());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_stores_gsr_name_as_plain_text(): void
     {
         $attendance = new TsmlIntergroupMeetingGroupAttendance(
@@ -128,9 +115,7 @@ class TsmlIntergroupMeetingGroupAttendanceTest extends TestCase
         $this->assertEquals('Mary K.', $attendance->getGsrName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_empty_strings_for_text_fields(): void
     {
         $attendance = new TsmlIntergroupMeetingGroupAttendance(
@@ -145,9 +130,7 @@ class TsmlIntergroupMeetingGroupAttendanceTest extends TestCase
         $this->assertEmpty($attendance->getGsrProxyName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_stores_member_id_as_integer(): void
     {
         $attendance = new TsmlIntergroupMeetingGroupAttendance(
@@ -159,9 +142,7 @@ class TsmlIntergroupMeetingGroupAttendanceTest extends TestCase
         $this->assertEquals(55, $attendance->getMemberId());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_stores_intergroup_meeting_id_as_integer(): void
     {
         $attendance = new TsmlIntergroupMeetingGroupAttendance(

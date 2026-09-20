@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendance;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceFactory;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceRepository;
@@ -21,15 +25,14 @@ use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingOfficerAttendanceReposi
  * a record in place. As with the group repository the assertions are on the
  * SQL produced, including the orderby whitelist that guards a value
  * interpolated straight into the statement.
- *
- * @covers \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceRepository
  */
+#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceRepository::class)]
 class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
 {
     private FakeWpdb $wpdb;
     private $previousWpdb;
 
-    /** @var TsmlIntergroupMeetingOfficerAttendanceFactory&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var TsmlIntergroupMeetingOfficerAttendanceFactory&MockObject */
     private $factory;
 
     private TsmlIntergroupMeetingOfficerAttendanceRepository $repository;
@@ -37,7 +40,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Functions\expect('esc_sql')->andReturnUsing(static fn ($v) => $v);
+        expect('esc_sql')->andReturnUsing(static fn ($v) => $v);
 
         $this->previousWpdb = $GLOBALS['wpdb'] ?? null;
         $this->wpdb = new FakeWpdb();
@@ -66,15 +69,14 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
         return $record;
     }
 
-    /** @test */
+    #[Test]
     public function it_implements_the_repository_interface(): void
     {
         $this->assertInstanceOf(IntergroupMeetingOfficerAttendanceRepository::class, $this->repository);
     }
 
     // ─── findById ───────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function find_by_id_hydrates_the_row_through_the_factory(): void
     {
         $this->wpdb->row = ['id' => '5', 'officer_id' => '9'];
@@ -88,7 +90,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
         $this->assertStringContainsString('WHERE id = 5', $this->wpdb->lastQuery());
     }
 
-    /** @test */
+    #[Test]
     public function find_by_id_returns_null_when_there_is_no_row(): void
     {
         $this->wpdb->row = null;
@@ -98,8 +100,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
     }
 
     // ─── findAll ────────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function find_all_without_filters_selects_everything_ordered_by_id(): void
     {
         $sql = '';
@@ -110,7 +111,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
         $this->assertStringContainsString('ORDER BY id ASC', $sql);
     }
 
-    /** @test */
+    #[Test]
     public function find_all_hydrates_every_row(): void
     {
         $this->wpdb->results = [['id' => '1'], ['id' => '2'], ['id' => '3']];
@@ -121,10 +122,8 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
         $this->assertCount(3, $this->repository->findAll());
     }
 
-    /**
-     * @test
-     * @dataProvider filterProvider
-     */
+    #[DataProvider('filterProvider')]
+    #[Test]
     public function find_all_turns_each_documented_filter_into_a_where_clause(
         string $key,
         mixed $value,
@@ -148,7 +147,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
         ];
     }
 
-    /** @test */
+    #[Test]
     public function find_all_combines_multiple_filters_with_and(): void
     {
         $this->repository->findAll(['officer_id' => 9, 'position_name' => 'Treasurer']);
@@ -156,7 +155,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
         $this->assertStringContainsString("officer_id = 9 AND position_name = 'Treasurer'", $this->wpdb->lastQuery());
     }
 
-    /** @test */
+    #[Test]
     public function find_all_accepts_a_whitelisted_order_column_and_direction(): void
     {
         $this->repository->findAll(['orderby' => 'officer_name', 'order' => 'desc']);
@@ -164,7 +163,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
         $this->assertStringContainsString('ORDER BY officer_name DESC', $this->wpdb->lastQuery());
     }
 
-    /** @test */
+    #[Test]
     public function find_all_falls_back_to_id_for_an_unrecognised_order_column(): void
     {
         $this->repository->findAll(['orderby' => 'officer_id; DELETE FROM wp_posts']);
@@ -174,7 +173,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
         $this->assertStringNotContainsString('DELETE FROM', $sql);
     }
 
-    /** @test */
+    #[Test]
     public function find_all_applies_limit_and_offset(): void
     {
         $this->repository->findAll(['number' => 5, 'offset' => 10]);
@@ -187,7 +186,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
         $this->assertStringNotContainsString('LIMIT', $this->wpdb->lastQuery());
     }
 
-    /** @test */
+    #[Test]
     public function find_by_intergroup_meeting_filters_on_the_parent_meeting(): void
     {
         $this->repository->findByIntergroupMeeting(99);
@@ -196,8 +195,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
     }
 
     // ─── count ──────────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function count_returns_the_scalar_from_the_database(): void
     {
         $this->wpdb->var = '4';
@@ -206,7 +204,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
         $this->assertStringContainsString('SELECT COUNT(*)', $this->wpdb->lastQuery());
     }
 
-    /** @test */
+    #[Test]
     public function count_applies_the_same_filters_as_find_all(): void
     {
         $this->wpdb->var = '2';
@@ -225,8 +223,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
     }
 
     // ─── save ───────────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function saving_a_new_record_inserts_it(): void
     {
         $this->assertTrue($this->repository->save($this->attendance(0)));
@@ -240,7 +237,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
         $this->assertSame('Jo', $data['officer_name']);
     }
 
-    /** @test */
+    #[Test]
     public function saving_an_existing_record_updates_it_by_id(): void
     {
         $this->assertTrue($this->repository->save($this->attendance(5)));
@@ -250,7 +247,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
         $this->assertSame(['id' => 5], $this->wpdb->updates[0][2]);
     }
 
-    /** @test */
+    #[Test]
     public function a_failed_write_is_reported(): void
     {
         $this->wpdb->insertResult = false;
@@ -261,8 +258,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
     }
 
     // ─── update by meeting and officer ──────────────────────────────
-
-    /** @test */
+    #[Test]
     public function update_by_meeting_and_officer_scopes_the_update_to_both(): void
     {
         $this->wpdb->updateResult = 1;
@@ -274,7 +270,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
         $this->assertSame(['intergroup_meeting_id' => 42, 'officer_id' => 9], $where);
     }
 
-    /** @test */
+    #[Test]
     public function update_by_meeting_and_officer_reports_zero_when_the_write_fails(): void
     {
         $this->wpdb->updateResult = false;
@@ -282,7 +278,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
         $this->assertSame(0, $this->repository->updateByMeetingAndOfficer(42, 9, 'Chair', 'Robin'));
     }
 
-    /** @test */
+    #[Test]
     public function update_by_meeting_and_officer_returns_the_affected_row_count(): void
     {
         $this->wpdb->updateResult = 3;
@@ -291,8 +287,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
     }
 
     // ─── delete ─────────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function delete_removes_the_row_by_id(): void
     {
         $this->assertTrue($this->repository->delete(5));
@@ -300,7 +295,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
         $this->assertSame(['id' => 5], $this->wpdb->deletes[0][1]);
     }
 
-    /** @test */
+    #[Test]
     public function delete_by_meeting_and_officer_scopes_to_both(): void
     {
         $this->assertTrue($this->repository->deleteByIntergroupMeetingAndOfficer(42, 9));
@@ -311,7 +306,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function a_failed_delete_is_reported(): void
     {
         $this->wpdb->deleteResult = false;
@@ -321,8 +316,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
     }
 
     // ─── existsForMeetingAndOfficer ─────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function exists_is_true_when_the_count_is_positive(): void
     {
         $this->wpdb->var = '1';
@@ -331,7 +325,7 @@ class TsmlIntergroupMeetingOfficerAttendanceRepositoryTest extends TestCase
         $this->assertStringContainsString('intergroup_meeting_id = 42 AND officer_id = 9', $this->wpdb->lastQuery());
     }
 
-    /** @test */
+    #[Test]
     public function exists_is_false_when_nothing_matches(): void
     {
         $this->wpdb->var = '0';

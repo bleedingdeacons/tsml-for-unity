@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Actions;
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
+use function Brain\Monkey\Actions\expectDone;
 use Exception;
 use TsmlForUnity\Groups\TsmlGroup;
 use TsmlForUnity\Groups\TsmlGroupChangeTracker;
@@ -26,12 +29,11 @@ use WP_Post;
  * own delete and status-transition routines — an exception escaping there
  * would break the deletion itself, so the tracker swallows it and still
  * announces the event with null.
- *
- * @covers \TsmlForUnity\Groups\TsmlGroupChangeTracker
  */
+#[CoversClass(\TsmlForUnity\Groups\TsmlGroupChangeTracker::class)]
 class TsmlGroupChangeTrackerLifecycleTest extends TestCase
 {
-    /** @var GroupRepository&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var GroupRepository&MockObject */
     private $repository;
 
     private TsmlGroupChangeTracker $tracker;
@@ -65,24 +67,23 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
     }
 
     // ─── deletion ───────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function deleting_a_group_fires_the_event_with_the_group_as_it_was(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
 
         $group = $this->group();
         $this->repository->expects($this->once())->method('findById')->with(42)->willReturn($group);
 
-        Actions\expectDone('unity/group_deleted')->once()->with(42, $group);
+        expectDone('unity/group_deleted')->once()->with(42, $group);
 
         $this->tracker->onGroupDeleted(42);
     }
 
-    /** @test */
+    #[Test]
     public function deleting_a_post_of_another_type_is_ignored(): void
     {
-        Functions\expect('get_post_type')->andReturn('page');
+        expect('get_post_type')->andReturn('page');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->onGroupDeleted(42);
@@ -90,13 +91,13 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
         $this->assertTrue(true, 'returned before raising the event');
     }
 
-    /** @test */
+    #[Test]
     public function a_repository_failure_during_deletion_still_fires_the_event(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
         $this->repository->method('findById')->willThrowException(new Exception('row vanished'));
 
-        Actions\expectDone('unity/group_deleted')->once()->with(42, null);
+        expectDone('unity/group_deleted')->once()->with(42, null);
 
         $this->tracker->onGroupDeleted(42);
 
@@ -104,19 +105,18 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
     }
 
     // ─── hiding ─────────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function taking_a_group_private_fires_the_hidden_event(): void
     {
         $group = $this->group();
         $this->repository->expects($this->once())->method('findById')->with(42)->willReturn($group);
 
-        Actions\expectDone('unity/group_hidden')->once()->with(42, $group);
+        expectDone('unity/group_hidden')->once()->with(42, $group);
 
         $this->tracker->onGroupHidden('private', 'publish', $this->post());
     }
 
-    /** @test */
+    #[Test]
     public function a_status_change_that_is_not_a_hide_is_ignored(): void
     {
         $this->repository->expects($this->never())->method('findById');
@@ -127,7 +127,7 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
         $this->assertTrue(true, 'no event for an unrelated transition');
     }
 
-    /** @test */
+    #[Test]
     public function a_group_already_private_is_not_hidden_again(): void
     {
         $this->repository->expects($this->never())->method('findById');
@@ -138,7 +138,7 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
         $this->assertTrue(true, 'no duplicate hide event');
     }
 
-    /** @test */
+    #[Test]
     public function hiding_a_post_of_another_type_is_ignored(): void
     {
         $this->repository->expects($this->never())->method('findById');
@@ -148,14 +148,14 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
         $this->assertTrue(true, 'only groups raise the event');
     }
 
-    /** @test */
+    #[Test]
     public function a_repository_failure_during_hiding_still_fires_the_event(): void
     {
         // The repository may refuse to return a private post; the event
         // still has to fire so listeners can react to the transition.
         $this->repository->method('findById')->willThrowException(new Exception('not visible'));
 
-        Actions\expectDone('unity/group_hidden')->once()->with(42, null);
+        expectDone('unity/group_hidden')->once()->with(42, null);
 
         $this->tracker->onGroupHidden('private', 'publish', $this->post());
 
@@ -163,11 +163,10 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
     }
 
     // ─── capture / check failure paths ──────────────────────────────
-
-    /** @test */
+    #[Test]
     public function a_capture_failure_is_swallowed(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
         $this->repository->method('findById')->willThrowException(new Exception('boom'));
 
         $this->tracker->captureOriginalGroup(42);
@@ -175,10 +174,10 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
         $this->assertTrue(true, 'a failed capture must not break the save');
     }
 
-    /** @test */
+    #[Test]
     public function a_check_that_cannot_reload_the_group_stops_quietly(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
 
         // Capture succeeds, then the reload comes back empty.
         $this->repository->method('findById')
@@ -190,10 +189,10 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
         $this->assertTrue(true, 'no event fired without an updated group');
     }
 
-    /** @test */
+    #[Test]
     public function a_check_failure_is_swallowed(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
 
         $this->repository->method('findById')
             ->willReturnOnConsecutiveCalls($this->group(), $this->throwException(new Exception('boom')));
@@ -204,10 +203,10 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
         $this->assertTrue(true, 'a failed check must not break the save');
     }
 
-    /** @test */
+    #[Test]
     public function a_renamed_group_has_its_post_title_synced(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlGroupFields::POST_TYPE);
 
         $original = new TsmlGroup(id: 42, title: 'Old Name', email: 'group@example.com');
         $updated  = new TsmlGroup(id: 42, title: 'New Name', email: 'group@example.com');
@@ -216,11 +215,11 @@ class TsmlGroupChangeTrackerLifecycleTest extends TestCase
 
         // The stored post_title still holds the old name, so the tracker
         // should write the new one back.
-        Functions\expect('get_post')
+        expect('get_post')
             ->andReturn((object) ['ID' => 42, 'post_title' => 'Old Name']);
 
         $updatedPost = [];
-        Functions\expect('wp_update_post')->andReturnUsing(
+        expect('wp_update_post')->andReturnUsing(
             function (array $args) use (&$updatedPost): int {
                 $updatedPost = $args;
 

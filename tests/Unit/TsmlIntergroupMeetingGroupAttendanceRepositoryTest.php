@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendance;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceFactory;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceRepository;
@@ -22,15 +26,14 @@ use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingGroupAttendanceReposito
  * WHERE clause, and that `orderby` is whitelisted — it is interpolated
  * directly into the statement, so an unrecognised value must fall back to
  * `id` rather than reach the database.
- *
- * @covers \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceRepository
  */
+#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceRepository::class)]
 class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
 {
     private FakeWpdb $wpdb;
     private $previousWpdb;
 
-    /** @var TsmlIntergroupMeetingGroupAttendanceFactory&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var TsmlIntergroupMeetingGroupAttendanceFactory&MockObject */
     private $factory;
 
     private TsmlIntergroupMeetingGroupAttendanceRepository $repository;
@@ -38,7 +41,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Functions\expect('esc_sql')->andReturnUsing(static fn ($v) => $v);
+        expect('esc_sql')->andReturnUsing(static fn ($v) => $v);
 
         $this->previousWpdb = $GLOBALS['wpdb'] ?? null;
         $this->wpdb = new FakeWpdb();
@@ -71,15 +74,14 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         return $record;
     }
 
-    /** @test */
+    #[Test]
     public function it_implements_the_repository_interface(): void
     {
         $this->assertInstanceOf(IntergroupMeetingGroupAttendanceRepository::class, $this->repository);
     }
 
     // ─── findById ───────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function find_by_id_hydrates_the_row_through_the_factory(): void
     {
         $this->wpdb->row = ['id' => '5', 'group_id' => '10'];
@@ -93,7 +95,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         $this->assertStringContainsString('WHERE id = 5', $this->wpdb->lastQuery());
     }
 
-    /** @test */
+    #[Test]
     public function find_by_id_returns_null_when_there_is_no_row(): void
     {
         $this->wpdb->row = null;
@@ -103,8 +105,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
     }
 
     // ─── findAll ────────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function find_all_without_filters_selects_everything_ordered_by_id(): void
     {
         $this->wpdb->results = [];
@@ -116,7 +117,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         $this->assertStringContainsString('ORDER BY id ASC', $sql);
     }
 
-    /** @test */
+    #[Test]
     public function find_all_hydrates_every_row(): void
     {
         $this->wpdb->results = [['id' => '1'], ['id' => '2']];
@@ -127,7 +128,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         $this->assertCount(2, $this->repository->findAll());
     }
 
-    /** @test */
+    #[Test]
     public function find_all_returns_an_empty_array_when_the_query_yields_no_rows(): void
     {
         $this->wpdb->results = [];
@@ -135,10 +136,8 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         $this->assertSame([], $this->repository->findAll(['group_id' => 3]));
     }
 
-    /**
-     * @test
-     * @dataProvider filterProvider
-     */
+    #[DataProvider('filterProvider')]
+    #[Test]
     public function find_all_turns_each_documented_filter_into_a_where_clause(
         string $key,
         mixed $value,
@@ -163,7 +162,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         ];
     }
 
-    /** @test */
+    #[Test]
     public function find_all_combines_multiple_filters_with_and(): void
     {
         $this->repository->findAll(['group_id' => 10, 'member_id' => 7]);
@@ -171,7 +170,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         $this->assertStringContainsString('group_id = 10 AND member_id = 7', $this->wpdb->lastQuery());
     }
 
-    /** @test */
+    #[Test]
     public function find_all_accepts_a_whitelisted_order_column_and_direction(): void
     {
         $this->repository->findAll(['orderby' => 'gsr_name', 'order' => 'desc']);
@@ -179,7 +178,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         $this->assertStringContainsString('ORDER BY gsr_name DESC', $this->wpdb->lastQuery());
     }
 
-    /** @test */
+    #[Test]
     public function find_all_falls_back_to_id_for_an_unrecognised_order_column(): void
     {
         // orderby is interpolated straight into the SQL, so anything outside
@@ -191,7 +190,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         $this->assertStringNotContainsString('DROP TABLE', $sql);
     }
 
-    /** @test */
+    #[Test]
     public function find_all_applies_limit_and_offset_only_when_a_positive_number_is_given(): void
     {
         $this->repository->findAll(['number' => 5, 'offset' => 10]);
@@ -201,7 +200,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         $this->assertStringNotContainsString('LIMIT', $this->wpdb->lastQuery());
     }
 
-    /** @test */
+    #[Test]
     public function find_all_defaults_the_offset_to_zero(): void
     {
         $this->repository->findAll(['number' => 3]);
@@ -209,7 +208,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         $this->assertStringContainsString('LIMIT 3 OFFSET 0', $this->wpdb->lastQuery());
     }
 
-    /** @test */
+    #[Test]
     public function find_by_intergroup_meeting_filters_on_the_parent_meeting(): void
     {
         $this->repository->findByIntergroupMeeting(99);
@@ -218,8 +217,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
     }
 
     // ─── count ──────────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function count_returns_the_scalar_from_the_database(): void
     {
         $this->wpdb->var = '17';
@@ -228,7 +226,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         $this->assertStringContainsString('SELECT COUNT(*)', $this->wpdb->lastQuery());
     }
 
-    /** @test */
+    #[Test]
     public function count_applies_the_same_filters_as_find_all(): void
     {
         $this->wpdb->var = '3';
@@ -248,8 +246,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
     }
 
     // ─── save ───────────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function saving_a_new_record_inserts_it(): void
     {
         $this->assertTrue($this->repository->save($this->attendance(0)));
@@ -265,7 +262,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         $this->assertSame(1, $data['gsr_proxy']);
     }
 
-    /** @test */
+    #[Test]
     public function saving_an_existing_record_updates_it_by_id(): void
     {
         $this->assertTrue($this->repository->save($this->attendance(5)));
@@ -275,7 +272,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         $this->assertSame(['id' => 5], $this->wpdb->updates[0][2]);
     }
 
-    /** @test */
+    #[Test]
     public function a_failed_insert_is_reported(): void
     {
         $this->wpdb->insertResult = false;
@@ -283,7 +280,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         $this->assertFalse($this->repository->save($this->attendance(0)));
     }
 
-    /** @test */
+    #[Test]
     public function a_failed_update_is_reported(): void
     {
         $this->wpdb->updateResult = false;
@@ -292,8 +289,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
     }
 
     // ─── delete ─────────────────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function delete_removes_the_row_by_id(): void
     {
         $this->assertTrue($this->repository->delete(5));
@@ -301,7 +297,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         $this->assertSame(['id' => 5], $this->wpdb->deletes[0][1]);
     }
 
-    /** @test */
+    #[Test]
     public function a_failed_delete_is_reported(): void
     {
         $this->wpdb->deleteResult = false;
@@ -309,7 +305,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         $this->assertFalse($this->repository->delete(5));
     }
 
-    /** @test */
+    #[Test]
     public function delete_by_meeting_and_member_scopes_to_both(): void
     {
         $this->assertTrue($this->repository->deleteByIntergroupMeetingAndMember(42, 7));
@@ -320,7 +316,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function delete_by_meeting_and_group_scopes_to_both(): void
     {
         $this->assertTrue($this->repository->deleteByIntergroupMeetingAndGroup(42, 10));
@@ -331,7 +327,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function a_failed_scoped_delete_is_reported(): void
     {
         $this->wpdb->deleteResult = false;
@@ -341,8 +337,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
     }
 
     // ─── existsForMeetingAndGroup ───────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function exists_is_true_when_the_count_is_positive(): void
     {
         $this->wpdb->var = '1';
@@ -351,7 +346,7 @@ class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
         $this->assertStringContainsString('intergroup_meeting_id = 42 AND group_id = 10', $this->wpdb->lastQuery());
     }
 
-    /** @test */
+    #[Test]
     public function exists_is_false_when_nothing_matches(): void
     {
         $this->wpdb->var = '0';

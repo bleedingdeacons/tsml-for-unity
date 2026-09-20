@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use TsmlForUnity\Tests\Support\WpdbStub;
 use BleedingDeacons\WpMocks\Bootstrap;
 use BleedingDeacons\WpMocks\WpState;
 
@@ -74,7 +75,7 @@ if (!defined('TSML_FOR_UNITY_VERSION')) {
 // it is final, so it cannot be aliased to the name a type-hint resolves.
 // WpdbStub exists for that, and is the same trick Reach and Unity use.
 if (!class_exists('wpdb')) {
-    class_alias(\TsmlForUnity\Tests\Support\WpdbStub::class, 'wpdb');
+    class_alias(WpdbStub::class, 'wpdb');
 }
 
 if (!defined('TSML_FOR_UNITY_PATH')) {

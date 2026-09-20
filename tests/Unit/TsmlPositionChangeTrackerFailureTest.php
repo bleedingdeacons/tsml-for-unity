@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
 use Exception;
 use TsmlForUnity\Positions\TsmlPositionChangeTracker;
 use TsmlForUnity\Positions\TsmlPositionFields;
@@ -24,12 +27,11 @@ use Unity\Positions\Interfaces\PositionRepository;
  * Also pinned is the post_title sync, which keeps the WordPress post title
  * in step with the position's long name — an admin list showing stale
  * titles is the visible symptom when it regresses.
- *
- * @covers \TsmlForUnity\Positions\TsmlPositionChangeTracker
  */
+#[CoversClass(\TsmlForUnity\Positions\TsmlPositionChangeTracker::class)]
 class TsmlPositionChangeTrackerFailureTest extends TestCase
 {
-    /** @var PositionRepository&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var PositionRepository&MockObject */
     private $repository;
 
     private TsmlPositionChangeTracker $tracker;
@@ -61,10 +63,10 @@ class TsmlPositionChangeTrackerFailureTest extends TestCase
         return $position;
     }
 
-    /** @test */
+    #[Test]
     public function capturing_a_post_of_another_type_is_ignored(): void
     {
-        Functions\expect('get_post_type')->andReturn('page');
+        expect('get_post_type')->andReturn('page');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->captureOriginalPosition(9);
@@ -72,10 +74,10 @@ class TsmlPositionChangeTrackerFailureTest extends TestCase
         $this->assertTrue(true, 'returned before reading the position');
     }
 
-    /** @test */
+    #[Test]
     public function a_capture_failure_is_swallowed(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
         $this->repository->method('findById')->willThrowException(new Exception('boom'));
 
         $this->tracker->captureOriginalPosition(9);
@@ -83,10 +85,10 @@ class TsmlPositionChangeTrackerFailureTest extends TestCase
         $this->assertTrue(true, 'a failed capture must not abort the save');
     }
 
-    /** @test */
+    #[Test]
     public function checking_a_post_of_another_type_is_ignored(): void
     {
-        Functions\expect('get_post_type')->andReturn('page');
+        expect('get_post_type')->andReturn('page');
         $this->repository->expects($this->never())->method('findById');
 
         $this->tracker->checkForChanges(9);
@@ -94,10 +96,10 @@ class TsmlPositionChangeTrackerFailureTest extends TestCase
         $this->assertTrue(true, 'returned before comparing');
     }
 
-    /** @test */
+    #[Test]
     public function a_check_that_cannot_reload_the_position_stops_quietly(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
 
         // Capture succeeds; the reload afterwards comes back empty.
         $this->repository->method('findById')
@@ -109,10 +111,10 @@ class TsmlPositionChangeTrackerFailureTest extends TestCase
         $this->assertTrue(true, 'no event fired without an updated position');
     }
 
-    /** @test */
+    #[Test]
     public function a_check_failure_is_swallowed(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
 
         $this->repository->method('findById')
             ->willReturnOnConsecutiveCalls(
@@ -126,10 +128,10 @@ class TsmlPositionChangeTrackerFailureTest extends TestCase
         $this->assertTrue(true, 'a failed check must not abort the save');
     }
 
-    /** @test */
+    #[Test]
     public function a_renamed_position_has_its_post_title_synced(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
 
         $this->repository->method('findById')->willReturnOnConsecutiveCalls(
             $this->position('Old Name'),
@@ -137,11 +139,11 @@ class TsmlPositionChangeTrackerFailureTest extends TestCase
         );
 
         // The stored title still holds the old long name.
-        Functions\expect('get_post')
+        expect('get_post')
             ->andReturn((object) ['ID' => 9, 'post_title' => 'Old Name']);
 
         $updatedPost = [];
-        Functions\expect('wp_update_post')->andReturnUsing(
+        expect('wp_update_post')->andReturnUsing(
             function (array $args) use (&$updatedPost): int {
                 $updatedPost = $args;
 
@@ -156,10 +158,10 @@ class TsmlPositionChangeTrackerFailureTest extends TestCase
         $this->assertSame('New Name', $updatedPost['post_title'] ?? null);
     }
 
-    /** @test */
+    #[Test]
     public function a_matching_post_title_is_left_alone(): void
     {
-        Functions\expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
+        expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
 
         $this->repository->method('findById')->willReturnOnConsecutiveCalls(
             $this->position('Old Name'),
@@ -167,11 +169,11 @@ class TsmlPositionChangeTrackerFailureTest extends TestCase
         );
 
         // post_title already matches the new long name — no write needed.
-        Functions\expect('get_post')
+        expect('get_post')
             ->andReturn((object) ['ID' => 9, 'post_title' => 'New Name']);
 
         $called = false;
-        Functions\expect('wp_update_post')->andReturnUsing(function () use (&$called): int {
+        expect('wp_update_post')->andReturnUsing(function () use (&$called): int {
             $called = true;
 
             return 9;

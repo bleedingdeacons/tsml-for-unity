@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Actions;
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
+use function Brain\Monkey\Actions\expectDone;
 use TsmlForUnity\Members\TsmlMemberChangeTracker;
 use TsmlForUnity\Members\TsmlMemberFields;
 use Unity\Testing\Doubles\MemberStub;
 use TsmlForUnity\Tests\Support\ActionExpectations;
 use TsmlForUnity\Tests\TestCase;
-use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberRepository;
 
 /**
@@ -23,14 +25,13 @@ use Unity\Members\Interfaces\MemberRepository;
  * after ACF has written every field. These tests exercise that
  * captureOriginalMember → checkForChanges pair, focusing on the
  * branching between unity/member_created and unity/member_changing.
- *
- * @covers \TsmlForUnity\Members\TsmlMemberChangeTracker
  */
+#[CoversClass(\TsmlForUnity\Members\TsmlMemberChangeTracker::class)]
 class TsmlMemberChangeTrackerTest extends TestCase
 {
     use ActionExpectations;
 
-    /** @var MemberRepository&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var MemberRepository&MockObject */
     private $repository;
 
     private TsmlMemberChangeTracker $tracker;
@@ -65,7 +66,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
      */
     private function stubPostTypeGuard(int $postId): void
     {
-        Functions\expect('get_post_type')
+        expect('get_post_type')
             ->with($postId)
             ->andReturn(TsmlMemberFields::POST_TYPE);
     }
@@ -95,7 +96,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
      */
     private function stubTitleSyncIsNoop(int $postId, string $existingTitle = ''): void
     {
-        Functions\expect('get_post')
+        expect('get_post')
             ->with($postId)
             ->andReturn((object) [
                 'ID' => $postId,
@@ -104,10 +105,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
     }
 
     // ─── First save of an admin-created member fires member_created ──
-
-    /**
-     * @test
-     */
+    #[Test]
     public function first_save_of_admin_created_member_fires_member_created(): void
     {
         $postId = 1234;
@@ -140,9 +138,9 @@ class TsmlMemberChangeTrackerTest extends TestCase
             ->with($postId)
             ->willReturnOnConsecutiveCalls($autoDraft, $populated);
 
-        Actions\expectDone('unity/member_before_save')->once()->with($postId, $autoDraft);
-        Actions\expectDone('unity/member_created')->once()->with($populated);
-        Actions\expectDone('unity/member_changed')->once()->with($postId, $populated, $autoDraft);
+        expectDone('unity/member_before_save')->once()->with($postId, $autoDraft);
+        expectDone('unity/member_created')->once()->with($populated);
+        expectDone('unity/member_changed')->once()->with($postId, $populated, $autoDraft);
         // member_changing must NOT fire on a first save.
         $this->expectActionNotFired('unity/member_changing', $populated, $autoDraft);
 
@@ -150,9 +148,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
         $this->tracker->checkForChanges($postId);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function first_save_fires_member_created_even_when_no_fields_were_populated(): void
     {
         // The "is this a new member" decision is taken from the
@@ -173,7 +169,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
             ->with($postId)
             ->willReturnOnConsecutiveCalls($before, $after);
 
-        Actions\expectDone('unity/member_created')->once()->with($after);
+        expectDone('unity/member_created')->once()->with($after);
         $this->expectActionNotFired('unity/member_changing', $after, $before);
 
         $this->tracker->captureOriginalMember($postId);
@@ -181,10 +177,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
     }
 
     // ─── Subsequent saves of an existing member fire member_changing ─
-
-    /**
-     * @test
-     */
+    #[Test]
     public function edit_of_existing_published_member_fires_member_changing(): void
     {
         $postId = 5678;
@@ -226,16 +219,14 @@ class TsmlMemberChangeTrackerTest extends TestCase
             ->with($postId)
             ->willReturnOnConsecutiveCalls($original, $updated);
 
-        Actions\expectDone('unity/member_changing')->once()->with($updated, $original);
+        expectDone('unity/member_changing')->once()->with($updated, $original);
         $this->expectActionNotFired('unity/member_created', $updated);
 
         $this->tracker->captureOriginalMember($postId);
         $this->tracker->checkForChanges($postId);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function toggling_telephone_responder_fires_member_changing(): void
     {
         $postId = 5679;
@@ -253,16 +244,14 @@ class TsmlMemberChangeTrackerTest extends TestCase
             ->with($postId)
             ->willReturnOnConsecutiveCalls($original, $updated);
 
-        Actions\expectDone('unity/member_changing')->once()->with($updated, $original);
+        expectDone('unity/member_changing')->once()->with($updated, $original);
         $this->expectActionNotFired('unity/member_created', $updated);
 
         $this->tracker->captureOriginalMember($postId);
         $this->tracker->checkForChanges($postId);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function edit_with_no_actual_field_changes_fires_no_create_or_update_event(): void
     {
         $postId = 91011;
@@ -282,7 +271,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
 
         // Only the catch-all "save completed" event fires; create and
         // changing both stay silent.
-        Actions\expectDone('unity/member_changed')->once()->with($postId, $updated, $original);
+        expectDone('unity/member_changed')->once()->with($postId, $updated, $original);
         $this->expectActionNotFired('unity/member_created', $updated);
         $this->expectActionNotFired('unity/member_changing', $updated, $original);
 
@@ -303,9 +292,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
         return $prop->getValue();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function transition_from_auto_draft_to_publish_flags_the_post(): void
     {
         $post = (object) ['ID' => 314, 'post_type' => TsmlMemberFields::POST_TYPE];
@@ -315,9 +302,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
         $this->assertSame([314 => true], $this->newMemberIds());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function transition_from_auto_draft_to_draft_also_flags_the_post(): void
     {
         // "Save Draft" on a brand-new Add New form is still a creation.
@@ -328,9 +313,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
         $this->assertSame([315 => true], $this->newMemberIds());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function transition_between_two_live_statuses_does_not_flag_the_post(): void
     {
         // Editing an existing member and changing draft → publish is a
@@ -342,9 +325,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
         $this->assertSame([], $this->newMemberIds());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function transition_into_auto_draft_does_not_flag_the_post(): void
     {
         // The new → auto-draft transition fires when WordPress creates
@@ -357,9 +338,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
         $this->assertSame([], $this->newMemberIds());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function transition_for_non_member_post_types_is_ignored(): void
     {
         // Posts, pages, and other CPTs share transition_post_status; we
@@ -372,10 +351,7 @@ class TsmlMemberChangeTrackerTest extends TestCase
     }
 
     // ─── Static state isolation ──────────────────────────────────────
-
-    /**
-     * @test
-     */
+    #[Test]
     public function isNewMember_flag_does_not_leak_into_a_following_update_request(): void
     {
         // A creation in one request followed by an unrelated edit in
@@ -407,8 +383,8 @@ class TsmlMemberChangeTrackerTest extends TestCase
                 $editUpdated,
             );
 
-        Actions\expectDone('unity/member_created')->once()->with($createPopulated);
-        Actions\expectDone('unity/member_changing')->once()->with($editUpdated, $editOriginal);
+        expectDone('unity/member_created')->once()->with($createPopulated);
+        expectDone('unity/member_changing')->once()->with($editUpdated, $editOriginal);
 
         // Request 1 — create
         $this->tracker->captureOriginalMember($createId);

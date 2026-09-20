@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Committees\TsmlCommittee;
 use TsmlForUnity\Tests\TestCase;
 use Unity\Committees\Interfaces\Committee;
@@ -13,22 +15,17 @@ use Unity\Committees\Interfaces\Committee;
  *
  * A value object over a taxonomy term: accessors and the one derived answer,
  * isRoot().
- *
- * @covers \TsmlForUnity\Committees\TsmlCommittee
  */
+#[CoversClass(\TsmlForUnity\Committees\TsmlCommittee::class)]
 class TsmlCommitteeTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_the_committee_interface(): void
     {
         $this->assertInstanceOf(Committee::class, new TsmlCommittee());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_exposes_every_field_it_was_built_with(): void
     {
         $committee = new TsmlCommittee(
@@ -49,9 +46,7 @@ class TsmlCommitteeTest extends TestCase
         $this->assertSame(7, $committee->getParentId());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_defaults_to_an_empty_root_committee(): void
     {
         $committee = new TsmlCommittee();
@@ -63,17 +58,13 @@ class TsmlCommitteeTest extends TestCase
         $this->assertSame(0, $committee->getParentId());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function a_committee_without_a_parent_is_a_root(): void
     {
         $this->assertTrue((new TsmlCommittee(id: 3, parentId: 0))->isRoot());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function a_committee_with_a_parent_is_not_a_root(): void
     {
         $this->assertFalse((new TsmlCommittee(id: 3, parentId: 1))->isRoot());

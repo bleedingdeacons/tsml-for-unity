@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeeting;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFields;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingRepository;
@@ -14,12 +17,11 @@ use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingRepository;
 
 /**
  * Tests for TsmlIntergroupMeetingRepository.
- *
- * @covers \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingRepository
  */
+#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingRepository::class)]
 class TsmlIntergroupMeetingRepositoryTest extends TestCase
 {
-    /** @var IntergroupMeetingFactory&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var IntergroupMeetingFactory&MockObject */
     private $factory;
 
     private TsmlIntergroupMeetingRepository $repository;
@@ -37,40 +39,32 @@ class TsmlIntergroupMeetingRepositoryTest extends TestCase
         return (object) ['post_type' => TsmlIntergroupMeetingFields::POST_TYPE];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_the_repository_interface(): void
     {
         $this->assertInstanceOf(IntergroupMeetingRepository::class, $this->repository);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function find_by_id_returns_null_for_a_missing_post(): void
     {
-        Functions\expect('get_post')->with(9)->andReturn(null);
+        expect('get_post')->with(9)->andReturn(null);
 
         $this->assertNull($this->repository->findById(9));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function find_by_id_returns_null_for_the_wrong_post_type(): void
     {
-        Functions\expect('get_post')->with(9)->andReturn((object) ['post_type' => 'page']);
+        expect('get_post')->with(9)->andReturn((object) ['post_type' => 'page']);
 
         $this->assertNull($this->repository->findById(9));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function find_by_id_delegates_to_the_factory(): void
     {
-        Functions\expect('get_post')->with(5)->andReturn($this->meetingPost());
+        expect('get_post')->with(5)->andReturn($this->meetingPost());
 
         $meeting = new TsmlIntergroupMeeting(id: 5, title: 'July');
         $this->factory->expects($this->once())
@@ -79,16 +73,14 @@ class TsmlIntergroupMeetingRepositoryTest extends TestCase
         $this->assertSame($meeting, $this->repository->findById(5));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function find_all_maps_posts_through_find_by_id(): void
     {
-        Functions\expect('get_posts')->once()->andReturn([
+        expect('get_posts')->once()->andReturn([
             (object) ['ID' => 1],
             (object) ['ID' => 2],
         ]);
-        Functions\expect('get_post')->andReturn($this->meetingPost());
+        expect('get_post')->andReturn($this->meetingPost());
 
         $a = new TsmlIntergroupMeeting(id: 1);
         $b = new TsmlIntergroupMeeting(id: 2);
@@ -97,34 +89,28 @@ class TsmlIntergroupMeetingRepositoryTest extends TestCase
         $this->assertSame([$a, $b], $this->repository->findAll());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function find_all_returns_empty_when_there_are_no_posts(): void
     {
-        Functions\expect('get_posts')->once()->andReturn([]);
+        expect('get_posts')->once()->andReturn([]);
 
         $this->assertSame([], $this->repository->findAll());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function count_returns_the_number_of_ids(): void
     {
-        Functions\expect('get_posts')->once()->andReturn([10, 11]);
+        expect('get_posts')->once()->andReturn([10, 11]);
 
         $this->assertSame(2, $this->repository->count());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function count_translates_pagination_args_without_error(): void
     {
         // posts_per_page → numberposts and paged → offset are handled in
         // buildQueryArgs; the count path then forces numberposts -1.
-        Functions\expect('get_posts')->once()->andReturn([1, 2, 3]);
+        expect('get_posts')->once()->andReturn([1, 2, 3]);
 
         $this->assertSame(3, $this->repository->count([
             'posts_per_page' => 10,
@@ -132,16 +118,14 @@ class TsmlIntergroupMeetingRepositoryTest extends TestCase
         ]));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function save_writes_both_relationship_fields_by_key(): void
     {
-        Functions\expect('get_option')
+        expect('get_option')
             ->with('tsml_unity_acf_field_keys', [])->andReturn([]);
 
         $writes = [];
-        Functions\expect('update_field')->andReturnUsing(
+        expect('update_field')->andReturnUsing(
             function ($key, $value, $id) use (&$writes) {
                 $writes[$key] = $value;
                 return true;
@@ -161,22 +145,18 @@ class TsmlIntergroupMeetingRepositoryTest extends TestCase
         $this->assertSame([3], $writes[TsmlIntergroupMeetingFields::FIELD_KEY_ATTENDING_OFFICERS]);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function delete_force_deletes_the_post(): void
     {
-        Functions\expect('wp_delete_post')->once()->with(5, true)->andReturn((object) ['ID' => 5]);
+        expect('wp_delete_post')->once()->with(5, true)->andReturn((object) ['ID' => 5]);
 
         $this->assertTrue($this->repository->delete(5));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function delete_returns_false_when_removal_fails(): void
     {
-        Functions\expect('wp_delete_post')->once()->with(5, true)->andReturn(false);
+        expect('wp_delete_post')->once()->with(5, true)->andReturn(false);
 
         $this->assertFalse($this->repository->delete(5));
     }

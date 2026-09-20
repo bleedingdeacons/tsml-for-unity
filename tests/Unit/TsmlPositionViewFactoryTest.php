@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Members\TsmlMember;
 use TsmlForUnity\Positions\TsmlPosition;
@@ -14,14 +16,11 @@ use Unity\Positions\Interfaces\PositionViewFactory;
 
 /**
  * Tests for TsmlPositionViewFactory
- *
- * @covers \TsmlForUnity\Positions\TsmlPositionViewFactory
  */
+#[CoversClass(\TsmlForUnity\Positions\TsmlPositionViewFactory::class)]
 class TsmlPositionViewFactoryTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_the_factory_interface(): void
     {
         $factory = new TsmlPositionViewFactory(
@@ -32,9 +31,7 @@ class TsmlPositionViewFactoryTest extends TestCase
         $this->assertInstanceOf(PositionViewFactory::class, $factory);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_from_returns_null_when_the_position_is_missing(): void
     {
         $positions = $this->createMock(PositionRepository::class);
@@ -45,9 +42,7 @@ class TsmlPositionViewFactoryTest extends TestCase
         $this->assertNull($factory->createFrom(99));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_from_returns_a_vacant_view_when_no_member_matches(): void
     {
         $position = new TsmlPosition(id: 5, shortDescription: 'Chair');
@@ -68,9 +63,7 @@ class TsmlPositionViewFactoryTest extends TestCase
         $this->assertSame($position, $view->getPosition());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_from_binds_the_single_matching_member(): void
     {
         $position = new TsmlPosition(id: 5, shortDescription: 'Chair');
@@ -92,9 +85,7 @@ class TsmlPositionViewFactoryTest extends TestCase
         $this->assertSame($matching, $view->getMember());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_from_picks_the_latest_rotation_when_several_members_match(): void
     {
         $position = new TsmlPosition(id: 5, shortDescription: 'Chair');
@@ -114,9 +105,7 @@ class TsmlPositionViewFactoryTest extends TestCase
         $this->assertSame([$newer], $view->getMembers());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_all_builds_one_view_per_position_sorted_by_title(): void
     {
         $chair = new TsmlPosition(id: 5, shortDescription: 'Chair');
@@ -142,9 +131,7 @@ class TsmlPositionViewFactoryTest extends TestCase
         $this->assertFalse($views[1]->isVacant());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_all_returns_an_empty_array_when_there_are_no_positions(): void
     {
         $positions = $this->createMock(PositionRepository::class);

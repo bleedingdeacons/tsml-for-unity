@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use Exception;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Positions\TsmlPositionView;
@@ -25,10 +27,9 @@ use Unity\Positions\Interfaces\PositionRepository;
  * Rotation dates arrive in two formats (Y-m-d and d/m/Y) and are often
  * missing entirely, so the unparseable and absent cases are covered
  * alongside the happy path.
- *
- * @covers \TsmlForUnity\Positions\TsmlPositionViewFactory
- * @covers \TsmlForUnity\Positions\TsmlPositionView
  */
+#[CoversClass(\TsmlForUnity\Positions\TsmlPositionViewFactory::class)]
+#[CoversClass(\TsmlForUnity\Positions\TsmlPositionView::class)]
 class TsmlPositionViewRotationTest extends TestCase
 {
     private const POSITION_ID = 5;
@@ -68,8 +69,7 @@ class TsmlPositionViewRotationTest extends TestCase
     }
 
     // ─── choosing the current holder ────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function the_member_with_the_latest_rotation_date_is_chosen(): void
     {
         $outgoing = $this->member(1, '2025-01-01');
@@ -81,7 +81,7 @@ class TsmlPositionViewRotationTest extends TestCase
         $this->assertSame($current, $views[0]->getMember());
     }
 
-    /** @test */
+    #[Test]
     public function the_two_rotation_date_formats_are_compared_correctly(): void
     {
         // d/m/Y and Y-m-d both normalise to Y-m-d before comparison.
@@ -93,7 +93,7 @@ class TsmlPositionViewRotationTest extends TestCase
         $this->assertSame($later, $views[0]->getMember());
     }
 
-    /** @test */
+    #[Test]
     public function members_sharing_the_latest_date_are_all_returned(): void
     {
         // A genuine job-share: both hold the position from the same date.
@@ -106,7 +106,7 @@ class TsmlPositionViewRotationTest extends TestCase
         $this->assertCount(2, $views[0]->getMembers());
     }
 
-    /** @test */
+    #[Test]
     public function a_member_with_no_rotation_date_is_skipped_when_others_have_one(): void
     {
         $undated = $this->member(1, '');
@@ -117,7 +117,7 @@ class TsmlPositionViewRotationTest extends TestCase
         $this->assertSame($dated, $views[0]->getMember());
     }
 
-    /** @test */
+    #[Test]
     public function an_unparseable_rotation_date_is_skipped(): void
     {
         $bad  = $this->member(1, 'not a date');
@@ -128,7 +128,7 @@ class TsmlPositionViewRotationTest extends TestCase
         $this->assertSame($good, $views[0]->getMember());
     }
 
-    /** @test */
+    #[Test]
     public function when_no_date_is_usable_the_first_member_is_taken(): void
     {
         // Nothing to order by, so the list order decides rather than
@@ -141,7 +141,7 @@ class TsmlPositionViewRotationTest extends TestCase
         $this->assertSame($first, $views[0]->getMember());
     }
 
-    /** @test */
+    #[Test]
     public function a_position_with_no_members_yields_a_vacant_view(): void
     {
         $views = $this->factoryWith([])->createAll();
@@ -151,7 +151,7 @@ class TsmlPositionViewRotationTest extends TestCase
         $this->assertSame([], $views[0]->getMembers());
     }
 
-    /** @test */
+    #[Test]
     public function a_single_member_is_used_directly(): void
     {
         $only = $this->member(1, '2027-01-01');
@@ -162,7 +162,7 @@ class TsmlPositionViewRotationTest extends TestCase
         $this->assertSame([$only], $views[0]->getMembers());
     }
 
-    /** @test */
+    #[Test]
     public function create_from_also_resolves_the_latest_holder(): void
     {
         $outgoing = $this->member(1, '2025-01-01');
@@ -175,8 +175,7 @@ class TsmlPositionViewRotationTest extends TestCase
     }
 
     // ─── view construction ──────────────────────────────────────────
-
-    /** @test */
+    #[Test]
     public function a_member_whose_details_cannot_be_read_still_yields_a_view(): void
     {
         // The view reads contact details in a try/catch: one member with a
@@ -191,7 +190,7 @@ class TsmlPositionViewRotationTest extends TestCase
         $this->assertNull($view->getRotationDate());
     }
 
-    /** @test */
+    #[Test]
     public function a_view_without_a_rotation_date_reports_no_months_remaining(): void
     {
         $view = new TsmlPositionView($this->position(), $this->member(1, ''));
@@ -199,7 +198,7 @@ class TsmlPositionViewRotationTest extends TestCase
         $this->assertNull($view->getMonthsUntilRotation());
     }
 
-    /** @test */
+    #[Test]
     public function a_future_rotation_date_reports_a_positive_month_count(): void
     {
         $future = (new \DateTime('today'))->modify('+13 months')->format('Y-m-d');
@@ -209,7 +208,7 @@ class TsmlPositionViewRotationTest extends TestCase
         $this->assertGreaterThan(0, $view->getMonthsUntilRotation());
     }
 
-    /** @test */
+    #[Test]
     public function a_past_rotation_date_reports_a_negative_month_count(): void
     {
         $past = (new \DateTime('today'))->modify('-13 months')->format('Y-m-d');

@@ -6,7 +6,7 @@
  * Description: Integrates 12 Step Meeting List (TSML) with the Unity plugin, providing meeting, group & location support.
  * Version: 1.26.1
  * Requires at least: 6.0
- * Requires PHP: 8.1
+ * Requires PHP: 8.4
  * Requires Plugins: unity
  * GitHub Plugin URI: https://github.com/bleedingdeacons/tsml-for-unity
  * Author: The Bleeding Deacons

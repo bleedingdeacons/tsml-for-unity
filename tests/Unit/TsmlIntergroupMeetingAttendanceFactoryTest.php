@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceFactory;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceFactory;
@@ -15,10 +17,9 @@ use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingOfficerAttendanceFactor
  *
  * Both read a row from a custom table via the global $wpdb, hydrate a value
  * object from it, and offer a createNew() for unsaved rows.
- *
- * @covers \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceFactory
- * @covers \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceFactory
  */
+#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceFactory::class)]
+#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendanceFactory::class)]
 class TsmlIntergroupMeetingAttendanceFactoryTest extends TestCase
 {
     /** @var object The previous global $wpdb, restored in tearDown. */
@@ -65,10 +66,7 @@ class TsmlIntergroupMeetingAttendanceFactoryTest extends TestCase
     }
 
     // ─── group attendance ───────────────────────────────────────────
-
-    /**
-     * @test
-     */
+    #[Test]
     public function group_factory_implements_the_interface(): void
     {
         $this->assertInstanceOf(
@@ -77,9 +75,7 @@ class TsmlIntergroupMeetingAttendanceFactoryTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function group_create_from_source_hydrates_from_a_row(): void
     {
         $this->installWpdb([
@@ -107,9 +103,7 @@ class TsmlIntergroupMeetingAttendanceFactoryTest extends TestCase
         $this->assertSame('Bob B.', $attendance->getGsrProxyName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function group_create_from_source_returns_an_empty_object_for_a_missing_row(): void
     {
         $this->installWpdb(null);
@@ -121,9 +115,7 @@ class TsmlIntergroupMeetingAttendanceFactoryTest extends TestCase
         $this->assertFalse($attendance->isGsrProxy());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function group_create_new_builds_an_unsaved_row(): void
     {
         $attendance = (new TsmlIntergroupMeetingGroupAttendanceFactory())->createNew(
@@ -145,10 +137,7 @@ class TsmlIntergroupMeetingAttendanceFactoryTest extends TestCase
     }
 
     // ─── officer attendance ─────────────────────────────────────────
-
-    /**
-     * @test
-     */
+    #[Test]
     public function officer_factory_implements_the_interface(): void
     {
         $this->assertInstanceOf(
@@ -157,9 +146,7 @@ class TsmlIntergroupMeetingAttendanceFactoryTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function officer_create_from_source_hydrates_from_a_row(): void
     {
         $this->installWpdb([
@@ -181,9 +168,7 @@ class TsmlIntergroupMeetingAttendanceFactoryTest extends TestCase
         $this->assertSame('Carol C.', $attendance->getOfficerName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function officer_create_from_source_returns_an_empty_object_for_a_missing_row(): void
     {
         $this->installWpdb(null);
@@ -194,9 +179,7 @@ class TsmlIntergroupMeetingAttendanceFactoryTest extends TestCase
         $this->assertSame(0, $attendance->getOfficerId());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function officer_create_new_builds_an_unsaved_row(): void
     {
         $attendance = (new TsmlIntergroupMeetingOfficerAttendanceFactory())->createNew(

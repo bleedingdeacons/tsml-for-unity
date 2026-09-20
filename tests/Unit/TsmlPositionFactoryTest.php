@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\Positions\TsmlPositionFactory;
 use TsmlForUnity\Positions\TsmlPositionFields;
 use TsmlForUnity\Tests\TestCase;
@@ -12,9 +14,8 @@ use Unity\Positions\Interfaces\PositionFactory;
 
 /**
  * Tests for TsmlPositionFactory
- *
- * @covers \TsmlForUnity\Positions\TsmlPositionFactory
  */
+#[CoversClass(\TsmlForUnity\Positions\TsmlPositionFactory::class)]
 class TsmlPositionFactoryTest extends TestCase
 {
     private TsmlPositionFactory $factory;
@@ -25,47 +26,39 @@ class TsmlPositionFactoryTest extends TestCase
         $this->factory = new TsmlPositionFactory();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_the_factory_interface(): void
     {
         $this->assertInstanceOf(PositionFactory::class, $this->factory);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_from_source_returns_null_when_the_post_is_missing(): void
     {
-        Functions\expect('get_post')->with(99)->andReturn(null);
+        expect('get_post')->with(99)->andReturn(null);
 
         $this->assertNull($this->factory->createFromSource(99));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_from_source_returns_null_for_the_wrong_post_type(): void
     {
-        Functions\expect('get_post')->with(99)->andReturn(
+        expect('get_post')->with(99)->andReturn(
             (object) ['post_type' => 'page', 'post_modified_gmt' => '']
         );
 
         $this->assertNull($this->factory->createFromSource(99));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_from_source_hydrates_a_position_from_acf_fields(): void
     {
-        Functions\expect('get_post')->with(42)->andReturn((object) [
+        expect('get_post')->with(42)->andReturn((object) [
             'post_type'         => TsmlPositionFields::POST_TYPE,
             'post_modified_gmt' => '2026-06-01 10:00:00',
         ]);
 
-        Functions\expect('get_fields')->with(42)->andReturn([
+        expect('get_fields')->with(42)->andReturn([
             TsmlPositionFields::MINIMUM_SOBRIETY  => '24',
             TsmlPositionFields::TERM_YEARS        => '3',
             TsmlPositionFields::EMAIL_ADDRESS     => 'chair@example.com',
@@ -74,7 +67,7 @@ class TsmlPositionFactoryTest extends TestCase
             TsmlPositionFields::SUMMARY           => 'Runs intergroup',
         ]);
 
-        Functions\expect('get_permalink')->with(42)->andReturn('https://example.com/chair');
+        expect('get_permalink')->with(42)->andReturn('https://example.com/chair');
 
         $position = $this->factory->createFromSource(42);
 
@@ -91,18 +84,16 @@ class TsmlPositionFactoryTest extends TestCase
         $this->assertSame('2026-06-01 10:00:00', $position->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_from_source_applies_defaults_when_acf_returns_nothing(): void
     {
-        Functions\expect('get_post')->with(42)->andReturn((object) [
+        expect('get_post')->with(42)->andReturn((object) [
             'post_type'         => TsmlPositionFields::POST_TYPE,
             'post_modified_gmt' => '',
         ]);
 
-        Functions\expect('get_fields')->with(42)->andReturn(false);
-        Functions\expect('get_permalink')->with(42)->andReturn(false);
+        expect('get_fields')->with(42)->andReturn(false);
+        expect('get_permalink')->with(42)->andReturn(false);
 
         $position = $this->factory->createFromSource(42);
 
@@ -113,12 +104,10 @@ class TsmlPositionFactoryTest extends TestCase
         $this->assertSame('', $position->getLink());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_new_builds_a_position_and_resolves_the_permalink(): void
     {
-        Functions\expect('get_permalink')->with(7)->andReturn('https://example.com/p/7');
+        expect('get_permalink')->with(7)->andReturn('https://example.com/p/7');
 
         $position = $this->factory->createNew(
             7,
@@ -138,13 +127,11 @@ class TsmlPositionFactoryTest extends TestCase
         $this->assertSame('https://example.com/p/7', $position->getLink());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_new_skips_the_permalink_lookup_for_an_unsaved_position(): void
     {
         // id 0 means "not persisted": get_permalink must not be called.
-        Functions\expect('get_permalink')->never();
+        expect('get_permalink')->never();
 
         $position = $this->factory->createNew(0);
 

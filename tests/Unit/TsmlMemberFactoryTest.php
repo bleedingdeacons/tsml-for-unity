@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Members\TsmlMemberFactory;
 use TsmlForUnity\Members\TsmlMemberFields;
@@ -12,9 +14,7 @@ use Unity\Members\Interfaces\Member;
 use Unity\Members\PreferredContact;
 use Unity\Members\ResponderCertification;
 
-/**
- * @covers \TsmlForUnity\Members\TsmlMemberFactory
- */
+#[CoversClass(\TsmlForUnity\Members\TsmlMemberFactory::class)]
 class TsmlMemberFactoryTest extends TestCase
 {
     private TsmlMemberFactory $factory;
@@ -26,13 +26,11 @@ class TsmlMemberFactoryTest extends TestCase
 
         // Every createFromSource reads post_modified_gmt for the updated
         // timestamp; no test here asserts on it.
-        Functions\expect('get_post')
+        expect('get_post')
             ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_creates_member_with_basic_fields(): void
     {
         $postId = 123;
@@ -84,9 +82,7 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertSame(['phone', 'email'], $member->getAccepts());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_home_group_as_array(): void
     {
         $postId = 124;
@@ -105,9 +101,7 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertSame(99, $member->getHomeGroup()); // Should use ID from first WP_Post object
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_home_group_as_wp_post_object(): void
     {
         $postId = 127;
@@ -123,9 +117,7 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertSame(42, $member->getHomeGroup()); // Should use ID from WP_Post object
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_home_group_as_numeric_array(): void
     {
         $postId = 128;
@@ -139,9 +131,7 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertSame(55, $member->getHomeGroup()); // Should use first numeric ID
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_empty_home_group_array(): void
     {
         $postId = 125;
@@ -155,9 +145,7 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertSame(0, $member->getHomeGroup()); // Should default to 0
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_null_home_group(): void
     {
         $postId = 129;
@@ -171,15 +159,13 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertSame(0, $member->getHomeGroup()); // Should default to 0
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_null_fields_with_defaults(): void
     {
         $postId = 126;
 
         // Mock all fields returning null
-        Functions\expect('get_field')
+        expect('get_field')
             ->andReturn(null);
 
         $member = $this->factory->createFromSource($postId);
@@ -264,9 +250,7 @@ class TsmlMemberFactoryTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function a_member_with_no_landline_reads_back_as_preferring_mobile(): void
     {
         $postId = 400;
@@ -287,9 +271,8 @@ class TsmlMemberFactoryTest extends TestCase
      * hides, so deleting a member's landline leaves 'Landline' in postmeta.
      * Reading that back as-is would point the helpline at a number that is
      * no longer there.
-     *
-     * @test
      */
+    #[Test]
     public function a_stale_landline_preference_is_dropped_when_the_number_goes(): void
     {
         $postId = 401;
@@ -305,9 +288,7 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertSame(PreferredContact::Mobile, $member->getPreferredContact());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function a_member_with_a_landline_keeps_the_saved_preference(): void
     {
         $postId = 402;
@@ -326,9 +307,8 @@ class TsmlMemberFactoryTest extends TestCase
      * createNew() settles the same invariant as createFromSource(), because
      * an importer can hand it a preference with no number behind it —
      * Reconcile does exactly that when a spreadsheet column is blank.
-     *
-     * @test
      */
+    #[Test]
     public function create_new_refuses_a_landline_preference_with_no_landline(): void
     {
         $member = $this->factory->createNew(
@@ -340,9 +320,7 @@ class TsmlMemberFactoryTest extends TestCase
         $this->assertSame(PreferredContact::Mobile, $member->getPreferredContact());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_new_keeps_a_landline_preference_that_has_a_number(): void
     {
         $member = $this->factory->createNew(
@@ -368,7 +346,7 @@ class TsmlMemberFactoryTest extends TestCase
      */
     private function stubFields(array $fields): void
     {
-        Functions\expect('get_field')->andReturnUsing(
+        expect('get_field')->andReturnUsing(
             static fn (string $field, int $postId): mixed => $fields[$field] ?? null
         );
     }

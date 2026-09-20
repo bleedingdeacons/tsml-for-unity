@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Support;
 
-use Brain\Monkey\Actions;
+use function Brain\Monkey\Actions\expectDone;
 
 /**
  * Negative expectations for WordPress actions.
@@ -30,7 +30,7 @@ trait ActionExpectations
      */
     protected function expectActionNotFired(string $hook, ...$args): void
     {
-        $expectation = Actions\expectDone($hook)->never();
+        $expectation = expectDone($hook)->never();
 
         if ($args !== []) {
             $expectation->with(...$args);

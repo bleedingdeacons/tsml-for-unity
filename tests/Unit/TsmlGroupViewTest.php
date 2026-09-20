@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Contacts\TsmlContact;
 use TsmlForUnity\Groups\TsmlGroupView;
@@ -12,22 +14,17 @@ use Unity\Groups\Interfaces\GroupView;
 
 /**
  * Tests for TsmlGroupView
- *
- * @covers \TsmlForUnity\Groups\TsmlGroupView
  */
+#[CoversClass(\TsmlForUnity\Groups\TsmlGroupView::class)]
 class TsmlGroupViewTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_group_view_interface(): void
     {
         $this->assertInstanceOf(GroupView::class, new TsmlGroupView());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_defaults_to_an_empty_view(): void
     {
         $view = new TsmlGroupView();
@@ -41,9 +38,7 @@ class TsmlGroupViewTest extends TestCase
         $this->assertSame([], $view->getMembers());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_exposes_every_field_passed_to_the_constructor(): void
     {
         $contact = new TsmlContact('Jane', 'jane@example.com');

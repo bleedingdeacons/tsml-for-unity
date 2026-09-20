@@ -4,20 +4,19 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicy;
 use Unity\PrivacyPolicies\Interfaces\PrivacyPolicy;
 
 /**
  * Tests for TsmlPrivacyPolicy entity
- *
- * @covers \TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicy
  */
+#[CoversClass(\TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicy::class)]
 class TsmlPrivacyPolicyTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_privacy_policy_interface(): void
     {
         $policy = new TsmlPrivacyPolicy(id: 1);
@@ -25,9 +24,7 @@ class TsmlPrivacyPolicyTest extends TestCase
         $this->assertInstanceOf(PrivacyPolicy::class, $policy);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_can_be_instantiated_with_minimal_values(): void
     {
         $policy = new TsmlPrivacyPolicy(id: 1);
@@ -40,9 +37,7 @@ class TsmlPrivacyPolicyTest extends TestCase
         $this->assertEquals('', $policy->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_can_be_instantiated_with_all_values(): void
     {
         $policy = new TsmlPrivacyPolicy(
@@ -62,9 +57,7 @@ class TsmlPrivacyPolicyTest extends TestCase
         $this->assertEquals('2026-05-06 12:34:56', $policy->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function active_flag_can_be_toggled(): void
     {
         $activePolicy = new TsmlPrivacyPolicy(id: 1, active: true);
@@ -74,9 +67,7 @@ class TsmlPrivacyPolicyTest extends TestCase
         $this->assertFalse($inactivePolicy->isActive());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_empty_strings_for_optional_fields(): void
     {
         $policy = new TsmlPrivacyPolicy(
@@ -91,9 +82,7 @@ class TsmlPrivacyPolicyTest extends TestCase
         $this->assertEmpty($policy->getVersion());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_preserves_html_content_in_policy_body(): void
     {
         $body = '<h1>Policy</h1><p>Lorem <strong>ipsum</strong>.</p>';
@@ -102,9 +91,7 @@ class TsmlPrivacyPolicyTest extends TestCase
         $this->assertEquals($body, $policy->getPolicy());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function unsaved_policy_has_zero_id(): void
     {
         $policy = new TsmlPrivacyPolicy(id: 0, title: 'Draft');
@@ -113,9 +100,7 @@ class TsmlPrivacyPolicyTest extends TestCase
         $this->assertEquals('Draft', $policy->getTitle());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function version_is_stored_as_string(): void
     {
         $policy = new TsmlPrivacyPolicy(id: 1, version: '2026-05');

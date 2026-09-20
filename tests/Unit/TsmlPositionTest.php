@@ -4,28 +4,26 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Positions\TsmlPosition;
 use Unity\Positions\Interfaces\Position;
 
 /**
  * Tests for TsmlPosition entity
- *
- * @covers \TsmlForUnity\Positions\TsmlPosition
  */
+#[CoversClass(\TsmlForUnity\Positions\TsmlPosition::class)]
 class TsmlPositionTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_position_interface(): void
     {
         $this->assertInstanceOf(Position::class, new TsmlPosition());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_applies_sensible_defaults(): void
     {
         $position = new TsmlPosition();
@@ -41,9 +39,7 @@ class TsmlPositionTest extends TestCase
         $this->assertSame('', $position->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_exposes_every_field_passed_to_the_constructor(): void
     {
         $position = new TsmlPosition(
@@ -69,19 +65,15 @@ class TsmlPositionTest extends TestCase
         $this->assertSame('2026-06-01 10:00:00', $position->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function a_fully_populated_position_is_valid_even_before_it_is_saved(): void
     {
         $this->assertTrue($this->validPosition(['id' => 0])->isValid());
         $this->assertTrue($this->validPosition(['id' => 5])->isValid());
     }
 
-    /**
-     * @test
-     * @dataProvider invalidFieldProvider
-     */
+    #[DataProvider('invalidFieldProvider')]
+    #[Test]
     public function is_valid_fails_when_any_requirement_is_missing(array $overrides): void
     {
         $this->assertFalse($this->validPosition($overrides)->isValid());

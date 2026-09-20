@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Members\TsmlMember;
 use TsmlForUnity\Positions\TsmlPosition;
@@ -12,14 +14,11 @@ use Unity\Positions\Interfaces\PositionView;
 
 /**
  * Tests for TsmlPositionView
- *
- * @covers \TsmlForUnity\Positions\TsmlPositionView
  */
+#[CoversClass(\TsmlForUnity\Positions\TsmlPositionView::class)]
 class TsmlPositionViewTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_position_view_interface(): void
     {
         $view = new TsmlPositionView($this->position());
@@ -27,9 +26,7 @@ class TsmlPositionViewTest extends TestCase
         $this->assertInstanceOf(PositionView::class, $view);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function a_view_with_no_member_is_vacant(): void
     {
         $view = new TsmlPositionView($this->position());
@@ -46,9 +43,7 @@ class TsmlPositionViewTest extends TestCase
         $this->assertNull($view->getDaysUntilRotation());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_derives_title_email_and_description_from_the_position(): void
     {
         $view = new TsmlPositionView($this->position());
@@ -58,9 +53,7 @@ class TsmlPositionViewTest extends TestCase
         $this->assertSame('chair@example.com', $view->getPositionEmail());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function a_view_with_a_member_pulls_contact_details_from_it(): void
     {
         $member = new TsmlMember(
@@ -82,9 +75,7 @@ class TsmlPositionViewTest extends TestCase
         $this->assertSame('John D.', $view->getPublicDisplayName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function public_display_name_is_hidden_when_the_member_opts_out(): void
     {
         $member = new TsmlMember(id: 1, anonymousName: 'John D.', showAnonymousName: false);
@@ -94,9 +85,7 @@ class TsmlPositionViewTest extends TestCase
         $this->assertSame('', $view->getPublicDisplayName());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function officer_display_name_joins_all_members(): void
     {
         $a = new TsmlMember(id: 1, anonymousName: 'John D.');
@@ -108,9 +97,7 @@ class TsmlPositionViewTest extends TestCase
         $this->assertSame([$a, $b], $view->getMembers());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_parses_an_iso_rotation_date_in_the_future(): void
     {
         $future = (new \DateTime('today'))->modify('+40 days')->format('Y-m-d');
@@ -124,9 +111,7 @@ class TsmlPositionViewTest extends TestCase
         $this->assertGreaterThan(0, $view->getMonthsUntilRotation());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_parses_a_uk_format_rotation_date(): void
     {
         $member = new TsmlMember(id: 1, intergroupPositionRotation: '25/12/2099');
@@ -136,9 +121,7 @@ class TsmlPositionViewTest extends TestCase
         $this->assertSame('2099-12-25', $view->getRotationDate()->format('Y-m-d'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function a_past_rotation_date_reports_zero_days_but_negative_months(): void
     {
         $past = (new \DateTime('today'))->modify('-40 days')->format('Y-m-d');
@@ -150,9 +133,7 @@ class TsmlPositionViewTest extends TestCase
         $this->assertLessThan(0, $view->getMonthsUntilRotation());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function an_unparseable_rotation_date_yields_no_rotation(): void
     {
         $member = new TsmlMember(id: 1, intergroupPositionRotation: 'not-a-date');
@@ -164,9 +145,7 @@ class TsmlPositionViewTest extends TestCase
         $this->assertNull($view->getMonthsUntilRotation());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function is_archivist_matches_the_role_case_insensitively(): void
     {
         $archivist = new TsmlPositionView(new TsmlPosition(shortDescription: 'archivist'));

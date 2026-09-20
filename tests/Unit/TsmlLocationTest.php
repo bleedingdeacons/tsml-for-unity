@@ -4,28 +4,25 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Locations\TsmlLocation;
 use Unity\Locations\Interfaces\Location;
 
 /**
  * Tests for TsmlLocation entity
- *
- * @covers \TsmlForUnity\Locations\TsmlLocation
  */
+#[CoversClass(\TsmlForUnity\Locations\TsmlLocation::class)]
 class TsmlLocationTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_location_interface(): void
     {
         $this->assertInstanceOf(Location::class, new TsmlLocation());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_defaults_every_field(): void
     {
         $location = new TsmlLocation();
@@ -47,9 +44,7 @@ class TsmlLocationTest extends TestCase
         $this->assertSame('', $location->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_exposes_every_field_passed_to_the_constructor(): void
     {
         $location = new TsmlLocation(
@@ -87,9 +82,7 @@ class TsmlLocationTest extends TestCase
         $this->assertSame('2026-06-01 10:00:00', $location->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function is_valid_requires_a_saved_id_and_a_name(): void
     {
         $this->assertFalse((new TsmlLocation(id: 0, name: 'Named'))->isValid());
@@ -97,9 +90,7 @@ class TsmlLocationTest extends TestCase
         $this->assertTrue((new TsmlLocation(id: 5, name: 'Named'))->isValid());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function has_coordinates_needs_both_latitude_and_longitude(): void
     {
         $this->assertFalse((new TsmlLocation())->hasCoordinates());
@@ -110,9 +101,7 @@ class TsmlLocationTest extends TestCase
         $this->assertTrue((new TsmlLocation(latitude: 0.0, longitude: 0.0))->hasCoordinates());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function formatted_address_joins_only_the_populated_parts(): void
     {
         $full = new TsmlLocation(
@@ -129,17 +118,13 @@ class TsmlLocationTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function formatted_address_is_empty_when_nothing_is_set(): void
     {
         $this->assertSame('', (new TsmlLocation())->getFormattedAddress());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function formatted_address_skips_missing_segments(): void
     {
         // Only city + country: no street line, no state/zip cluster tail.

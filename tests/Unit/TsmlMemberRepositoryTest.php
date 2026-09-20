@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Actions;
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
+use function Brain\Monkey\Actions\expectDone;
 use TsmlForUnity\Members\TsmlMemberFields;
 use TsmlForUnity\Members\TsmlMemberRepository;
 use Unity\Testing\Doubles\MemberStub;
 use TsmlForUnity\Tests\TestCase;
-use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberFactory;
 use Unity\Members\PreferredContact;
 
@@ -26,12 +28,11 @@ use Unity\Members\PreferredContact;
  * The tests deliberately do NOT exercise the underlying acf/save_post
  * path used by the admin form; that path has its own listener in
  * TsmlMemberChangeTracker and is covered by other tests.
- *
- * @covers \TsmlForUnity\Members\TsmlMemberRepository
  */
+#[CoversClass(\TsmlForUnity\Members\TsmlMemberRepository::class)]
 class TsmlMemberRepositoryTest extends TestCase
 {
-    /** @var MemberFactory&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var MemberFactory&MockObject */
     private $factory;
 
     private TsmlMemberRepository $repository;
@@ -50,7 +51,7 @@ class TsmlMemberRepositoryTest extends TestCase
      */
     private function stubExistingPost(int $postId): void
     {
-        Functions\expect('get_post')
+        expect('get_post')
             ->with($postId)
             ->andReturn((object) [
                 'ID' => $postId,
@@ -65,14 +66,11 @@ class TsmlMemberRepositoryTest extends TestCase
      */
     private function allowAnyUpdateFieldCalls(): void
     {
-        Functions\expect('update_field')->andReturn(true);
+        expect('update_field')->andReturn(true);
     }
 
     // ─── update() fires unity/member_changing ───────────────────────
-
-    /**
-     * @test
-     */
+    #[Test]
     public function update_fires_member_changing_with_original_and_updated_members(): void
     {
         $postId = 23462;
@@ -90,10 +88,10 @@ class TsmlMemberRepositoryTest extends TestCase
             ->with($postId)
             ->willReturnOnConsecutiveCalls($original, $updated);
 
-        Functions\expect('wp_update_post')->once()->andReturn($postId);
+        expect('wp_update_post')->once()->andReturn($postId);
         $this->allowAnyUpdateFieldCalls();
 
-        Actions\expectDone('unity/member_changing')->once()->with($updated, $original);
+        expectDone('unity/member_changing')->once()->with($updated, $original);
 
         $caller = new MemberStub($postId, 'Anon', false, false, '', 0, '', 0, false, null, '', 'NEW-MOBILE');
         $result = $this->repository->update($caller);
@@ -101,9 +99,7 @@ class TsmlMemberRepositoryTest extends TestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function update_does_not_fire_member_changing_when_wp_update_post_fails(): void
     {
         $postId = 23462;
@@ -118,7 +114,7 @@ class TsmlMemberRepositoryTest extends TestCase
 
         // Simulate wp_update_post returning a WP_Error.
         $error = new \WP_Error('db_error', 'the write failed');
-        Functions\expect('wp_update_post')->once()->andReturn($error);
+        expect('wp_update_post')->once()->andReturn($error);
 
         // No update_field calls and no event fired — assert by absence.
 
@@ -131,17 +127,15 @@ class TsmlMemberRepositoryTest extends TestCase
         // expectation above.
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function update_returns_false_for_zero_post_id_and_does_nothing(): void
     {
         // Zero ID never reaches findById, wp_update_post, or update_field.
         // Said explicitly rather than left to "an unstubbed call fatals":
         // wp-mocks defines these for real, so an unexpected call would now
         // succeed quietly where wp_mock would have blown up.
-        Functions\expect('wp_update_post')->never();
-        Functions\expect('update_field')->never();
+        expect('wp_update_post')->never();
+        expect('update_field')->never();
 
         $caller = new MemberStub(0, 'Anon');
         $result = $this->repository->update($caller);
@@ -150,10 +144,7 @@ class TsmlMemberRepositoryTest extends TestCase
     }
 
     // ─── save() insert path fires unity/member_created ──────────────
-
-    /**
-     * @test
-     */
+    #[Test]
     public function save_insert_fires_member_created_after_writes(): void
     {
         $newPostId = 99999;
@@ -166,11 +157,11 @@ class TsmlMemberRepositoryTest extends TestCase
         // member as it exists in storage.
         $persisted = new MemberStub($newPostId, 'New Anon');
 
-        Functions\expect('wp_insert_post')->once()->andReturn($newPostId);
+        expect('wp_insert_post')->once()->andReturn($newPostId);
         $this->allowAnyUpdateFieldCalls();
 
         // findById's pre-check
-        Functions\expect('get_post')
+        expect('get_post')
             ->with($newPostId)
             ->andReturn((object) [
                 'ID' => $newPostId,
@@ -182,22 +173,20 @@ class TsmlMemberRepositoryTest extends TestCase
             ->with($newPostId)
             ->willReturn($persisted);
 
-        Actions\expectDone('unity/member_created')->once()->with($persisted);
+        expectDone('unity/member_created')->once()->with($persisted);
 
         $result = $this->repository->save($caller);
 
         $this->assertTrue($result);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function save_insert_does_not_fire_member_created_when_wp_insert_post_fails(): void
     {
         $caller = new MemberStub(0, 'New Anon');
 
         $error = new \WP_Error('db_error', 'the write failed');
-        Functions\expect('wp_insert_post')->once()->andReturn($error);
+        expect('wp_insert_post')->once()->andReturn($error);
 
         // No update_field, no get_post, no createFromSource: a
         // failure to insert returns false before any of those.
@@ -207,9 +196,7 @@ class TsmlMemberRepositoryTest extends TestCase
         $this->assertFalse($result);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function save_with_existing_id_delegates_to_update_and_fires_member_changing(): void
     {
         // save() with id > 0 must delegate to update() — verified by
@@ -227,10 +214,10 @@ class TsmlMemberRepositoryTest extends TestCase
             ->with($postId)
             ->willReturnOnConsecutiveCalls($original, $updated);
 
-        Functions\expect('wp_update_post')->once()->andReturn($postId);
+        expect('wp_update_post')->once()->andReturn($postId);
         $this->allowAnyUpdateFieldCalls();
 
-        Actions\expectDone('unity/member_changing')->once()->with($updated, $original);
+        expectDone('unity/member_changing')->once()->with($updated, $original);
 
         $caller = new MemberStub($postId, 'New Anon');
         $result = $this->repository->save($caller);
@@ -239,10 +226,7 @@ class TsmlMemberRepositoryTest extends TestCase
     }
 
     // ─── findByEmail() ──────────────────────────────────────────────
-
-    /**
-     * @test
-     */
+    #[Test]
     public function find_by_email_returns_member_when_acf_field_matches(): void
     {
         $postId = 4242;
@@ -252,7 +236,7 @@ class TsmlMemberRepositoryTest extends TestCase
         //  - filters by the members CPT and 'publish' status (defaults)
         //  - limits to one post (numberposts => 1)
         //  - meta_query keys on the personal-email ACF field
-        Functions\expect('get_posts')
+        expect('get_posts')
             ->once()
             ->withArgs(function ($args) use ($email) {
                 if (!isset($args['meta_query'][0])) {
@@ -281,13 +265,11 @@ class TsmlMemberRepositoryTest extends TestCase
         $this->assertSame($expected, $result);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function find_by_email_returns_null_when_no_member_matches(): void
     {
         // No matching posts → findAll() returns [] → findByEmail() returns null.
-        Functions\expect('get_posts')->once()->andReturn([]);
+        expect('get_posts')->once()->andReturn([]);
 
         // Factory must not be called when there are no posts.
         $this->factory->expects($this->never())->method('createFromSource');
@@ -295,25 +277,20 @@ class TsmlMemberRepositoryTest extends TestCase
         $this->assertNull($this->repository->findByEmail('missing@example.test'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function find_by_email_returns_null_for_empty_string_without_querying(): void
     {
         // Empty input short-circuits before any DB work. get_posts() is a
         // real function in wp-mocks, so "no expectation" no longer means "a
         // call would fatal" — say it outright.
-        Functions\expect('get_posts')->never();
+        expect('get_posts')->never();
         $this->factory->expects($this->never())->method('createFromSource');
 
         $this->assertNull($this->repository->findByEmail(''));
     }
 
     // ─── findTelephoneResponders() ──────────────────────────────────
-
-    /**
-     * @test
-     */
+    #[Test]
     public function find_telephone_responders_queries_the_responder_flag_and_returns_members(): void
     {
         $postId = 7777;
@@ -324,7 +301,7 @@ class TsmlMemberRepositoryTest extends TestCase
         //    goes straight through the factory, no per-post get_post
         //  - meta_query keys on the telephone-responder ACF field,
         //    matching the ACF true_false stored value '1'
-        Functions\expect('get_posts')
+        expect('get_posts')
             ->once()
             ->withArgs(function ($args) {
                 if (!isset($args['meta_query'][0])) {
@@ -351,13 +328,11 @@ class TsmlMemberRepositoryTest extends TestCase
         $this->assertSame([$expected], $result);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function find_telephone_responders_returns_empty_array_when_none_match(): void
     {
         // No matching posts → findAll() returns [] → method returns [].
-        Functions\expect('get_posts')->once()->andReturn([]);
+        expect('get_posts')->once()->andReturn([]);
 
         $this->factory->expects($this->never())->method('createFromSource');
 
@@ -373,7 +348,7 @@ class TsmlMemberRepositoryTest extends TestCase
      */
     private function captureUpdateFieldCalls(array &$captured): void
     {
-        Functions\expect('update_field')->andReturnUsing(
+        expect('update_field')->andReturnUsing(
             static function (string $field, mixed $value, int $postId) use (&$captured): bool {
                 $captured[$field] = $value;
                 return true;
@@ -381,9 +356,7 @@ class TsmlMemberRepositoryTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function update_writes_the_landline_and_the_preferred_contact(): void
     {
         $postId = 5100;
@@ -395,7 +368,7 @@ class TsmlMemberRepositoryTest extends TestCase
 
         $this->stubExistingPost($postId);
         $this->factory->method('createFromSource')->willReturn($member);
-        Functions\expect('wp_update_post')->once()->andReturn($postId);
+        expect('wp_update_post')->once()->andReturn($postId);
 
         $captured = [];
         $this->captureUpdateFieldCalls($captured);
@@ -412,9 +385,8 @@ class TsmlMemberRepositoryTest extends TestCase
      * saying Landline with no landline to ring. The stored value is what the
      * admin form and the forwarding side read back, so it is settled on the
      * way in rather than left for every reader to second-guess.
-     *
-     * @test
      */
+    #[Test]
     public function update_writes_mobile_when_the_preference_has_no_landline_behind_it(): void
     {
         $postId = 5101;
@@ -426,7 +398,7 @@ class TsmlMemberRepositoryTest extends TestCase
 
         $this->stubExistingPost($postId);
         $this->factory->method('createFromSource')->willReturn($member);
-        Functions\expect('wp_update_post')->once()->andReturn($postId);
+        expect('wp_update_post')->once()->andReturn($postId);
 
         $captured = [];
         $this->captureUpdateFieldCalls($captured);

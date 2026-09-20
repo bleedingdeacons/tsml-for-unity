@@ -4,28 +4,25 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeeting;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeeting;
 
 /**
  * Tests for TsmlIntergroupMeeting entity
- *
- * @covers \TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeeting
  */
+#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeeting::class)]
 class TsmlIntergroupMeetingTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_the_interface(): void
     {
         $this->assertInstanceOf(IntergroupMeeting::class, new TsmlIntergroupMeeting(id: 1));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_exposes_constructor_values(): void
     {
         $meeting = new TsmlIntergroupMeeting(
@@ -45,9 +42,7 @@ class TsmlIntergroupMeetingTest extends TestCase
         $this->assertSame('2026-07-01 20:00:00', $meeting->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_defaults_collections_to_empty(): void
     {
         $meeting = new TsmlIntergroupMeeting(id: 1);
@@ -60,10 +55,7 @@ class TsmlIntergroupMeetingTest extends TestCase
     }
 
     // ── group attendee mutators ────────────────────────────────────────
-
-    /**
-     * @test
-     */
+    #[Test]
     public function adding_a_group_attendee_returns_true_and_records_it(): void
     {
         $meeting = new TsmlIntergroupMeeting(id: 1);
@@ -73,9 +65,7 @@ class TsmlIntergroupMeetingTest extends TestCase
         $this->assertSame([10], $meeting->getGroupAttendees());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function adding_a_duplicate_group_attendee_returns_false(): void
     {
         $meeting = new TsmlIntergroupMeeting(id: 1, groupAttendees: [10]);
@@ -84,9 +74,7 @@ class TsmlIntergroupMeetingTest extends TestCase
         $this->assertSame([10], $meeting->getGroupAttendees());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function removing_a_group_attendee_reindexes_the_list(): void
     {
         $meeting = new TsmlIntergroupMeeting(id: 1, groupAttendees: [10, 20, 30]);
@@ -96,9 +84,7 @@ class TsmlIntergroupMeetingTest extends TestCase
         $this->assertFalse($meeting->hasGroupAttendee(20));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function removing_an_absent_group_attendee_returns_false(): void
     {
         $meeting = new TsmlIntergroupMeeting(id: 1, groupAttendees: [10]);
@@ -108,10 +94,7 @@ class TsmlIntergroupMeetingTest extends TestCase
     }
 
     // ── officer attendee mutators ──────────────────────────────────────
-
-    /**
-     * @test
-     */
+    #[Test]
     public function adding_an_officer_attendee_returns_true_and_records_it(): void
     {
         $meeting = new TsmlIntergroupMeeting(id: 1);
@@ -121,9 +104,7 @@ class TsmlIntergroupMeetingTest extends TestCase
         $this->assertSame([3], $meeting->getOfficersAttending());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function adding_a_duplicate_officer_attendee_returns_false(): void
     {
         $meeting = new TsmlIntergroupMeeting(id: 1, officersAttending: [3]);
@@ -132,9 +113,7 @@ class TsmlIntergroupMeetingTest extends TestCase
         $this->assertSame([3], $meeting->getOfficersAttending());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function removing_an_officer_attendee_reindexes_the_list(): void
     {
         $meeting = new TsmlIntergroupMeeting(id: 1, officersAttending: [3, 4, 5]);
@@ -144,9 +123,7 @@ class TsmlIntergroupMeetingTest extends TestCase
         $this->assertFalse($meeting->hasOfficerAttendee(4));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function removing_an_absent_officer_attendee_returns_false(): void
     {
         $meeting = new TsmlIntergroupMeeting(id: 1, officersAttending: [3]);

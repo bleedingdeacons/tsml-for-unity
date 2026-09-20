@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicyFactory;
 use TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicyFields;
 use TsmlForUnity\Tests\TestCase;
@@ -12,9 +14,8 @@ use Unity\PrivacyPolicies\Interfaces\PrivacyPolicyFactory;
 
 /**
  * Tests for TsmlPrivacyPolicyFactory
- *
- * @covers \TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicyFactory
  */
+#[CoversClass(\TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicyFactory::class)]
 class TsmlPrivacyPolicyFactoryTest extends TestCase
 {
     private TsmlPrivacyPolicyFactory $factory;
@@ -25,20 +26,16 @@ class TsmlPrivacyPolicyFactoryTest extends TestCase
         $this->factory = new TsmlPrivacyPolicyFactory();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_the_factory_interface(): void
     {
         $this->assertInstanceOf(PrivacyPolicyFactory::class, $this->factory);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_from_source_reads_the_title_from_the_post_and_fields_from_acf(): void
     {
-        Functions\expect('get_post')->with(5)->andReturn((object) [
+        expect('get_post')->with(5)->andReturn((object) [
             'post_title'        => 'Privacy &amp; Cookies',
             'post_modified_gmt' => '2026-06-01 10:00:00',
         ]);
@@ -50,7 +47,7 @@ class TsmlPrivacyPolicyFactoryTest extends TestCase
         // stub per function per test, and the first one registered answers
         // every call whatever its ->with() says. The result is silent — every
         // field comes back as the policy text — so the mapping is explicit.
-        Functions\expect('get_field')->andReturnUsing(
+        expect('get_field')->andReturnUsing(
             static fn (string $field, int $postId): mixed => match ($field) {
                 TsmlPrivacyPolicyFields::FIELD_POLICY  => 'The policy text',
                 TsmlPrivacyPolicyFields::FIELD_VERSION => '2.1',
@@ -70,13 +67,11 @@ class TsmlPrivacyPolicyFactoryTest extends TestCase
         $this->assertSame('2026-06-01 10:00:00', $policy->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_from_source_defaults_gracefully_when_the_post_is_missing(): void
     {
-        Functions\expect('get_post')->with(9)->andReturn(null);
-        Functions\expect('get_field')->andReturn(null);
+        expect('get_post')->with(9)->andReturn(null);
+        expect('get_field')->andReturn(null);
 
         $policy = $this->factory->createFromSource(9);
 
@@ -88,9 +83,7 @@ class TsmlPrivacyPolicyFactoryTest extends TestCase
         $this->assertSame('', $policy->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_new_builds_a_policy_from_explicit_values(): void
     {
         $policy = $this->factory->createNew(
@@ -110,9 +103,7 @@ class TsmlPrivacyPolicyFactoryTest extends TestCase
         $this->assertSame('2026-01-01 00:00:00', $policy->getUpdated());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function create_new_applies_empty_defaults(): void
     {
         $policy = $this->factory->createNew(4);

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\Locations\TsmlLocation;
 use TsmlForUnity\Locations\TsmlLocationRepository;
 use TsmlForUnity\Tests\TestCase;
@@ -17,12 +20,11 @@ use Unity\Locations\Interfaces\LocationRepository;
  * The repository is read-only: reads delegate to the factory (findById) or
  * combine get_posts with the factory (findAll and its filtered variants),
  * while the write methods deliberately throw.
- *
- * @covers \TsmlForUnity\Locations\TsmlLocationRepository
  */
+#[CoversClass(\TsmlForUnity\Locations\TsmlLocationRepository::class)]
 class TsmlLocationRepositoryTest extends TestCase
 {
-    /** @var LocationFactory&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var LocationFactory&MockObject */
     private $factory;
 
     private TsmlLocationRepository $repository;
@@ -32,7 +34,7 @@ class TsmlLocationRepositoryTest extends TestCase
         parent::setUp();
 
         // wp_parse_args merges the caller args over the defaults.
-        Functions\expect('wp_parse_args')->andReturnUsing(
+        expect('wp_parse_args')->andReturnUsing(
             fn ($args, $defaults) => array_merge($defaults, $args)
         );
 
@@ -40,17 +42,13 @@ class TsmlLocationRepositoryTest extends TestCase
         $this->repository = new TsmlLocationRepository($this->factory);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_implements_the_repository_interface(): void
     {
         $this->assertInstanceOf(LocationRepository::class, $this->repository);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function find_by_id_delegates_to_the_factory(): void
     {
         $location = new TsmlLocation(id: 5, name: 'Hall');
@@ -60,12 +58,10 @@ class TsmlLocationRepositoryTest extends TestCase
         $this->assertSame($location, $this->repository->findById(5));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function find_all_maps_every_post_through_the_factory(): void
     {
-        Functions\expect('get_posts')->once()->andReturn([
+        expect('get_posts')->once()->andReturn([
             (object) ['ID' => 1],
             (object) ['ID' => 2],
         ]);
@@ -78,12 +74,10 @@ class TsmlLocationRepositoryTest extends TestCase
         $this->assertSame([$a, $b], $this->repository->findAll());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function find_by_city_queries_all_and_returns_the_matches(): void
     {
-        Functions\expect('get_posts')->once()->andReturn([(object) ['ID' => 3]]);
+        expect('get_posts')->once()->andReturn([(object) ['ID' => 3]]);
 
         $location = new TsmlLocation(id: 3, name: 'City Hall', city: 'London');
         $this->factory->method('createFromSource')->with(3)->willReturn($location);
@@ -91,12 +85,10 @@ class TsmlLocationRepositoryTest extends TestCase
         $this->assertSame([$location], $this->repository->findByCity('London'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function find_by_region_queries_all_and_returns_the_matches(): void
     {
-        Functions\expect('get_posts')->once()->andReturn([(object) ['ID' => 4]]);
+        expect('get_posts')->once()->andReturn([(object) ['ID' => 4]]);
 
         $location = new TsmlLocation(id: 4, name: 'Regional', region: 'South');
         $this->factory->method('createFromSource')->with(4)->willReturn($location);
@@ -104,37 +96,29 @@ class TsmlLocationRepositoryTest extends TestCase
         $this->assertSame([$location], $this->repository->findByRegion('South'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function find_all_returns_empty_when_there_are_no_posts(): void
     {
-        Functions\expect('get_posts')->once()->andReturn([]);
+        expect('get_posts')->once()->andReturn([]);
 
         $this->assertSame([], $this->repository->findAll());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function save_is_not_implemented(): void
     {
         $this->expectException(\Exception::class);
         $this->repository->save(new TsmlLocation(id: 1, name: 'X'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function update_is_not_implemented(): void
     {
         $this->expectException(\Exception::class);
         $this->repository->update(new TsmlLocation(id: 1, name: 'X'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function delete_is_not_implemented(): void
     {
         $this->expectException(\Exception::class);

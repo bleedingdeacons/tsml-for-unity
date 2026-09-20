@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use Brain\Monkey\Functions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\MockObject;
+use function Brain\Monkey\Functions\expect;
 use TsmlForUnity\Positions\TsmlPosition;
 use TsmlForUnity\Positions\TsmlPositionFields;
 use TsmlForUnity\Positions\TsmlPositionRepository;
@@ -22,12 +26,11 @@ use Unity\Positions\Interfaces\PositionFactory;
  * stub getId() and isValid() into combinations the real class cannot
  * produce, which is exactly how the insert branch stayed dead-code
  * while looking covered.
- *
- * @covers \TsmlForUnity\Positions\TsmlPositionRepository
  */
+#[CoversClass(\TsmlForUnity\Positions\TsmlPositionRepository::class)]
 class TsmlPositionRepositoryTest extends TestCase
 {
-    /** @var PositionFactory&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var PositionFactory&MockObject */
     private $factory;
 
     private TsmlPositionRepository $repository;
@@ -66,7 +69,7 @@ class TsmlPositionRepositoryTest extends TestCase
      */
     private function captureUpdateField(string $field, &$captured): void
     {
-        Functions\expect('update_field')
+        expect('update_field')
             ->withArgs(function ($key) use ($field) {
                 return $key === $field;
             })
@@ -76,21 +79,18 @@ class TsmlPositionRepositoryTest extends TestCase
             });
 
         // The other fields in the same save are not under test.
-        Functions\expect('update_field')->andReturn(true);
+        expect('update_field')->andReturn(true);
     }
 
     // ─── save() insert path accepts a real, unsaved TsmlPosition ─────
-
-    /**
-     * @test
-     */
+    #[Test]
     public function save_inserts_a_new_unsaved_tsml_position(): void
     {
         $position = $this->position(0);
 
         $this->assertTrue($position->isValid(), 'A fully populated, unsaved position must be valid');
 
-        Functions\expect('wp_insert_post')->once()->andReturn(4242);
+        expect('wp_insert_post')->once()->andReturn(4242);
 
         $written = null;
         $this->captureUpdateField(TsmlPositionFields::LONG_NAME, $written);
@@ -102,9 +102,8 @@ class TsmlPositionRepositoryTest extends TestCase
     /**
      * The ID is the repository's business, not the position's: an unsaved
      * position is still valid data.
-     *
-     * @test
      */
+    #[Test]
     public function a_new_unsaved_position_is_valid(): void
     {
         $this->assertTrue($this->position(0)->isValid());
@@ -112,10 +111,9 @@ class TsmlPositionRepositoryTest extends TestCase
 
     /**
      * Dropping the ID rule must not weaken the data rules.
-     *
-     * @test
-     * @dataProvider incompletePositions
      */
+    #[DataProvider('incompletePositions')]
+    #[Test]
     public function save_rejects_a_new_position_with_incomplete_data(TsmlPosition $position): void
     {
         // No wp_insert_post expectation: a call would fail the test.
@@ -138,13 +136,11 @@ class TsmlPositionRepositoryTest extends TestCase
         ];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function save_returns_false_when_wp_insert_post_fails(): void
     {
         $error = new \WP_Error('db_error', 'the write failed');
-        Functions\expect('wp_insert_post')->once()->andReturn($error);
+        expect('wp_insert_post')->once()->andReturn($error);
 
         // No update_field expectation: the failure returns before any writes.
 
@@ -152,17 +148,14 @@ class TsmlPositionRepositoryTest extends TestCase
     }
 
     // ─── save() with an existing ID delegates to update() ────────────
-
-    /**
-     * @test
-     */
+    #[Test]
     public function save_with_existing_id_delegates_to_update(): void
     {
         // Delegation is observed via wp_update_post being used rather
         // than wp_insert_post, which has no expectation here.
         $postId = 4242;
 
-        Functions\expect('wp_update_post')->once()->andReturn($postId);
+        expect('wp_update_post')->once()->andReturn($postId);
 
         $written = null;
         $this->captureUpdateField(TsmlPositionFields::LONG_NAME, $written);
@@ -172,15 +165,12 @@ class TsmlPositionRepositoryTest extends TestCase
     }
 
     // ─── update() path ──────────────────────────────────────────────
-
-    /**
-     * @test
-     */
+    #[Test]
     public function update_writes_fields_for_an_existing_position(): void
     {
         $postId = 4242;
 
-        Functions\expect('wp_update_post')->once()->andReturn($postId);
+        expect('wp_update_post')->once()->andReturn($postId);
 
         $written = null;
         $this->captureUpdateField(TsmlPositionFields::SUMMARY, $written);
@@ -192,9 +182,8 @@ class TsmlPositionRepositoryTest extends TestCase
     /**
      * update() guards the ID itself rather than leaning on isValid(),
      * which is what lets isValid() stay silent about persistence.
-     *
-     * @test
      */
+    #[Test]
     public function update_returns_false_for_zero_post_id_without_writing(): void
     {
         // Valid data, no ID: never reaches wp_update_post or update_field.
@@ -204,9 +193,7 @@ class TsmlPositionRepositoryTest extends TestCase
         $this->assertFalse($this->repository->update($position));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function update_returns_false_for_an_invalid_position(): void
     {
         // Real ID, but incomplete data — no wp_update_post expectation.
@@ -215,26 +202,22 @@ class TsmlPositionRepositoryTest extends TestCase
         $this->assertFalse($this->repository->update($position));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function update_returns_false_when_wp_update_post_fails(): void
     {
         $error = new \WP_Error('db_error', 'the write failed');
-        Functions\expect('wp_update_post')->once()->andReturn($error);
+        expect('wp_update_post')->once()->andReturn($error);
 
         $this->assertFalse($this->repository->update($this->position(4242)));
     }
 
     // ─── interface-level contract ───────────────────────────────────
-
     /**
      * The repository is typed against Position, where identity and
      * validity are separate parts of the contract. An implementation
      * that reports id 0 but invalid must not be inserted.
-     *
-     * @test
      */
+    #[Test]
     public function save_returns_false_for_invalid_position_without_inserting(): void
     {
         // No wp_insert_post expectation: a call would fail the test.
