@@ -4,62 +4,52 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Contacts\TsmlContact;
 use TsmlForUnity\Groups\TsmlGroupView;
 use TsmlForUnity\Members\TsmlMember;
 use Unity\Groups\Interfaces\GroupView;
 
-/**
+/*
  * Tests for TsmlGroupView
  */
-#[CoversClass(\TsmlForUnity\Groups\TsmlGroupView::class)]
-class TsmlGroupViewTest extends TestCase
-{
-    #[Test]
-    public function it_implements_group_view_interface(): void
-    {
-        $this->assertInstanceOf(GroupView::class, new TsmlGroupView());
-    }
 
-    #[Test]
-    public function it_defaults_to_an_empty_view(): void
-    {
-        $view = new TsmlGroupView();
+covers(\TsmlForUnity\Groups\TsmlGroupView::class);
 
-        $this->assertSame(0, $view->getId());
-        $this->assertSame('', $view->getTitle());
-        $this->assertSame('', $view->getEmail());
-        $this->assertSame([], $view->getMeetings());
-        $this->assertSame('', $view->getLink());
-        $this->assertSame([], $view->getContacts());
-        $this->assertSame([], $view->getMembers());
-    }
+it('implements group view interface', function () {
+    expect(new TsmlGroupView())->toBeInstanceOf(GroupView::class);
+});
 
-    #[Test]
-    public function it_exposes_every_field_passed_to_the_constructor(): void
-    {
-        $contact = new TsmlContact('Jane', 'jane@example.com');
-        $member = new TsmlMember(id: 1, anonymousName: 'John D.');
+it('defaults to an empty view', function () {
+    $view = new TsmlGroupView();
 
-        $view = new TsmlGroupView(
-            id: 10,
-            title: 'Tuesday Group',
-            email: 'group@example.com',
-            meetings: ['m1'],
-            link: 'https://example.com/group',
-            contacts: [$contact],
-            members: [$member]
-        );
+    expect($view->getId())->toBe(0)
+        ->and($view->getTitle())->toBe('')
+        ->and($view->getEmail())->toBe('')
+        ->and($view->getMeetings())->toBe([])
+        ->and($view->getLink())->toBe('')
+        ->and($view->getContacts())->toBe([])
+        ->and($view->getMembers())->toBe([]);
+});
 
-        $this->assertSame(10, $view->getId());
-        $this->assertSame('Tuesday Group', $view->getTitle());
-        $this->assertSame('group@example.com', $view->getEmail());
-        $this->assertSame(['m1'], $view->getMeetings());
-        $this->assertSame('https://example.com/group', $view->getLink());
-        $this->assertSame([$contact], $view->getContacts());
-        $this->assertSame([$member], $view->getMembers());
-    }
-}
+it('exposes every field passed to the constructor', function () {
+    $contact = new TsmlContact('Jane', 'jane@example.com');
+    $member = new TsmlMember(id: 1, anonymousName: 'John D.');
+
+    $view = new TsmlGroupView(
+        id: 10,
+        title: 'Tuesday Group',
+        email: 'group@example.com',
+        meetings: ['m1'],
+        link: 'https://example.com/group',
+        contacts: [$contact],
+        members: [$member]
+    );
+
+    expect($view->getId())->toBe(10)
+        ->and($view->getTitle())->toBe('Tuesday Group')
+        ->and($view->getEmail())->toBe('group@example.com')
+        ->and($view->getMeetings())->toBe(['m1'])
+        ->and($view->getLink())->toBe('https://example.com/group')
+        ->and($view->getContacts())->toBe([$contact])
+        ->and($view->getMembers())->toBe([$member]);
+});

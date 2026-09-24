@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Members\TsmlMember;
 use TsmlForUnity\Positions\TsmlPosition;
 use TsmlForUnity\Positions\TsmlPositionViewFactory;
@@ -14,134 +11,119 @@ use Unity\Members\Interfaces\MemberRepository;
 use Unity\Positions\Interfaces\PositionRepository;
 use Unity\Positions\Interfaces\PositionViewFactory;
 
-/**
+/*
  * Tests for TsmlPositionViewFactory
  */
-#[CoversClass(\TsmlForUnity\Positions\TsmlPositionViewFactory::class)]
-class TsmlPositionViewFactoryTest extends TestCase
-{
-    #[Test]
-    public function it_implements_the_factory_interface(): void
-    {
-        $factory = new TsmlPositionViewFactory(
-            $this->createMock(PositionRepository::class),
-            $this->createMock(MemberRepository::class)
-        );
 
-        $this->assertInstanceOf(PositionViewFactory::class, $factory);
-    }
+covers(\TsmlForUnity\Positions\TsmlPositionViewFactory::class);
 
-    #[Test]
-    public function create_from_returns_null_when_the_position_is_missing(): void
-    {
-        $positions = $this->createMock(PositionRepository::class);
-        $positions->method('findById')->with(99)->willReturn(null);
+it('implements the factory interface', function () {
+    $factory = new TsmlPositionViewFactory(
+        $this->createMock(PositionRepository::class),
+        $this->createMock(MemberRepository::class)
+    );
 
-        $factory = new TsmlPositionViewFactory($positions, $this->createMock(MemberRepository::class));
+    expect($factory)->toBeInstanceOf(PositionViewFactory::class);
+});
 
-        $this->assertNull($factory->createFrom(99));
-    }
+test('create from returns null when the position is missing', function () {
+    $positions = $this->createMock(PositionRepository::class);
+    $positions->method('findById')->with(99)->willReturn(null);
 
-    #[Test]
-    public function create_from_returns_a_vacant_view_when_no_member_matches(): void
-    {
-        $position = new TsmlPosition(id: 5, shortDescription: 'Chair');
+    $factory = new TsmlPositionViewFactory($positions, $this->createMock(MemberRepository::class));
 
-        $positions = $this->createMock(PositionRepository::class);
-        $positions->method('findById')->with(5)->willReturn($position);
+    expect($factory->createFrom(99))->toBeNull();
+});
 
-        $members = $this->createMock(MemberRepository::class);
-        $members->method('findAll')->willReturn([
-            new TsmlMember(id: 1, intergroupPosition: 99),
-        ]);
+test('create from returns a vacant view when no member matches', function () {
+    $position = new TsmlPosition(id: 5, shortDescription: 'Chair');
 
-        $factory = new TsmlPositionViewFactory($positions, $members);
-        $view = $factory->createFrom(5);
+    $positions = $this->createMock(PositionRepository::class);
+    $positions->method('findById')->with(5)->willReturn($position);
 
-        $this->assertNotNull($view);
-        $this->assertTrue($view->isVacant());
-        $this->assertSame($position, $view->getPosition());
-    }
+    $members = $this->createMock(MemberRepository::class);
+    $members->method('findAll')->willReturn([
+        new TsmlMember(id: 1, intergroupPosition: 99),
+    ]);
 
-    #[Test]
-    public function create_from_binds_the_single_matching_member(): void
-    {
-        $position = new TsmlPosition(id: 5, shortDescription: 'Chair');
-        $matching = new TsmlMember(id: 1, anonymousName: 'John D.', intergroupPosition: 5);
+    $factory = new TsmlPositionViewFactory($positions, $members);
+    $view = $factory->createFrom(5);
 
-        $positions = $this->createMock(PositionRepository::class);
-        $positions->method('findById')->with(5)->willReturn($position);
+    expect($view)->not->toBeNull()
+        ->and($view->isVacant())->toBeTrue()
+        ->and($view->getPosition())->toBe($position);
+});
 
-        $members = $this->createMock(MemberRepository::class);
-        $members->method('findAll')->willReturn([
-            $matching,
-            new TsmlMember(id: 2, intergroupPosition: 6),
-        ]);
+test('create from binds the single matching member', function () {
+    $position = new TsmlPosition(id: 5, shortDescription: 'Chair');
+    $matching = new TsmlMember(id: 1, anonymousName: 'John D.', intergroupPosition: 5);
 
-        $factory = new TsmlPositionViewFactory($positions, $members);
-        $view = $factory->createFrom(5);
+    $positions = $this->createMock(PositionRepository::class);
+    $positions->method('findById')->with(5)->willReturn($position);
 
-        $this->assertFalse($view->isVacant());
-        $this->assertSame($matching, $view->getMember());
-    }
+    $members = $this->createMock(MemberRepository::class);
+    $members->method('findAll')->willReturn([
+        $matching,
+        new TsmlMember(id: 2, intergroupPosition: 6),
+    ]);
 
-    #[Test]
-    public function create_from_picks_the_latest_rotation_when_several_members_match(): void
-    {
-        $position = new TsmlPosition(id: 5, shortDescription: 'Chair');
-        $older  = new TsmlMember(id: 1, anonymousName: 'Older', intergroupPosition: 5, intergroupPositionRotation: '2024-01-01');
-        $newer  = new TsmlMember(id: 2, anonymousName: 'Newer', intergroupPosition: 5, intergroupPositionRotation: '2026-01-01');
+    $factory = new TsmlPositionViewFactory($positions, $members);
+    $view = $factory->createFrom(5);
 
-        $positions = $this->createMock(PositionRepository::class);
-        $positions->method('findById')->with(5)->willReturn($position);
+    expect($view->isVacant())->toBeFalse()
+        ->and($view->getMember())->toBe($matching);
+});
 
-        $members = $this->createMock(MemberRepository::class);
-        $members->method('findAll')->willReturn([$older, $newer]);
+test('create from picks the latest rotation when several members match', function () {
+    $position = new TsmlPosition(id: 5, shortDescription: 'Chair');
+    $older  = new TsmlMember(id: 1, anonymousName: 'Older', intergroupPosition: 5, intergroupPositionRotation: '2024-01-01');
+    $newer  = new TsmlMember(id: 2, anonymousName: 'Newer', intergroupPosition: 5, intergroupPositionRotation: '2026-01-01');
 
-        $factory = new TsmlPositionViewFactory($positions, $members);
-        $view = $factory->createFrom(5);
+    $positions = $this->createMock(PositionRepository::class);
+    $positions->method('findById')->with(5)->willReturn($position);
 
-        $this->assertSame($newer, $view->getMember());
-        $this->assertSame([$newer], $view->getMembers());
-    }
+    $members = $this->createMock(MemberRepository::class);
+    $members->method('findAll')->willReturn([$older, $newer]);
 
-    #[Test]
-    public function create_all_builds_one_view_per_position_sorted_by_title(): void
-    {
-        $chair = new TsmlPosition(id: 5, shortDescription: 'Chair');
-        $treasurer = new TsmlPosition(id: 6, shortDescription: 'Aardvark');
+    $factory = new TsmlPositionViewFactory($positions, $members);
+    $view = $factory->createFrom(5);
 
-        $positions = $this->createMock(PositionRepository::class);
-        $positions->method('findAll')->willReturn([$chair, $treasurer]);
+    expect($view->getMember())->toBe($newer)
+        ->and($view->getMembers())->toBe([$newer]);
+});
 
-        $members = $this->createMock(MemberRepository::class);
-        $members->method('findAll')->willReturn([
-            new TsmlMember(id: 1, anonymousName: 'John', intergroupPosition: 5),
-        ]);
+test('create all builds one view per position sorted by title', function () {
+    $chair = new TsmlPosition(id: 5, shortDescription: 'Chair');
+    $treasurer = new TsmlPosition(id: 6, shortDescription: 'Aardvark');
 
-        $factory = new TsmlPositionViewFactory($positions, $members);
-        $views = $factory->createAll();
+    $positions = $this->createMock(PositionRepository::class);
+    $positions->method('findAll')->willReturn([$chair, $treasurer]);
 
-        $this->assertCount(2, $views);
-        // Sorted case-insensitively by title: "Aardvark" before "Chair".
-        $this->assertSame('Aardvark', $views[0]->getTitle());
-        $this->assertSame('Chair', $views[1]->getTitle());
-        // The Chair view has its member bound; the Aardvark view is vacant.
-        $this->assertTrue($views[0]->isVacant());
-        $this->assertFalse($views[1]->isVacant());
-    }
+    $members = $this->createMock(MemberRepository::class);
+    $members->method('findAll')->willReturn([
+        new TsmlMember(id: 1, anonymousName: 'John', intergroupPosition: 5),
+    ]);
 
-    #[Test]
-    public function create_all_returns_an_empty_array_when_there_are_no_positions(): void
-    {
-        $positions = $this->createMock(PositionRepository::class);
-        $positions->method('findAll')->willReturn([]);
+    $factory = new TsmlPositionViewFactory($positions, $members);
+    $views = $factory->createAll();
 
-        $members = $this->createMock(MemberRepository::class);
-        $members->method('findAll')->willReturn([]);
+    expect($views)->toHaveCount(2);
+    // Sorted case-insensitively by title: "Aardvark" before "Chair".
+    expect($views[0]->getTitle())->toBe('Aardvark')
+        ->and($views[1]->getTitle())->toBe('Chair');
+    // The Chair view has its member bound; the Aardvark view is vacant.
+    expect($views[0]->isVacant())->toBeTrue()
+        ->and($views[1]->isVacant())->toBeFalse();
+});
 
-        $factory = new TsmlPositionViewFactory($positions, $members);
+test('create all returns an empty array when there are no positions', function () {
+    $positions = $this->createMock(PositionRepository::class);
+    $positions->method('findAll')->willReturn([]);
 
-        $this->assertSame([], $factory->createAll());
-    }
-}
+    $members = $this->createMock(MemberRepository::class);
+    $members->method('findAll')->willReturn([]);
+
+    $factory = new TsmlPositionViewFactory($positions, $members);
+
+    expect($factory->createAll())->toBe([]);
+});

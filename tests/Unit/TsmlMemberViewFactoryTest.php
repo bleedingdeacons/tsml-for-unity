@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Groups\TsmlGroup;
 use TsmlForUnity\Members\TsmlMember;
 use TsmlForUnity\Members\TsmlMemberViewFactory;
@@ -17,171 +14,156 @@ use Unity\Members\Interfaces\MemberRepository;
 use Unity\Members\Interfaces\MemberViewFactory;
 use Unity\Positions\Interfaces\PositionRepository;
 
-/**
+/*
  * Tests for TsmlMemberViewFactory
  */
-#[CoversClass(\TsmlForUnity\Members\TsmlMemberViewFactory::class)]
-class TsmlMemberViewFactoryTest extends TestCase
-{
-    #[Test]
-    public function it_implements_the_factory_interface(): void
-    {
-        $factory = new TsmlMemberViewFactory(
-            $this->createMock(MemberRepository::class),
-            $this->createMock(GroupRepository::class),
-            $this->createMock(PositionRepository::class)
-        );
 
-        $this->assertInstanceOf(MemberViewFactory::class, $factory);
-    }
+covers(\TsmlForUnity\Members\TsmlMemberViewFactory::class);
 
-    #[Test]
-    public function it_resolves_group_and_position_names(): void
-    {
-        $member = new TsmlMember(
-            id: 1,
-            anonymousName: 'John D.',
-            personalEmail: 'john@example.com',
-            mobileNumber: '07700 900123',
-            landlineNumber: '0117 496 0000',
-            preferredContact: PreferredContact::Landline,
-            homeGroup: 10,
-            intergroupPosition: 5,
-            intergroupPositionRotation: '2026-01-01',
-        );
+it('implements the factory interface', function () {
+    $factory = new TsmlMemberViewFactory(
+        $this->createMock(MemberRepository::class),
+        $this->createMock(GroupRepository::class),
+        $this->createMock(PositionRepository::class)
+    );
 
-        $members = $this->createMock(MemberRepository::class);
-        $members->method('findById')->with(1)->willReturn($member);
+    expect($factory)->toBeInstanceOf(MemberViewFactory::class);
+});
 
-        $groups = $this->createMock(GroupRepository::class);
-        $groups->method('findById')->with(10)->willReturn(new TsmlGroup(id: 10, title: 'Tuesday Group'));
+it('resolves group and position names', function () {
+    $member = new TsmlMember(
+        id: 1,
+        anonymousName: 'John D.',
+        personalEmail: 'john@example.com',
+        mobileNumber: '07700 900123',
+        landlineNumber: '0117 496 0000',
+        preferredContact: PreferredContact::Landline,
+        homeGroup: 10,
+        intergroupPosition: 5,
+        intergroupPositionRotation: '2026-01-01',
+    );
 
-        $positions = $this->createMock(PositionRepository::class);
-        $positions->method('findById')->with(5)->willReturn(new TsmlPosition(id: 5, longName: 'Intergroup Chair'));
+    $members = $this->createMock(MemberRepository::class);
+    $members->method('findById')->with(1)->willReturn($member);
 
-        $factory = new TsmlMemberViewFactory($members, $groups, $positions);
-        $views = $factory->createFromSource([1]);
+    $groups = $this->createMock(GroupRepository::class);
+    $groups->method('findById')->with(10)->willReturn(new TsmlGroup(id: 10, title: 'Tuesday Group'));
 
-        $this->assertCount(1, $views);
-        $this->assertSame('John D.', $views[0]->getAnonymousName());
-        // TsmlMemberView is built positionally, so a field inserted mid-list
-        // rebinds every argument after it. Assert across the join.
-        $this->assertSame('07700 900123', $views[0]->getMobileNumber());
-        $this->assertSame('0117 496 0000', $views[0]->getLandlineNumber());
-        $this->assertSame(PreferredContact::Landline, $views[0]->getPreferredContact());
-        $this->assertSame('Tuesday Group', $views[0]->getHomeGroupName());
-        $this->assertSame('Intergroup Chair', $views[0]->getPositionName());
-        $this->assertSame('2026-01-01', $views[0]->getRotationDate());
-    }
+    $positions = $this->createMock(PositionRepository::class);
+    $positions->method('findById')->with(5)->willReturn(new TsmlPosition(id: 5, longName: 'Intergroup Chair'));
 
-    #[Test]
-    public function it_leaves_names_blank_when_a_member_has_no_group_or_position(): void
-    {
-        $member = new TsmlMember(id: 1, anonymousName: 'Solo');
+    $factory = new TsmlMemberViewFactory($members, $groups, $positions);
+    $views = $factory->createFromSource([1]);
 
-        $members = $this->createMock(MemberRepository::class);
-        $members->method('findById')->with(1)->willReturn($member);
+    expect($views)->toHaveCount(1)
+        ->and($views[0]->getAnonymousName())->toBe('John D.');
+    // TsmlMemberView is built positionally, so a field inserted mid-list
+    // rebinds every argument after it. Assert across the join.
+    expect($views[0]->getMobileNumber())->toBe('07700 900123')
+        ->and($views[0]->getLandlineNumber())->toBe('0117 496 0000')
+        ->and($views[0]->getPreferredContact())->toBe(PreferredContact::Landline)
+        ->and($views[0]->getHomeGroupName())->toBe('Tuesday Group')
+        ->and($views[0]->getPositionName())->toBe('Intergroup Chair')
+        ->and($views[0]->getRotationDate())->toBe('2026-01-01');
+});
 
-        $groups = $this->createMock(GroupRepository::class);
-        $groups->expects($this->never())->method('findById');
+it('leaves names blank when a member has no group or position', function () {
+    $member = new TsmlMember(id: 1, anonymousName: 'Solo');
 
-        $positions = $this->createMock(PositionRepository::class);
-        $positions->expects($this->never())->method('findById');
+    $members = $this->createMock(MemberRepository::class);
+    $members->method('findById')->with(1)->willReturn($member);
 
-        $factory = new TsmlMemberViewFactory($members, $groups, $positions);
-        $views = $factory->createFromSource([1]);
+    $groups = $this->createMock(GroupRepository::class);
+    $groups->expects($this->never())->method('findById');
 
-        $this->assertSame('', $views[0]->getHomeGroupName());
-        $this->assertSame('', $views[0]->getPositionName());
-        $this->assertFalse($views[0]->hasHomeGroup());
-        $this->assertFalse($views[0]->hasPosition());
-    }
+    $positions = $this->createMock(PositionRepository::class);
+    $positions->expects($this->never())->method('findById');
 
-    #[Test]
-    public function a_deleted_group_or_position_resolves_to_an_empty_name(): void
-    {
-        $member = new TsmlMember(id: 1, homeGroup: 10, intergroupPosition: 5);
+    $factory = new TsmlMemberViewFactory($members, $groups, $positions);
+    $views = $factory->createFromSource([1]);
 
-        $members = $this->createMock(MemberRepository::class);
-        $members->method('findById')->with(1)->willReturn($member);
+    expect($views[0]->getHomeGroupName())->toBe('')
+        ->and($views[0]->getPositionName())->toBe('')
+        ->and($views[0]->hasHomeGroup())->toBeFalse()
+        ->and($views[0]->hasPosition())->toBeFalse();
+});
 
-        $groups = $this->createMock(GroupRepository::class);
-        $groups->method('findById')->with(10)->willReturn(null);
+test('a deleted group or position resolves to an empty name', function () {
+    $member = new TsmlMember(id: 1, homeGroup: 10, intergroupPosition: 5);
 
-        $positions = $this->createMock(PositionRepository::class);
-        $positions->method('findById')->with(5)->willReturn(null);
+    $members = $this->createMock(MemberRepository::class);
+    $members->method('findById')->with(1)->willReturn($member);
 
-        $factory = new TsmlMemberViewFactory($members, $groups, $positions);
-        $views = $factory->createFromSource([1]);
+    $groups = $this->createMock(GroupRepository::class);
+    $groups->method('findById')->with(10)->willReturn(null);
 
-        $this->assertSame('', $views[0]->getHomeGroupName());
-        $this->assertSame('', $views[0]->getPositionName());
-        // The IDs are still carried even when the name can't be resolved.
-        $this->assertTrue($views[0]->hasHomeGroup());
-        $this->assertTrue($views[0]->hasPosition());
-    }
+    $positions = $this->createMock(PositionRepository::class);
+    $positions->method('findById')->with(5)->willReturn(null);
 
-    #[Test]
-    public function it_skips_non_positive_ids_and_missing_members(): void
-    {
-        $members = $this->createMock(MemberRepository::class);
-        $members->method('findById')->willReturnCallback(
-            fn (int $id) => $id === 2 ? new TsmlMember(id: 2, anonymousName: 'Real') : null
-        );
+    $factory = new TsmlMemberViewFactory($members, $groups, $positions);
+    $views = $factory->createFromSource([1]);
 
-        $factory = new TsmlMemberViewFactory(
-            $members,
-            $this->createMock(GroupRepository::class),
-            $this->createMock(PositionRepository::class)
-        );
+    expect($views[0]->getHomeGroupName())->toBe('')
+        ->and($views[0]->getPositionName())->toBe('');
+    // The IDs are still carried even when the name can't be resolved.
+    expect($views[0]->hasHomeGroup())->toBeTrue()
+        ->and($views[0]->hasPosition())->toBeTrue();
+});
 
-        // 0 and -1 skipped before lookup; 99 looked up but missing; 2 found.
-        $views = $factory->createFromSource([0, -1, 99, 2]);
+it('skips non positive ids and missing members', function () {
+    $members = $this->createMock(MemberRepository::class);
+    $members->method('findById')->willReturnCallback(
+        fn (int $id) => $id === 2 ? new TsmlMember(id: 2, anonymousName: 'Real') : null
+    );
 
-        $this->assertCount(1, $views);
-        $this->assertSame('Real', $views[0]->getAnonymousName());
-    }
+    $factory = new TsmlMemberViewFactory(
+        $members,
+        $this->createMock(GroupRepository::class),
+        $this->createMock(PositionRepository::class)
+    );
 
-    #[Test]
-    public function it_resolves_a_shared_group_name_only_once_per_call(): void
-    {
-        $memberA = new TsmlMember(id: 1, homeGroup: 10);
-        $memberB = new TsmlMember(id: 2, homeGroup: 10);
+    // 0 and -1 skipped before lookup; 99 looked up but missing; 2 found.
+    $views = $factory->createFromSource([0, -1, 99, 2]);
 
-        $members = $this->createMock(MemberRepository::class);
-        $members->method('findById')->willReturnCallback(
-            fn (int $id) => $id === 1 ? $memberA : $memberB
-        );
+    expect($views)->toHaveCount(1)
+        ->and($views[0]->getAnonymousName())->toBe('Real');
+});
 
-        $groups = $this->createMock(GroupRepository::class);
-        // Two members share group 10, but the repository is hit only once.
-        $groups->expects($this->once())
-            ->method('findById')
-            ->with(10)
-            ->willReturn(new TsmlGroup(id: 10, title: 'Shared Group'));
+it('resolves a shared group name only once per call', function () {
+    $memberA = new TsmlMember(id: 1, homeGroup: 10);
+    $memberB = new TsmlMember(id: 2, homeGroup: 10);
 
-        $factory = new TsmlMemberViewFactory(
-            $members,
-            $groups,
-            $this->createMock(PositionRepository::class)
-        );
+    $members = $this->createMock(MemberRepository::class);
+    $members->method('findById')->willReturnCallback(
+        fn (int $id) => $id === 1 ? $memberA : $memberB
+    );
 
-        $views = $factory->createFromSource([1, 2]);
+    $groups = $this->createMock(GroupRepository::class);
+    // Two members share group 10, but the repository is hit only once.
+    $groups->expects($this->once())
+        ->method('findById')
+        ->with(10)
+        ->willReturn(new TsmlGroup(id: 10, title: 'Shared Group'));
 
-        $this->assertCount(2, $views);
-        $this->assertSame('Shared Group', $views[0]->getHomeGroupName());
-        $this->assertSame('Shared Group', $views[1]->getHomeGroupName());
-    }
+    $factory = new TsmlMemberViewFactory(
+        $members,
+        $groups,
+        $this->createMock(PositionRepository::class)
+    );
 
-    #[Test]
-    public function an_empty_source_list_yields_no_views(): void
-    {
-        $factory = new TsmlMemberViewFactory(
-            $this->createMock(MemberRepository::class),
-            $this->createMock(GroupRepository::class),
-            $this->createMock(PositionRepository::class)
-        );
+    $views = $factory->createFromSource([1, 2]);
 
-        $this->assertSame([], $factory->createFromSource([]));
-    }
-}
+    expect($views)->toHaveCount(2)
+        ->and($views[0]->getHomeGroupName())->toBe('Shared Group')
+        ->and($views[1]->getHomeGroupName())->toBe('Shared Group');
+});
+
+test('an empty source list yields no views', function () {
+    $factory = new TsmlMemberViewFactory(
+        $this->createMock(MemberRepository::class),
+        $this->createMock(GroupRepository::class),
+        $this->createMock(PositionRepository::class)
+    );
+
+    expect($factory->createFromSource([]))->toBe([]);
+});

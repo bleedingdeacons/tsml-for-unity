@@ -4,108 +4,87 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\Attributes\DataProvider;
-use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Positions\TsmlPosition;
 use Unity\Positions\Interfaces\Position;
 
-/**
+/*
  * Tests for TsmlPosition entity
  */
-#[CoversClass(\TsmlForUnity\Positions\TsmlPosition::class)]
-class TsmlPositionTest extends TestCase
+
+covers(\TsmlForUnity\Positions\TsmlPosition::class);
+
+it('implements position interface', function () {
+    expect(new TsmlPosition())->toBeInstanceOf(Position::class);
+});
+
+it('applies sensible defaults', function () {
+    $position = new TsmlPosition();
+
+    expect($position->getId())->toBe(0)
+        ->and($position->getMinimumSobriety())->toBe(6)
+        ->and($position->getTermYears())->toBe(1)
+        ->and($position->getEmail())->toBe('')
+        ->and($position->getLongName())->toBe('')
+        ->and($position->getShortDescription())->toBe('')
+        ->and($position->getSummary())->toBe('')
+        ->and($position->getLink())->toBe('')
+        ->and($position->getUpdated())->toBe('');
+});
+
+it('exposes every field passed to the constructor', function () {
+    $position = new TsmlPosition(
+        id: 8,
+        minimumSobriety: 24,
+        termYears: 3,
+        email: 'chair@example.com',
+        longName: 'Intergroup Chair',
+        shortDescription: 'Chairs the meeting',
+        summary: 'Runs intergroup',
+        link: 'https://example.com/chair',
+        updated: '2026-06-01 10:00:00'
+    );
+
+    expect($position->getId())->toBe(8)
+        ->and($position->getMinimumSobriety())->toBe(24)
+        ->and($position->getTermYears())->toBe(3)
+        ->and($position->getEmail())->toBe('chair@example.com')
+        ->and($position->getLongName())->toBe('Intergroup Chair')
+        ->and($position->getShortDescription())->toBe('Chairs the meeting')
+        ->and($position->getSummary())->toBe('Runs intergroup')
+        ->and($position->getLink())->toBe('https://example.com/chair')
+        ->and($position->getUpdated())->toBe('2026-06-01 10:00:00');
+});
+
+test('a fully populated position is valid even before it is saved', function () {
+    expect(validPosition(['id' => 0])->isValid())->toBeTrue()
+        ->and(validPosition(['id' => 5])->isValid())->toBeTrue();
+});
+
+test('is valid fails when any requirement is missing', function (array $overrides) {
+    expect(validPosition($overrides)->isValid())->toBeFalse();
+})->with([
+    'no email'             => [['email' => '']],
+    'no long name'         => [['longName' => '']],
+    'no short description' => [['shortDescription' => '']],
+    'no summary'           => [['summary' => '']],
+    'sobriety below six'   => [['minimumSobriety' => 5]],
+    'term below one year'  => [['termYears' => 0]],
+]);
+
+/**
+ * @param array<string, mixed> $overrides
+ */
+function validPosition(array $overrides = []): TsmlPosition
 {
-    #[Test]
-    public function it_implements_position_interface(): void
-    {
-        $this->assertInstanceOf(Position::class, new TsmlPosition());
-    }
+    $defaults = [
+        'id'               => 1,
+        'minimumSobriety'  => 6,
+        'termYears'        => 1,
+        'email'            => 'chair@example.com',
+        'longName'         => 'Intergroup Chair',
+        'shortDescription' => 'Chairs the meeting',
+        'summary'          => 'Runs intergroup',
+    ];
 
-    #[Test]
-    public function it_applies_sensible_defaults(): void
-    {
-        $position = new TsmlPosition();
-
-        $this->assertSame(0, $position->getId());
-        $this->assertSame(6, $position->getMinimumSobriety());
-        $this->assertSame(1, $position->getTermYears());
-        $this->assertSame('', $position->getEmail());
-        $this->assertSame('', $position->getLongName());
-        $this->assertSame('', $position->getShortDescription());
-        $this->assertSame('', $position->getSummary());
-        $this->assertSame('', $position->getLink());
-        $this->assertSame('', $position->getUpdated());
-    }
-
-    #[Test]
-    public function it_exposes_every_field_passed_to_the_constructor(): void
-    {
-        $position = new TsmlPosition(
-            id: 8,
-            minimumSobriety: 24,
-            termYears: 3,
-            email: 'chair@example.com',
-            longName: 'Intergroup Chair',
-            shortDescription: 'Chairs the meeting',
-            summary: 'Runs intergroup',
-            link: 'https://example.com/chair',
-            updated: '2026-06-01 10:00:00'
-        );
-
-        $this->assertSame(8, $position->getId());
-        $this->assertSame(24, $position->getMinimumSobriety());
-        $this->assertSame(3, $position->getTermYears());
-        $this->assertSame('chair@example.com', $position->getEmail());
-        $this->assertSame('Intergroup Chair', $position->getLongName());
-        $this->assertSame('Chairs the meeting', $position->getShortDescription());
-        $this->assertSame('Runs intergroup', $position->getSummary());
-        $this->assertSame('https://example.com/chair', $position->getLink());
-        $this->assertSame('2026-06-01 10:00:00', $position->getUpdated());
-    }
-
-    #[Test]
-    public function a_fully_populated_position_is_valid_even_before_it_is_saved(): void
-    {
-        $this->assertTrue($this->validPosition(['id' => 0])->isValid());
-        $this->assertTrue($this->validPosition(['id' => 5])->isValid());
-    }
-
-    #[DataProvider('invalidFieldProvider')]
-    #[Test]
-    public function is_valid_fails_when_any_requirement_is_missing(array $overrides): void
-    {
-        $this->assertFalse($this->validPosition($overrides)->isValid());
-    }
-
-    public static function invalidFieldProvider(): array
-    {
-        return [
-            'no email'             => [['email' => '']],
-            'no long name'         => [['longName' => '']],
-            'no short description' => [['shortDescription' => '']],
-            'no summary'           => [['summary' => '']],
-            'sobriety below six'   => [['minimumSobriety' => 5]],
-            'term below one year'  => [['termYears' => 0]],
-        ];
-    }
-
-    /**
-     * @param array<string, mixed> $overrides
-     */
-    private function validPosition(array $overrides = []): TsmlPosition
-    {
-        $defaults = [
-            'id'               => 1,
-            'minimumSobriety'  => 6,
-            'termYears'        => 1,
-            'email'            => 'chair@example.com',
-            'longName'         => 'Intergroup Chair',
-            'shortDescription' => 'Chairs the meeting',
-            'summary'          => 'Runs intergroup',
-        ];
-
-        return new TsmlPosition(...array_merge($defaults, $overrides));
-    }
+    return new TsmlPosition(...array_merge($defaults, $overrides));
 }

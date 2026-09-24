@@ -4,63 +4,51 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Meetings\TsmlMeetingView;
 use Unity\Meetings\Interfaces\Meeting;
 use Unity\Meetings\Interfaces\MeetingView;
 use Unity\Members\Interfaces\Member;
 
-/**
+/*
  * Tests for TsmlMeetingView
  */
-#[CoversClass(\TsmlForUnity\Meetings\TsmlMeetingView::class)]
-class TsmlMeetingViewTest extends TestCase
-{
-    #[Test]
-    public function it_implements_meeting_view_interface(): void
-    {
-        $view = new TsmlMeetingView($this->createMock(Meeting::class), []);
 
-        $this->assertInstanceOf(MeetingView::class, $view);
-    }
+covers(\TsmlForUnity\Meetings\TsmlMeetingView::class);
 
-    #[Test]
-    public function it_exposes_the_meeting_and_members(): void
-    {
-        $meeting = $this->createMock(Meeting::class);
-        $memberA = $this->createMock(Member::class);
-        $memberB = $this->createMock(Member::class);
+it('implements meeting view interface', function () {
+    $view = new TsmlMeetingView($this->createMock(Meeting::class), []);
 
-        $view = new TsmlMeetingView($meeting, [$memberA, $memberB]);
+    expect($view)->toBeInstanceOf(MeetingView::class);
+});
 
-        $this->assertSame($meeting, $view->getMeeting());
-        $this->assertSame([$memberA, $memberB], $view->getMembers());
-    }
+it('exposes the meeting and members', function () {
+    $meeting = $this->createMock(Meeting::class);
+    $memberA = $this->createMock(Member::class);
+    $memberB = $this->createMock(Member::class);
 
-    /**
-     * getGsrNames() maps each associated member to its name via the Member
-     * contract (getAnonymousName()).
-     */
-    #[Test]
-    public function gsr_names_collects_each_members_name(): void
-    {
-        $memberA = $this->createMock(Member::class);
-        $memberA->method('getAnonymousName')->willReturn('Alice A.');
-        $memberB = $this->createMock(Member::class);
-        $memberB->method('getAnonymousName')->willReturn('Bob B.');
+    $view = new TsmlMeetingView($meeting, [$memberA, $memberB]);
 
-        $view = new TsmlMeetingView($this->createMock(Meeting::class), [$memberA, $memberB]);
+    expect($view->getMeeting())->toBe($meeting)
+        ->and($view->getMembers())->toBe([$memberA, $memberB]);
+});
 
-        $this->assertSame(['Alice A.', 'Bob B.'], $view->getGsrNames());
-    }
+/*
+ * getGsrNames() maps each associated member to its name via the Member
+ * contract (getAnonymousName()).
+ */
+test('gsr names collects each members name', function () {
+    $memberA = $this->createMock(Member::class);
+    $memberA->method('getAnonymousName')->willReturn('Alice A.');
+    $memberB = $this->createMock(Member::class);
+    $memberB->method('getAnonymousName')->willReturn('Bob B.');
 
-    #[Test]
-    public function gsr_names_is_empty_for_a_meeting_with_no_members(): void
-    {
-        $view = new TsmlMeetingView($this->createMock(Meeting::class), []);
+    $view = new TsmlMeetingView($this->createMock(Meeting::class), [$memberA, $memberB]);
 
-        $this->assertSame([], $view->getGsrNames());
-    }
-}
+    expect($view->getGsrNames())->toBe(['Alice A.', 'Bob B.']);
+});
+
+test('gsr names is empty for a meeting with no members', function () {
+    $view = new TsmlMeetingView($this->createMock(Meeting::class), []);
+
+    expect($view->getGsrNames())->toBe([]);
+});

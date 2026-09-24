@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use function Brain\Monkey\Functions\expect;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Meetings\TsmlMeetingFactory;
-use TsmlForUnity\Tests\TestCase;
 use Unity\Contacts\Interfaces\ContactFactory;
 use Unity\Locations\Interfaces\Location;
 use Unity\Locations\Interfaces\LocationRepository;
 
-/**
+/*
  * Tests for TsmlMeetingFactory's location resolution and meta handling.
  *
  * Complements TsmlMeetingFactoryTest, which covers the happy path of
@@ -24,248 +21,220 @@ use Unity\Locations\Interfaces\LocationRepository;
  * addresses off every meeting, which is the sort of thing that looks fine
  * in a smoke test.
  */
-#[CoversClass(\TsmlForUnity\Meetings\TsmlMeetingFactory::class)]
-class TsmlMeetingFactoryLocationTest extends TestCase
+
+covers(\TsmlForUnity\Meetings\TsmlMeetingFactory::class);
+
+beforeEach(function () {
+    // createFromSource() refuses to run unless the whole WordPress post
+    // API is present, so stub the lot once here rather than per test.
+    Functions\expect('get_permalink')->andReturn('https://example.test/location/5');
+    Functions\expect('get_post_status')->andReturn('publish');
+    Functions\expect('get_post_custom')->andReturn([]);
+    Functions\expect('is_serialized')
+        ->andReturnUsing(static fn ($v): bool => is_string($v) && @unserialize($v) !== false);
+    Functions\expect('get_post')
+        ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
+    Functions\expect('get_post_meta')->andReturn('');
+});
+
+/** The minimum source createFromSource() will accept. */
+function locationSource(array $overrides = []): array
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        // createFromSource() refuses to run unless the whole WordPress post
-        // API is present, so stub the lot once here rather than per test.
-        expect('get_permalink')->andReturn('https://example.test/location/5');
-        expect('get_post_status')->andReturn('publish');
-        expect('get_post_custom')->andReturn([]);
-        expect('is_serialized')
-            ->andReturnUsing(static fn ($v): bool => is_string($v) && @unserialize($v) !== false);
-        expect('get_post')
-            ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
-        expect('get_post_meta')->andReturn('');
-    }
-
-    /** The minimum source createFromSource() will accept. */
-    private function source(array $overrides = []): array
-    {
-        return array_merge([
-            'id'       => 123,
-            'name'     => 'Morning Serenity',
-            'slug'     => 'morning-serenity',
-            'location' => 'Community Center',
-            'day'      => 1,
-            'time'     => '07:00',
-        ], $overrides);
-    }
-
-    private function location(): Location
-    {
-        $location = $this->createMock(Location::class);
-        $location->method('getName')->willReturn('St Mary Hall');
-        $location->method('getAddress')->willReturn('1 Church Lane');
-        $location->method('getCity')->willReturn('Bristol');
-        $location->method('getState')->willReturn('Avon');
-        $location->method('getPostalCode')->willReturn('BS1 1AA');
-        $location->method('getCountry')->willReturn('GB');
-        $location->method('getRegion')->willReturn('Central');
-        $location->method('getNotes')->willReturn('Side entrance');
-
-        return $location;
-    }
-
-    // ─── setters ────────────────────────────────────────────────────
-    #[Test]
-    public function the_location_repository_can_be_supplied_after_construction(): void
-    {
-        $repository = $this->createMock(LocationRepository::class);
-        $repository->expects($this->once())->method('findById')->with(5)->willReturn($this->location());
-
-        $factory = new TsmlMeetingFactory();
-        $factory->setLocationRepository($repository);
-
-        $meeting = $factory->createFromSource($this->source(['location_id' => 5]));
-
-        $this->assertNotNull($meeting);
-        $this->assertSame('St Mary Hall', $meeting->getLocation()->getName());
-    }
-
-    #[Test]
-    public function the_contact_factory_can_be_supplied_after_construction(): void
-    {
-        $factory = new TsmlMeetingFactory();
-        $factory->setContactFactory($this->createMock(ContactFactory::class));
-
-        $this->assertNotNull($factory->createFromSource($this->source()));
-    }
-
-    #[Test]
-    public function a_default_contact_factory_is_created_when_none_is_given(): void
-    {
-        // No contact factory injected; the factory should build its own
-        // rather than fataling when a meeting carries contacts.
-        $factory = new TsmlMeetingFactory();
-
-        $meeting = $factory->createFromSource($this->source([
-            'meta' => [
-                'contact_1_name'  => ['Alex'],
-                'contact_1_email' => ['alex@example.test'],
-            ],
-        ]));
-
-        $this->assertNotNull($meeting);
-    }
-
-    // ─── location via repository ────────────────────────────────────
-    #[Test]
-    public function a_resolved_location_supplies_every_address_component(): void
-    {
-        $repository = $this->createMock(LocationRepository::class);
-        $repository->method('findById')->with(5)->willReturn($this->location());
-
-        $factory = new TsmlMeetingFactory(null, $repository);
-        $meeting = $factory->createFromSource($this->source([
-            'location_id' => 5,
-            'latitude'    => '51.45',
-            'longitude'   => '-2.58',
-            'timezone'    => 'Europe/London',
-        ]));
-
-        $location = $meeting->getLocation();
-        $this->assertSame('St Mary Hall', $location->getName());
-        $this->assertSame('1 Church Lane', $location->getAddress());
-        $this->assertSame('Bristol', $location->getCity());
-        $this->assertSame('BS1 1AA', $location->getPostalCode());
-        $this->assertSame('Side entrance', $location->getNotes());
-        // The permalink is looked up from the location id.
-        $this->assertSame('https://example.test/location/5', $location->getLink());
-    }
-
-    #[Test]
-    public function an_unresolvable_location_id_falls_back_to_the_source_fields(): void
-    {
-        $repository = $this->createMock(LocationRepository::class);
-        $repository->method('findById')->willReturn(null);
-
-        $factory = new TsmlMeetingFactory(null, $repository);
-        $meeting = $factory->createFromSource($this->source([
-            'location_id'       => 5,
-            'location'          => 'Fallback Hall',
-            'formatted_address' => '2 Other Road',
-        ]));
-
-        $this->assertSame('Fallback Hall', $meeting->getLocation()->getName());
-        $this->assertSame('2 Other Road', $meeting->getLocation()->getAddress());
-    }
-
-    #[Test]
-    public function a_zero_location_id_is_not_looked_up(): void
-    {
-        $repository = $this->createMock(LocationRepository::class);
-        $repository->expects($this->never())->method('findById');
-
-        $factory = new TsmlMeetingFactory(null, $repository);
-        $meeting = $factory->createFromSource($this->source(['location_id' => 0]));
-
-        $this->assertSame('Community Center', $meeting->getLocation()->getName());
-    }
-
-    #[Test]
-    public function without_a_repository_the_source_fields_are_used_directly(): void
-    {
-        $factory = new TsmlMeetingFactory();
-
-        $meeting = $factory->createFromSource($this->source([
-            'location_id'       => 5,
-            'formatted_address' => '3 High Street',
-            'city'              => 'Bath',
-            'state'             => 'Somerset',
-            'postal_code'       => 'BA1 1AA',
-            'country'           => 'GB',
-            'region'            => 'South West',
-            'location_notes'    => 'Upstairs',
-        ]));
-
-        $location = $meeting->getLocation();
-        $this->assertSame('3 High Street', $location->getAddress());
-        $this->assertSame('Bath', $location->getCity());
-        $this->assertSame('Somerset', $location->getState());
-        $this->assertSame('BA1 1AA', $location->getPostalCode());
-        $this->assertSame('GB', $location->getCountry());
-        $this->assertSame('South West', $location->getRegion());
-        $this->assertSame('Upstairs', $location->getNotes());
-    }
-
-    #[Test]
-    public function a_meeting_with_neither_a_name_nor_an_address_has_no_location(): void
-    {
-        $factory = new TsmlMeetingFactory();
-
-        // 'location' is required by createFromSource, so pass it empty to
-        // reach the branch where no Location object can be built.
-        $meeting = $factory->createFromSource([
-            'id'       => 123,
-            'name'     => 'Nameless',
-            'slug'     => 'nameless',
-            'location' => '',
-            'day'      => 1,
-        ]);
-
-        if ($meeting !== null) {
-            $this->assertNull($meeting->getLocation());
-        } else {
-            // An empty location is treated as a missing required field,
-            // which is equally acceptable — assert the factory was decisive.
-            $this->assertNull($meeting);
-        }
-    }
-
-    // ─── meta processing ────────────────────────────────────────────
-    #[Test]
-    public function single_element_meta_arrays_are_flattened(): void
-    {
-        $factory = new TsmlMeetingFactory();
-
-        $meeting = $factory->createFromSource($this->source([
-            'meta' => [
-                'conference_url' => ['https://zoom.example/j/1'],
-            ],
-        ]));
-
-        $this->assertNotNull($meeting);
-    }
-
-    #[Test]
-    public function serialized_meta_values_are_unserialized(): void
-    {
-        $factory = new TsmlMeetingFactory();
-
-        $meeting = $factory->createFromSource($this->source([
-            'meta'  => ['types' => [serialize(['O', 'D'])]],
-            'types' => serialize(['O', 'D']),
-        ]));
-
-        $this->assertNotNull($meeting);
-        $this->assertIsArray($meeting->getTypes());
-    }
-
-    #[Test]
-    public function meeting_types_are_expanded_from_codes_to_names(): void
-    {
-        $factory = new TsmlMeetingFactory();
-
-        $meeting = $factory->createFromSource($this->source(['types' => ['O', 'D']]));
-
-        $types = $meeting->getTypes();
-        $this->assertNotEmpty($types);
-        // 'O' is the Open code; the factory stores the readable name.
-        $this->assertContains('Open', $types);
-    }
-
-    #[Test]
-    public function an_unknown_type_code_is_preserved_as_given(): void
-    {
-        $factory = new TsmlMeetingFactory();
-
-        $meeting = $factory->createFromSource($this->source(['types' => ['ZZZ']]));
-
-        $this->assertContains('ZZZ', $meeting->getTypes());
-    }
+    return array_merge([
+        'id'       => 123,
+        'name'     => 'Morning Serenity',
+        'slug'     => 'morning-serenity',
+        'location' => 'Community Center',
+        'day'      => 1,
+        'time'     => '07:00',
+    ], $overrides);
 }
+
+function location(): Location
+{
+    $location = test()->createMock(Location::class);
+    $location->method('getName')->willReturn('St Mary Hall');
+    $location->method('getAddress')->willReturn('1 Church Lane');
+    $location->method('getCity')->willReturn('Bristol');
+    $location->method('getState')->willReturn('Avon');
+    $location->method('getPostalCode')->willReturn('BS1 1AA');
+    $location->method('getCountry')->willReturn('GB');
+    $location->method('getRegion')->willReturn('Central');
+    $location->method('getNotes')->willReturn('Side entrance');
+
+    return $location;
+}
+
+// ─── setters ────────────────────────────────────────────────────
+test('the location repository can be supplied after construction', function () {
+    $repository = $this->createMock(LocationRepository::class);
+    $repository->expects($this->once())->method('findById')->with(5)->willReturn(location());
+
+    $factory = new TsmlMeetingFactory();
+    $factory->setLocationRepository($repository);
+
+    $meeting = $factory->createFromSource(locationSource(['location_id' => 5]));
+
+    expect($meeting)->not->toBeNull()
+        ->and($meeting->getLocation()->getName())->toBe('St Mary Hall');
+});
+
+test('the contact factory can be supplied after construction', function () {
+    $factory = new TsmlMeetingFactory();
+    $factory->setContactFactory($this->createMock(ContactFactory::class));
+
+    expect($factory->createFromSource(locationSource()))->not->toBeNull();
+});
+
+test('a default contact factory is created when none is given', function () {
+    // No contact factory injected; the factory should build its own
+    // rather than fataling when a meeting carries contacts.
+    $factory = new TsmlMeetingFactory();
+
+    $meeting = $factory->createFromSource(locationSource([
+        'meta' => [
+            'contact_1_name'  => ['Alex'],
+            'contact_1_email' => ['alex@example.test'],
+        ],
+    ]));
+
+    expect($meeting)->not->toBeNull();
+});
+
+// ─── location via repository ────────────────────────────────────
+test('a resolved location supplies every address component', function () {
+    $repository = $this->createMock(LocationRepository::class);
+    $repository->method('findById')->with(5)->willReturn(location());
+
+    $factory = new TsmlMeetingFactory(null, $repository);
+    $meeting = $factory->createFromSource(locationSource([
+        'location_id' => 5,
+        'latitude'    => '51.45',
+        'longitude'   => '-2.58',
+        'timezone'    => 'Europe/London',
+    ]));
+
+    $location = $meeting->getLocation();
+    expect($location->getName())->toBe('St Mary Hall')
+        ->and($location->getAddress())->toBe('1 Church Lane')
+        ->and($location->getCity())->toBe('Bristol')
+        ->and($location->getPostalCode())->toBe('BS1 1AA')
+        ->and($location->getNotes())->toBe('Side entrance');
+    // The permalink is looked up from the location id.
+    expect($location->getLink())->toBe('https://example.test/location/5');
+});
+
+test('an unresolvable location id falls back to the source fields', function () {
+    $repository = $this->createMock(LocationRepository::class);
+    $repository->method('findById')->willReturn(null);
+
+    $factory = new TsmlMeetingFactory(null, $repository);
+    $meeting = $factory->createFromSource(locationSource([
+        'location_id'       => 5,
+        'location'          => 'Fallback Hall',
+        'formatted_address' => '2 Other Road',
+    ]));
+
+    expect($meeting->getLocation()->getName())->toBe('Fallback Hall')
+        ->and($meeting->getLocation()->getAddress())->toBe('2 Other Road');
+});
+
+test('a zero location id is not looked up', function () {
+    $repository = $this->createMock(LocationRepository::class);
+    $repository->expects($this->never())->method('findById');
+
+    $factory = new TsmlMeetingFactory(null, $repository);
+    $meeting = $factory->createFromSource(locationSource(['location_id' => 0]));
+
+    expect($meeting->getLocation()->getName())->toBe('Community Center');
+});
+
+test('without a repository the source fields are used directly', function () {
+    $factory = new TsmlMeetingFactory();
+
+    $meeting = $factory->createFromSource(locationSource([
+        'location_id'       => 5,
+        'formatted_address' => '3 High Street',
+        'city'              => 'Bath',
+        'state'             => 'Somerset',
+        'postal_code'       => 'BA1 1AA',
+        'country'           => 'GB',
+        'region'            => 'South West',
+        'location_notes'    => 'Upstairs',
+    ]));
+
+    $location = $meeting->getLocation();
+    expect($location->getAddress())->toBe('3 High Street')
+        ->and($location->getCity())->toBe('Bath')
+        ->and($location->getState())->toBe('Somerset')
+        ->and($location->getPostalCode())->toBe('BA1 1AA')
+        ->and($location->getCountry())->toBe('GB')
+        ->and($location->getRegion())->toBe('South West')
+        ->and($location->getNotes())->toBe('Upstairs');
+});
+
+test('a meeting with neither a name nor an address has no location', function () {
+    $factory = new TsmlMeetingFactory();
+
+    // 'location' is required by createFromSource, so pass it empty to
+    // reach the branch where no Location object can be built.
+    $meeting = $factory->createFromSource([
+        'id'       => 123,
+        'name'     => 'Nameless',
+        'slug'     => 'nameless',
+        'location' => '',
+        'day'      => 1,
+    ]);
+
+    if ($meeting !== null) {
+        expect($meeting->getLocation())->toBeNull();
+    } else {
+        // An empty location is treated as a missing required field,
+        // which is equally acceptable — assert the factory was decisive.
+        expect($meeting)->toBeNull();
+    }
+});
+
+// ─── meta processing ────────────────────────────────────────────
+test('single element meta arrays are flattened', function () {
+    $factory = new TsmlMeetingFactory();
+
+    $meeting = $factory->createFromSource(locationSource([
+        'meta' => [
+            'conference_url' => ['https://zoom.example/j/1'],
+        ],
+    ]));
+
+    expect($meeting)->not->toBeNull();
+});
+
+test('serialized meta values are unserialized', function () {
+    $factory = new TsmlMeetingFactory();
+
+    $meeting = $factory->createFromSource(locationSource([
+        'meta'  => ['types' => [serialize(['O', 'D'])]],
+        'types' => serialize(['O', 'D']),
+    ]));
+
+    expect($meeting)->not->toBeNull()
+        ->and($meeting->getTypes())->toBeArray();
+});
+
+test('meeting types are expanded from codes to names', function () {
+    $factory = new TsmlMeetingFactory();
+
+    $meeting = $factory->createFromSource(locationSource(['types' => ['O', 'D']]));
+
+    $types = $meeting->getTypes();
+    expect($types)->not->toBeEmpty();
+    // 'O' is the Open code; the factory stores the readable name.
+    expect($types)->toContain('Open');
+});
+
+test('an unknown type code is preserved as given', function () {
+    $factory = new TsmlMeetingFactory();
+
+    $meeting = $factory->createFromSource(locationSource(['types' => ['ZZZ']]));
+
+    expect($meeting->getTypes())->toContain('ZZZ');
+});

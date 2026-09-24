@@ -4,19 +4,16 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use function Brain\Monkey\Functions\expect;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Committees\TsmlCommitteeFactory;
 use TsmlForUnity\Committees\TsmlCommitteeFields;
 use TsmlForUnity\Committees\TsmlCommitteeRepository;
 use TsmlForUnity\Members\TsmlMemberFields;
 use TsmlForUnity\Positions\TsmlPositionFields;
-use TsmlForUnity\Tests\TestCase;
 use Unity\Committees\Interfaces\CommitteeRepository;
 use WP_Term;
 
-/**
+/*
  * Tests for TsmlCommitteeRepository.
  *
  * Read-only over the term APIs. Built with a real TsmlCommitteeFactory rather
@@ -25,480 +22,408 @@ use WP_Term;
  * are checking -- a mock would assert the repository calls a collaborator
  * without ever proving a WP_Term becomes the right Committee.
  */
-#[CoversClass(\TsmlForUnity\Committees\TsmlCommitteeRepository::class)]
-class TsmlCommitteeRepositoryTest extends TestCase
+
+covers(\TsmlForUnity\Committees\TsmlCommitteeRepository::class);
+
+beforeEach(function () {
+    $this->repository = new TsmlCommitteeRepository(new TsmlCommitteeFactory());
+});
+
+/**
+ * Build a WP_Term in the committee taxonomy.
+ *
+ * @param array<string, mixed> $overrides
+ */
+function committeeRepositoryTerm(int $id, string $slug, string $name, int $parent = 0): WP_Term
 {
-    private TsmlCommitteeRepository $repository;
+    return new WP_Term([
+        'term_id'  => $id,
+        'name'     => $name,
+        'slug'     => $slug,
+        'taxonomy' => TsmlCommitteeFields::TAXONOMY,
+        'parent'   => $parent,
+    ]);
+}
 
-    protected function setUp(): void
-    {
-        parent::setUp();
+it('implements the repository interface', function () {
+    expect($this->repository)->toBeInstanceOf(CommitteeRepository::class);
+});
 
-        $this->repository = new TsmlCommitteeRepository(new TsmlCommitteeFactory());
-    }
+// ── Lookups ──────────────────────────────────────────────────────
+test('find by id hydrates the term', function () {
+    Functions\expect('get_term')
+        ->once()
+        ->with(7, TsmlCommitteeFields::TAXONOMY)
+        ->andReturn(committeeRepositoryTerm(7, 'telephones', 'Telephones'));
 
-    /**
-     * Build a WP_Term in the committee taxonomy.
-     *
-     * @param array<string, mixed> $overrides
-     */
-    private function term(int $id, string $slug, string $name, int $parent = 0): WP_Term
-    {
-        return new WP_Term([
-            'term_id'  => $id,
-            'name'     => $name,
-            'slug'     => $slug,
-            'taxonomy' => TsmlCommitteeFields::TAXONOMY,
-            'parent'   => $parent,
+    $committee = $this->repository->findById(7);
+
+    expect($committee)->not->toBeNull()
+        ->and($committee->getSlug())->toBe('telephones');
+});
+
+test('find by slug hydrates the term', function () {
+    Functions\expect('get_term_by')
+        ->once()
+        ->with('slug', 'telephones', TsmlCommitteeFields::TAXONOMY)
+        ->andReturn(committeeRepositoryTerm(7, 'telephones', 'Telephones'));
+
+    $committee = $this->repository->findBySlug('telephones');
+
+    expect($committee)->not->toBeNull()
+        ->and($committee->getId())->toBe(7);
+});
+
+/*
+ * get_term_by() returns false rather than null or a WP_Error when nothing
+ * matches, which is why the guard is an instanceof rather than a null check.
+ */
+test('find by slug returns null when nothing matches', function () {
+    Functions\expect('get_term_by')->once()->andReturn(false);
+
+    expect($this->repository->findBySlug('nope'))->toBeNull();
+});
+
+test('find by slug rejects an empty slug without querying', function () {
+    Functions\expect('get_term_by')->never();
+
+    expect($this->repository->findBySlug(''))->toBeNull();
+});
+
+// ── Listings ─────────────────────────────────────────────────────
+/*
+ * A committee nobody has joined yet is still part of the structure, so
+ * hide_empty must be false or a new branch stays invisible until somebody
+ * is assigned to it.
+ */
+test('find all asks for every term including empty ones', function () {
+    Functions\expect('get_terms')
+        ->once()
+        ->with([
+            'taxonomy'   => TsmlCommitteeFields::TAXONOMY,
+            'hide_empty' => false,
+            'orderby'    => 'name',
+            'order'      => 'ASC',
+        ])
+        ->andReturn([
+            committeeRepositoryTerm(1, 'intergroup', 'Intergroup'),
+            committeeRepositoryTerm(7, 'telephones', 'Telephones', 1),
         ]);
-    }
 
-    #[Test]
-    public function it_implements_the_repository_interface(): void
-    {
-        $this->assertInstanceOf(CommitteeRepository::class, $this->repository);
-    }
+    $committees = $this->repository->findAll();
 
-    // ── Lookups ──────────────────────────────────────────────────────
-    #[Test]
-    public function find_by_id_hydrates_the_term(): void
-    {
-        expect('get_term')
-            ->once()
-            ->with(7, TsmlCommitteeFields::TAXONOMY)
-            ->andReturn($this->term(7, 'telephones', 'Telephones'));
-
-        $committee = $this->repository->findById(7);
-
-        $this->assertNotNull($committee);
-        $this->assertSame('telephones', $committee->getSlug());
-    }
-
-    #[Test]
-    public function find_by_slug_hydrates_the_term(): void
-    {
-        expect('get_term_by')
-            ->once()
-            ->with('slug', 'telephones', TsmlCommitteeFields::TAXONOMY)
-            ->andReturn($this->term(7, 'telephones', 'Telephones'));
-
-        $committee = $this->repository->findBySlug('telephones');
-
-        $this->assertNotNull($committee);
-        $this->assertSame(7, $committee->getId());
-    }
-
-    /**
-     * get_term_by() returns false rather than null or a WP_Error when nothing
-     * matches, which is why the guard is an instanceof rather than a null check.
-     */
-    #[Test]
-    public function find_by_slug_returns_null_when_nothing_matches(): void
-    {
-        expect('get_term_by')->once()->andReturn(false);
-
-        $this->assertNull($this->repository->findBySlug('nope'));
-    }
-
-    #[Test]
-    public function find_by_slug_rejects_an_empty_slug_without_querying(): void
-    {
-        expect('get_term_by')->never();
-
-        $this->assertNull($this->repository->findBySlug(''));
-    }
-
-    // ── Listings ─────────────────────────────────────────────────────
-    /**
-     * A committee nobody has joined yet is still part of the structure, so
-     * hide_empty must be false or a new branch stays invisible until somebody
-     * is assigned to it.
-     */
-    #[Test]
-    public function find_all_asks_for_every_term_including_empty_ones(): void
-    {
-        expect('get_terms')
-            ->once()
-            ->with([
-                'taxonomy'   => TsmlCommitteeFields::TAXONOMY,
-                'hide_empty' => false,
-                'orderby'    => 'name',
-                'order'      => 'ASC',
-            ])
-            ->andReturn([
-                $this->term(1, 'intergroup', 'Intergroup'),
-                $this->term(7, 'telephones', 'Telephones', 1),
-            ]);
-
-        $committees = $this->repository->findAll();
-
-        $this->assertCount(2, $committees);
-        $this->assertSame(['intergroup', 'telephones'], array_map(
+    expect($committees)->toHaveCount(2)
+        ->and(array_map(
             static fn ($committee) => $committee->getSlug(),
             $committees
-        ));
-    }
+        ))->toBe(['intergroup', 'telephones']);
+});
 
-    #[Test]
-    public function roots_asks_only_for_top_level_terms(): void
-    {
-        expect('get_terms')
-            ->once()
-            ->andReturnUsing(function (array $args) {
-                $this->assertSame(0, $args['parent']);
-                return [$this->term(1, 'intergroup', 'Intergroup')];
-            });
-
-        $roots = $this->repository->roots();
-
-        $this->assertCount(1, $roots);
-        $this->assertTrue($roots[0]->isRoot());
-    }
-
-    #[Test]
-    public function children_of_asks_for_the_committees_one_level_down(): void
-    {
-        expect('get_terms')
-            ->once()
-            ->andReturnUsing(function (array $args) {
-                $this->assertSame(1, $args['parent']);
-                return [$this->term(7, 'telephones', 'Telephones', 1)];
-            });
-
-        $children = $this->repository->childrenOf(1);
-
-        $this->assertCount(1, $children);
-        $this->assertSame(7, $children[0]->getId());
-    }
-
-    #[Test]
-    public function a_slug_resolves_to_its_term_id_before_the_tree_is_walked(): void
-    {
-        expect('get_term_by')
-            ->once()
-            ->with('slug', 'intergroup', TsmlCommitteeFields::TAXONOMY)
-            ->andReturn($this->term(1, 'intergroup', 'Intergroup'));
-
-        expect('get_terms')
-            ->once()
-            ->andReturnUsing(function (array $args) {
-                $this->assertSame(1, $args['parent']);
-                return [];
-            });
-
-        $this->assertSame([], $this->repository->childrenOf('intergroup'));
-    }
-
-    #[Test]
-    public function an_unknown_slug_answers_empty_without_querying_the_tree(): void
-    {
-        expect('get_term_by')->once()->andReturn(false);
-        expect('get_terms')->never();
-
-        $this->assertSame([], $this->repository->childrenOf('no-such-committee'));
-    }
-
-    #[Test]
-    public function a_non_positive_id_answers_empty_without_querying_the_tree(): void
-    {
-        expect('get_terms')->never();
-
-        $this->assertSame([], $this->repository->childrenOf(0));
-        $this->assertSame([], $this->repository->childrenOf(-3));
-    }
-
-    #[Test]
-    public function a_term_query_that_fails_answers_empty(): void
-    {
-        expect('get_terms')->once()->andReturn(new \WP_Error());
-
-        $this->assertSame([], $this->repository->findAll());
-    }
-
-    /**
-     * get_terms() hands back ints or strings when a caller sets 'fields' --
-     * nothing here does, but the guard keeps a surprise from becoming a fatal
-     * inside the factory.
-     */
-    #[Test]
-    public function entries_that_are_not_terms_are_skipped(): void
-    {
-        expect('get_terms')->once()->andReturn([
-            $this->term(1, 'intergroup', 'Intergroup'),
-            42,
-            'telephones',
-        ]);
-
-        $this->assertCount(1, $this->repository->findAll());
-    }
-
-    #[Test]
-    public function terms_from_another_taxonomy_are_skipped(): void
-    {
-        $foreign = $this->term(9, 'news', 'News');
-        $foreign->taxonomy = 'category';
-
-        expect('get_terms')->once()->andReturn([
-            $this->term(1, 'intergroup', 'Intergroup'),
-            $foreign,
-        ]);
-
-        $this->assertCount(1, $this->repository->findAll());
-    }
-
-    // ── Walking the hierarchy ────────────────────────────────────────
-    #[Test]
-    public function descendants_of_expands_the_whole_branch(): void
-    {
-        expect('get_term_children')
-            ->once()
-            ->with(2, TsmlCommitteeFields::TAXONOMY)
-            ->andReturn([5, 6]);
-
-        expect('get_terms')
-            ->once()
-            ->andReturnUsing(function (array $args) {
-                $this->assertSame([5, 6], $args['include']);
-                return [
-                    $this->term(5, 'pi-employment', 'Employment', 2),
-                    $this->term(6, 'pi-health', 'Health', 2),
-                ];
-            });
-
-        $this->assertCount(2, $this->repository->descendantsOf(2));
-    }
-
-    /**
-     * The trap this guards: get_terms() treats an empty 'include' as no filter
-     * at all, so passing one through would answer "this leaf has no children"
-     * with the entire taxonomy.
-     */
-    #[Test]
-    public function a_leaf_has_no_descendants_and_no_second_query(): void
-    {
-        expect('get_term_children')->once()->andReturn([]);
-        expect('get_terms')->never();
-
-        $this->assertSame([], $this->repository->descendantsOf(5));
-    }
-
-    #[Test]
-    public function descendants_of_answers_empty_when_the_children_lookup_fails(): void
-    {
-        expect('get_term_children')->once()->andReturn(new \WP_Error());
-        expect('get_terms')->never();
-
-        $this->assertSame([], $this->repository->descendantsOf(5));
-    }
-
-    #[Test]
-    public function ancestors_of_keeps_nearest_first(): void
-    {
-        expect('get_ancestors')
-            ->once()
-            ->with(6, TsmlCommitteeFields::TAXONOMY, 'taxonomy')
-            ->andReturn([2, 1]);
-
-        expect('get_term')
-            ->twice()
-            ->andReturnUsing(fn (int $id) => $id === 2
-                ? $this->term(2, 'public-information', 'Public Information', 1)
-                : $this->term(1, 'intergroup', 'Intergroup'));
-
-        $this->assertSame(
-            ['public-information', 'intergroup'],
-            array_map(
-                static fn ($committee) => $committee->getSlug(),
-                $this->repository->ancestorsOf(6)
-            )
-        );
-    }
-
-    #[Test]
-    public function a_root_has_no_ancestors(): void
-    {
-        expect('get_ancestors')->once()->andReturn([]);
-
-        $this->assertSame([], $this->repository->ancestorsOf(1));
-    }
-
-    #[Test]
-    public function path_to_runs_root_first_and_ends_with_the_committee(): void
-    {
-        expect('get_ancestors')->once()->andReturn([2, 1]);
-
-        expect('get_term')->andReturnUsing(fn (int $id) => match ($id) {
-            1 => $this->term(1, 'intergroup', 'Intergroup'),
-            2 => $this->term(2, 'public-information', 'Public Information', 1),
-            6 => $this->term(6, 'pi-health', 'Health', 2),
-            default => null,
+test('roots asks only for top level terms', function () {
+    Functions\expect('get_terms')
+        ->once()
+        ->andReturnUsing(function (array $args) {
+            expect($args['parent'])->toBe(0);
+            return [committeeRepositoryTerm(1, 'intergroup', 'Intergroup')];
         });
 
-        $this->assertSame(
-            ['intergroup', 'public-information', 'pi-health'],
-            array_map(
-                static fn ($committee) => $committee->getSlug(),
-                $this->repository->pathTo(6)
-            )
-        );
-    }
+    $roots = $this->repository->roots();
 
-    #[Test]
-    public function path_to_an_unknown_committee_is_empty(): void
-    {
-        expect('get_term')->once()->andReturn(null);
-        expect('get_ancestors')->never();
+    expect($roots)->toHaveCount(1)
+        ->and($roots[0]->isRoot())->toBeTrue();
+});
 
-        $this->assertSame([], $this->repository->pathTo(404));
-    }
+test('children of asks for the committees one level down', function () {
+    Functions\expect('get_terms')
+        ->once()
+        ->andReturnUsing(function (array $args) {
+            expect($args['parent'])->toBe(1);
+            return [committeeRepositoryTerm(7, 'telephones', 'Telephones', 1)];
+        });
 
-    // ── Assignments ──────────────────────────────────────────────────
-    #[Test]
-    public function for_member_returns_the_members_committees(): void
-    {
-        expect('get_post_type')
-            ->once()
-            ->with(31)
-            ->andReturn(TsmlMemberFields::POST_TYPE);
+    $children = $this->repository->childrenOf(1);
 
-        expect('wp_get_object_terms')
-            ->once()
-            ->with(31, TsmlCommitteeFields::TAXONOMY, ['orderby' => 'name', 'order' => 'ASC'])
-            ->andReturn([$this->term(7, 'telephones', 'Telephones', 1)]);
+    expect($children)->toHaveCount(1)
+        ->and($children[0]->getId())->toBe(7);
+});
 
-        $committees = $this->repository->forMember(31);
+test('a slug resolves to its term id before the tree is walked', function () {
+    Functions\expect('get_term_by')
+        ->once()
+        ->with('slug', 'intergroup', TsmlCommitteeFields::TAXONOMY)
+        ->andReturn(committeeRepositoryTerm(1, 'intergroup', 'Intergroup'));
 
-        $this->assertCount(1, $committees);
-        $this->assertSame('telephones', $committees[0]->getSlug());
-    }
+    Functions\expect('get_terms')
+        ->once()
+        ->andReturnUsing(function (array $args) {
+            expect($args['parent'])->toBe(1);
+            return [];
+        });
 
-    /**
-     * Members and positions carry the same taxonomy, so without the post-type
-     * check a mixed-up ID would return a plausible but wrong answer.
-     */
-    #[Test]
-    public function for_member_refuses_an_id_that_is_not_a_member(): void
-    {
-        expect('get_post_type')
-            ->once()
-            ->andReturn(TsmlPositionFields::POST_TYPE);
+    expect($this->repository->childrenOf('intergroup'))->toBe([]);
+});
 
-        expect('wp_get_object_terms')->never();
+test('an unknown slug answers empty without querying the tree', function () {
+    Functions\expect('get_term_by')->once()->andReturn(false);
+    Functions\expect('get_terms')->never();
 
-        $this->assertSame([], $this->repository->forMember(31));
-    }
+    expect($this->repository->childrenOf('no-such-committee'))->toBe([]);
+});
 
-    #[Test]
-    public function for_member_refuses_a_non_positive_id_without_querying(): void
-    {
-        expect('get_post_type')->never();
-        expect('wp_get_object_terms')->never();
+test('a non positive id answers empty without querying the tree', function () {
+    Functions\expect('get_terms')->never();
 
-        $this->assertSame([], $this->repository->forMember(0));
-    }
+    expect($this->repository->childrenOf(0))->toBe([])
+        ->and($this->repository->childrenOf(-3))->toBe([]);
+});
 
-    #[Test]
-    public function for_position_asks_about_the_position_post_type(): void
-    {
-        expect('get_post_type')
-            ->once()
-            ->andReturn(TsmlPositionFields::POST_TYPE);
+test('a term query that fails answers empty', function () {
+    Functions\expect('get_terms')->once()->andReturn(new \WP_Error());
 
-        expect('wp_get_object_terms')
-            ->once()
-            ->andReturn([$this->term(1, 'intergroup', 'Intergroup')]);
+    expect($this->repository->findAll())->toBe([]);
+});
 
-        $this->assertCount(1, $this->repository->forPosition(88));
-    }
+/*
+ * get_terms() hands back ints or strings when a caller sets 'fields' --
+ * nothing here does, but the guard keeps a surprise from becoming a fatal
+ * inside the factory.
+ */
+test('entries that are not terms are skipped', function () {
+    Functions\expect('get_terms')->once()->andReturn([
+        committeeRepositoryTerm(1, 'intergroup', 'Intergroup'),
+        42,
+        'telephones',
+    ]);
 
-    /*
-     * There is deliberately no test for wp_get_object_terms() returning a
-     * WP_Error, though the repository guards against it and WordPress really
-     * does return one for an unregistered taxonomy.
-     *
-     * bleedingdeacons/wp-mocks declares the stub as `: array`, and Patchwork
-     * redefines a function's body while keeping its signature -- so returning
-     * a WP_Error from it is a TypeError inside the stub, not a value the
-     * repository ever sees. The guard is right for production and untestable
-     * here; don't delete it for being uncovered.
-     *
-     * get_terms() has no such problem (a_term_query_that_fails_answers_empty
-     * covers the equivalent path), because wp-mocks does not stub it at all
-     * and Brain Monkey defines it fresh with no declared return type.
-     */
-    // ── Members and positions in a committee ─────────────────────────
-    #[Test]
-    public function member_ids_in_includes_sub_committees_by_default(): void
-    {
-        expect('get_posts')
-            ->once()
-            ->andReturnUsing(function (array $args) {
-                $this->assertSame(TsmlMemberFields::POST_TYPE, $args['post_type']);
-                $this->assertSame('ids', $args['fields']);
-                $this->assertSame([
-                    'taxonomy'         => TsmlCommitteeFields::TAXONOMY,
-                    'field'            => 'term_id',
-                    'terms'            => [2],
-                    'include_children' => true,
-                ], $args['tax_query'][0]);
+    expect($this->repository->findAll())->toHaveCount(1);
+});
 
-                return [11, 12, 13];
-            });
+test('terms from another taxonomy are skipped', function () {
+    $foreign = committeeRepositoryTerm(9, 'news', 'News');
+    $foreign->taxonomy = 'category';
 
-        $this->assertSame([11, 12, 13], $this->repository->memberIdsIn(2));
-    }
+    Functions\expect('get_terms')->once()->andReturn([
+        committeeRepositoryTerm(1, 'intergroup', 'Intergroup'),
+        $foreign,
+    ]);
 
-    #[Test]
-    public function member_ids_in_can_be_limited_to_the_committee_itself(): void
-    {
-        expect('get_posts')
-            ->once()
-            ->andReturnUsing(function (array $args) {
-                $this->assertFalse($args['tax_query'][0]['include_children']);
-                return [11];
-            });
+    expect($this->repository->findAll())->toHaveCount(1);
+});
 
-        $this->assertSame([11], $this->repository->memberIdsIn(2, false));
-    }
+// ── Walking the hierarchy ────────────────────────────────────────
+test('descendants of expands the whole branch', function () {
+    Functions\expect('get_term_children')
+        ->once()
+        ->with(2, TsmlCommitteeFields::TAXONOMY)
+        ->andReturn([5, 6]);
 
-    #[Test]
-    public function member_ids_in_accepts_a_slug(): void
-    {
-        expect('get_term_by')
-            ->once()
-            ->andReturn($this->term(7, 'telephones', 'Telephones', 1));
+    Functions\expect('get_terms')
+        ->once()
+        ->andReturnUsing(function (array $args) {
+            expect($args['include'])->toBe([5, 6]);
+            return [
+                committeeRepositoryTerm(5, 'pi-employment', 'Employment', 2),
+                committeeRepositoryTerm(6, 'pi-health', 'Health', 2),
+            ];
+        });
 
-        expect('get_posts')
-            ->once()
-            ->andReturnUsing(function (array $args) {
-                $this->assertSame([7], $args['tax_query'][0]['terms']);
-                return ['11', '12'];
-            });
+    expect($this->repository->descendantsOf(2))->toHaveCount(2);
+});
 
-        // get_posts() with 'fields' => 'ids' can hand back numeric strings
-        // depending on the query path, so the IDs are cast rather than trusted.
-        $this->assertSame([11, 12], $this->repository->memberIdsIn('telephones'));
-    }
+/*
+ * The trap this guards: get_terms() treats an empty 'include' as no filter
+ * at all, so passing one through would answer "this leaf has no children"
+ * with the entire taxonomy.
+ */
+test('a leaf has no descendants and no second query', function () {
+    Functions\expect('get_term_children')->once()->andReturn([]);
+    Functions\expect('get_terms')->never();
 
-    #[Test]
-    public function member_ids_in_an_unknown_committee_answers_empty_without_querying(): void
-    {
-        expect('get_term_by')->once()->andReturn(false);
-        expect('get_posts')->never();
+    expect($this->repository->descendantsOf(5))->toBe([]);
+});
 
-        $this->assertSame([], $this->repository->memberIdsIn('no-such-committee'));
-    }
+test('descendants of answers empty when the children lookup fails', function () {
+    Functions\expect('get_term_children')->once()->andReturn(new \WP_Error());
+    Functions\expect('get_terms')->never();
 
-    #[Test]
-    public function position_ids_in_asks_for_the_position_post_type(): void
-    {
-        expect('get_posts')
-            ->once()
-            ->andReturnUsing(function (array $args) {
-                $this->assertSame(TsmlPositionFields::POST_TYPE, $args['post_type']);
-                return [88];
-            });
+    expect($this->repository->descendantsOf(5))->toBe([]);
+});
 
-        $this->assertSame([88], $this->repository->positionIdsIn(1));
-    }
-}
+test('ancestors of keeps nearest first', function () {
+    Functions\expect('get_ancestors')
+        ->once()
+        ->with(6, TsmlCommitteeFields::TAXONOMY, 'taxonomy')
+        ->andReturn([2, 1]);
+
+    Functions\expect('get_term')
+        ->twice()
+        ->andReturnUsing(fn (int $id) => $id === 2
+            ? committeeRepositoryTerm(2, 'public-information', 'Public Information', 1)
+            : committeeRepositoryTerm(1, 'intergroup', 'Intergroup'));
+
+    expect(array_map(
+        static fn ($committee) => $committee->getSlug(),
+        $this->repository->ancestorsOf(6)
+    ))->toBe(['public-information', 'intergroup']);
+});
+
+test('a root has no ancestors', function () {
+    Functions\expect('get_ancestors')->once()->andReturn([]);
+
+    expect($this->repository->ancestorsOf(1))->toBe([]);
+});
+
+test('path to runs root first and ends with the committee', function () {
+    Functions\expect('get_ancestors')->once()->andReturn([2, 1]);
+
+    Functions\expect('get_term')->andReturnUsing(fn (int $id) => match ($id) {
+        1 => committeeRepositoryTerm(1, 'intergroup', 'Intergroup'),
+        2 => committeeRepositoryTerm(2, 'public-information', 'Public Information', 1),
+        6 => committeeRepositoryTerm(6, 'pi-health', 'Health', 2),
+        default => null,
+    });
+
+    expect(array_map(
+        static fn ($committee) => $committee->getSlug(),
+        $this->repository->pathTo(6)
+    ))->toBe(['intergroup', 'public-information', 'pi-health']);
+});
+
+test('path to an unknown committee is empty', function () {
+    Functions\expect('get_term')->once()->andReturn(null);
+    Functions\expect('get_ancestors')->never();
+
+    expect($this->repository->pathTo(404))->toBe([]);
+});
+
+// ── Assignments ──────────────────────────────────────────────────
+test('for member returns the members committees', function () {
+    Functions\expect('get_post_type')
+        ->once()
+        ->with(31)
+        ->andReturn(TsmlMemberFields::POST_TYPE);
+
+    Functions\expect('wp_get_object_terms')
+        ->once()
+        ->with(31, TsmlCommitteeFields::TAXONOMY, ['orderby' => 'name', 'order' => 'ASC'])
+        ->andReturn([committeeRepositoryTerm(7, 'telephones', 'Telephones', 1)]);
+
+    $committees = $this->repository->forMember(31);
+
+    expect($committees)->toHaveCount(1)
+        ->and($committees[0]->getSlug())->toBe('telephones');
+});
+
+/*
+ * Members and positions carry the same taxonomy, so without the post-type
+ * check a mixed-up ID would return a plausible but wrong answer.
+ */
+test('for member refuses an id that is not a member', function () {
+    Functions\expect('get_post_type')
+        ->once()
+        ->andReturn(TsmlPositionFields::POST_TYPE);
+
+    Functions\expect('wp_get_object_terms')->never();
+
+    expect($this->repository->forMember(31))->toBe([]);
+});
+
+test('for member refuses a non positive id without querying', function () {
+    Functions\expect('get_post_type')->never();
+    Functions\expect('wp_get_object_terms')->never();
+
+    expect($this->repository->forMember(0))->toBe([]);
+});
+
+test('for position asks about the position post type', function () {
+    Functions\expect('get_post_type')
+        ->once()
+        ->andReturn(TsmlPositionFields::POST_TYPE);
+
+    Functions\expect('wp_get_object_terms')
+        ->once()
+        ->andReturn([committeeRepositoryTerm(1, 'intergroup', 'Intergroup')]);
+
+    expect($this->repository->forPosition(88))->toHaveCount(1);
+});
+
+/*
+ * There is deliberately no test for wp_get_object_terms() returning a
+ * WP_Error, though the repository guards against it and WordPress really
+ * does return one for an unregistered taxonomy.
+ *
+ * bleedingdeacons/wp-mocks declares the stub as `: array`, and Patchwork
+ * redefines a function's body while keeping its signature -- so returning
+ * a WP_Error from it is a TypeError inside the stub, not a value the
+ * repository ever sees. The guard is right for production and untestable
+ * here; don't delete it for being uncovered.
+ *
+ * get_terms() has no such problem (a_term_query_that_fails_answers_empty
+ * covers the equivalent path), because wp-mocks does not stub it at all
+ * and Brain Monkey defines it fresh with no declared return type.
+ */
+// ── Members and positions in a committee ─────────────────────────
+test('member ids in includes sub committees by default', function () {
+    Functions\expect('get_posts')
+        ->once()
+        ->andReturnUsing(function (array $args) {
+            expect($args['post_type'])->toBe(TsmlMemberFields::POST_TYPE)
+                ->and($args['fields'])->toBe('ids')
+                ->and($args['tax_query'][0])->toBe([
+                'taxonomy'         => TsmlCommitteeFields::TAXONOMY,
+                'field'            => 'term_id',
+                'terms'            => [2],
+                'include_children' => true,
+            ]);
+
+            return [11, 12, 13];
+        });
+
+    expect($this->repository->memberIdsIn(2))->toBe([11, 12, 13]);
+});
+
+test('member ids in can be limited to the committee itself', function () {
+    Functions\expect('get_posts')
+        ->once()
+        ->andReturnUsing(function (array $args) {
+            expect($args['tax_query'][0]['include_children'])->toBeFalse();
+            return [11];
+        });
+
+    expect($this->repository->memberIdsIn(2, false))->toBe([11]);
+});
+
+test('member ids in accepts a slug', function () {
+    Functions\expect('get_term_by')
+        ->once()
+        ->andReturn(committeeRepositoryTerm(7, 'telephones', 'Telephones', 1));
+
+    Functions\expect('get_posts')
+        ->once()
+        ->andReturnUsing(function (array $args) {
+            expect($args['tax_query'][0]['terms'])->toBe([7]);
+            return ['11', '12'];
+        });
+
+    // get_posts() with 'fields' => 'ids' can hand back numeric strings
+    // depending on the query path, so the IDs are cast rather than trusted.
+    expect($this->repository->memberIdsIn('telephones'))->toBe([11, 12]);
+});
+
+test('member ids in an unknown committee answers empty without querying', function () {
+    Functions\expect('get_term_by')->once()->andReturn(false);
+    Functions\expect('get_posts')->never();
+
+    expect($this->repository->memberIdsIn('no-such-committee'))->toBe([]);
+});
+
+test('position ids in asks for the position post type', function () {
+    Functions\expect('get_posts')
+        ->once()
+        ->andReturnUsing(function (array $args) {
+            expect($args['post_type'])->toBe(TsmlPositionFields::POST_TYPE);
+            return [88];
+        });
+
+    expect($this->repository->positionIdsIn(1))->toBe([88]);
+});

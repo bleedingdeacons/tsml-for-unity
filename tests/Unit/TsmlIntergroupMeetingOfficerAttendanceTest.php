@@ -4,117 +4,97 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendance;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingOfficerAttendance;
 
-/**
+/*
  * Tests for TsmlIntergroupMeetingOfficerAttendance entity
  */
-#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendance::class)]
-class TsmlIntergroupMeetingOfficerAttendanceTest extends TestCase
-{
-    #[Test]
-    public function it_implements_intergroup_meeting_officer_attendance_interface(): void
-    {
-        $attendance = new TsmlIntergroupMeetingOfficerAttendance();
 
-        $this->assertInstanceOf(IntergroupMeetingOfficerAttendance::class, $attendance);
-    }
+covers(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingOfficerAttendance::class);
 
-    #[Test]
-    public function it_can_be_instantiated_with_default_values(): void
-    {
-        $attendance = new TsmlIntergroupMeetingOfficerAttendance();
+it('implements intergroup meeting officer attendance interface', function () {
+    $attendance = new TsmlIntergroupMeetingOfficerAttendance();
 
-        $this->assertEquals(0, $attendance->getId());
-        $this->assertEquals(0, $attendance->getIntergroupMeetingId());
-        $this->assertEquals('', $attendance->getMeetingLabel());
-        $this->assertEquals(0, $attendance->getOfficerId());
-        $this->assertEquals('', $attendance->getPositionName());
-        $this->assertEquals('', $attendance->getOfficerName());
-    }
+    expect($attendance)->toBeInstanceOf(IntergroupMeetingOfficerAttendance::class);
+});
 
-    #[Test]
-    public function it_can_be_instantiated_with_all_values(): void
-    {
-        $attendance = new TsmlIntergroupMeetingOfficerAttendance(
-            id: 42,
-            intergroupMeetingId: 100,
-            meetingLabel: 'Monthly Meeting — January 15, 2025',
-            officerId: 55,
-            positionName: 'Treasurer',
-            officerName: 'John D.'
-        );
+it('can be instantiated with default values', function () {
+    $attendance = new TsmlIntergroupMeetingOfficerAttendance();
 
-        $this->assertEquals(42, $attendance->getId());
-        $this->assertEquals(100, $attendance->getIntergroupMeetingId());
-        $this->assertEquals('Monthly Meeting — January 15, 2025', $attendance->getMeetingLabel());
-        $this->assertEquals(55, $attendance->getOfficerId());
-        $this->assertEquals('Treasurer', $attendance->getPositionName());
-        $this->assertEquals('John D.', $attendance->getOfficerName());
-    }
+    expect($attendance->getId())->toEqual(0)
+        ->and($attendance->getIntergroupMeetingId())->toEqual(0)
+        ->and($attendance->getMeetingLabel())->toEqual('')
+        ->and($attendance->getOfficerId())->toEqual(0)
+        ->and($attendance->getPositionName())->toEqual('')
+        ->and($attendance->getOfficerName())->toEqual('');
+});
 
-    #[Test]
-    public function it_stores_position_name_as_plain_text(): void
-    {
-        $attendance = new TsmlIntergroupMeetingOfficerAttendance(
-            id: 1,
-            positionName: 'Secretary'
-        );
+it('can be instantiated with all values', function () {
+    $attendance = new TsmlIntergroupMeetingOfficerAttendance(
+        id: 42,
+        intergroupMeetingId: 100,
+        meetingLabel: 'Monthly Meeting — January 15, 2025',
+        officerId: 55,
+        positionName: 'Treasurer',
+        officerName: 'John D.'
+    );
 
-        $this->assertIsString($attendance->getPositionName());
-        $this->assertEquals('Secretary', $attendance->getPositionName());
-    }
+    expect($attendance->getId())->toEqual(42)
+        ->and($attendance->getIntergroupMeetingId())->toEqual(100)
+        ->and($attendance->getMeetingLabel())->toEqual('Monthly Meeting — January 15, 2025')
+        ->and($attendance->getOfficerId())->toEqual(55)
+        ->and($attendance->getPositionName())->toEqual('Treasurer')
+        ->and($attendance->getOfficerName())->toEqual('John D.');
+});
 
-    #[Test]
-    public function it_stores_officer_name_as_plain_text(): void
-    {
-        $attendance = new TsmlIntergroupMeetingOfficerAttendance(
-            id: 1,
-            officerName: 'Mary K.'
-        );
+it('stores position name as plain text', function () {
+    $attendance = new TsmlIntergroupMeetingOfficerAttendance(
+        id: 1,
+        positionName: 'Secretary'
+    );
 
-        $this->assertIsString($attendance->getOfficerName());
-        $this->assertEquals('Mary K.', $attendance->getOfficerName());
-    }
+    expect($attendance->getPositionName())->toBeString()
+        ->and($attendance->getPositionName())->toEqual('Secretary');
+});
 
-    #[Test]
-    public function it_handles_empty_strings_for_text_fields(): void
-    {
-        $attendance = new TsmlIntergroupMeetingOfficerAttendance(
-            id: 1,
-            positionName: '',
-            officerName: ''
-        );
+it('stores officer name as plain text', function () {
+    $attendance = new TsmlIntergroupMeetingOfficerAttendance(
+        id: 1,
+        officerName: 'Mary K.'
+    );
 
-        $this->assertEmpty($attendance->getPositionName());
-        $this->assertEmpty($attendance->getOfficerName());
-    }
+    expect($attendance->getOfficerName())->toBeString()
+        ->and($attendance->getOfficerName())->toEqual('Mary K.');
+});
 
-    #[Test]
-    public function it_stores_officer_id_as_integer(): void
-    {
-        $attendance = new TsmlIntergroupMeetingOfficerAttendance(
-            id: 1,
-            officerId: 55
-        );
+it('handles empty strings for text fields', function () {
+    $attendance = new TsmlIntergroupMeetingOfficerAttendance(
+        id: 1,
+        positionName: '',
+        officerName: ''
+    );
 
-        $this->assertIsInt($attendance->getOfficerId());
-        $this->assertEquals(55, $attendance->getOfficerId());
-    }
+    expect($attendance->getPositionName())->toBeEmpty()
+        ->and($attendance->getOfficerName())->toBeEmpty();
+});
 
-    #[Test]
-    public function it_stores_intergroup_meeting_id_as_integer(): void
-    {
-        $attendance = new TsmlIntergroupMeetingOfficerAttendance(
-            id: 1,
-            intergroupMeetingId: 999
-        );
+it('stores officer id as integer', function () {
+    $attendance = new TsmlIntergroupMeetingOfficerAttendance(
+        id: 1,
+        officerId: 55
+    );
 
-        $this->assertIsInt($attendance->getIntergroupMeetingId());
-        $this->assertEquals(999, $attendance->getIntergroupMeetingId());
-    }
-}
+    expect($attendance->getOfficerId())->toBeInt()
+        ->and($attendance->getOfficerId())->toEqual(55);
+});
+
+it('stores intergroup meeting id as integer', function () {
+    $attendance = new TsmlIntergroupMeetingOfficerAttendance(
+        id: 1,
+        intergroupMeetingId: 999
+    );
+
+    expect($attendance->getIntergroupMeetingId())->toBeInt()
+        ->and($attendance->getIntergroupMeetingId())->toEqual(999);
+});

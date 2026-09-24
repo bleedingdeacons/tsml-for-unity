@@ -4,18 +4,14 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\MockObject\MockObject;
-use function Brain\Monkey\Functions\expect;
+use Brain\Monkey\Functions;
 use Exception;
 use TsmlForUnity\Positions\TsmlPositionChangeTracker;
 use TsmlForUnity\Positions\TsmlPositionFields;
-use TsmlForUnity\Tests\TestCase;
 use Unity\Positions\Interfaces\Position;
 use Unity\Positions\Interfaces\PositionRepository;
 
-/**
+/*
  * Failure and title-sync paths for the position change tracker.
  *
  * Complements TsmlPositionChangeTrackerTest, which covers the ordinary
@@ -28,160 +24,132 @@ use Unity\Positions\Interfaces\PositionRepository;
  * in step with the position's long name — an admin list showing stale
  * titles is the visible symptom when it regresses.
  */
-#[CoversClass(\TsmlForUnity\Positions\TsmlPositionChangeTracker::class)]
-class TsmlPositionChangeTrackerFailureTest extends TestCase
+
+covers(\TsmlForUnity\Positions\TsmlPositionChangeTracker::class);
+
+beforeEach(function () {
+    $this->repository = $this->createMock(PositionRepository::class);
+    $this->tracker = new TsmlPositionChangeTracker($this->repository);
+});
+
+afterEach(function () {
+    (new \ReflectionClass(TsmlPositionChangeTracker::class))
+        ->getProperty('originalPosition')->setValue(null, null);
+});
+
+function failingPosition(string $longName = 'Treasurer'): Position
 {
-    /** @var PositionRepository&MockObject */
-    private $repository;
+    $position = test()->createMock(Position::class);
+    $position->method('getId')->willReturn(9);
+    $position->method('getLongName')->willReturn($longName);
 
-    private TsmlPositionChangeTracker $tracker;
+    return $position;
+}
 
-    protected function setUp(): void
-    {
-        parent::setUp();
+test('capturing a post of another type is ignored', function () {
+    Functions\expect('get_post_type')->andReturn('page');
+    $this->repository->expects($this->never())->method('findById');
 
+    $this->tracker->captureOriginalPosition(9);
 
-        $this->repository = $this->createMock(PositionRepository::class);
-        $this->tracker = new TsmlPositionChangeTracker($this->repository);
-    }
+    // Returned before reading the position.
+});
 
-    protected function tearDown(): void
-    {
+test('a capture failure is swallowed', function () {
+    Functions\expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
+    $this->repository->method('findById')->willThrowException(new Exception('boom'));
 
-        (new \ReflectionClass(TsmlPositionChangeTracker::class))
-            ->getProperty('originalPosition')->setValue(null, null);
+    $this->tracker->captureOriginalPosition(9);
 
-        parent::tearDown();
-    }
+    // A failed capture must not abort the save.
+})->throwsNoExceptions();
 
-    private function position(string $longName = 'Treasurer'): Position
-    {
-        $position = $this->createMock(Position::class);
-        $position->method('getId')->willReturn(9);
-        $position->method('getLongName')->willReturn($longName);
+test('checking a post of another type is ignored', function () {
+    Functions\expect('get_post_type')->andReturn('page');
+    $this->repository->expects($this->never())->method('findById');
 
-        return $position;
-    }
+    $this->tracker->checkForChanges(9);
 
-    #[Test]
-    public function capturing_a_post_of_another_type_is_ignored(): void
-    {
-        expect('get_post_type')->andReturn('page');
-        $this->repository->expects($this->never())->method('findById');
+    // Returned before comparing.
+});
 
-        $this->tracker->captureOriginalPosition(9);
+test('a check that cannot reload the position stops quietly', function () {
+    Functions\expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
 
-        $this->assertTrue(true, 'returned before reading the position');
-    }
+    // Capture succeeds; the reload afterwards comes back empty.
+    $this->repository->method('findById')
+        ->willReturnOnConsecutiveCalls(failingPosition(), null);
 
-    #[Test]
-    public function a_capture_failure_is_swallowed(): void
-    {
-        expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
-        $this->repository->method('findById')->willThrowException(new Exception('boom'));
+    $this->tracker->captureOriginalPosition(9);
+    $this->tracker->checkForChanges(9);
 
-        $this->tracker->captureOriginalPosition(9);
+    // No event fired without an updated position.
+})->throwsNoExceptions();
 
-        $this->assertTrue(true, 'a failed capture must not abort the save');
-    }
+test('a check failure is swallowed', function () {
+    Functions\expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
 
-    #[Test]
-    public function checking_a_post_of_another_type_is_ignored(): void
-    {
-        expect('get_post_type')->andReturn('page');
-        $this->repository->expects($this->never())->method('findById');
-
-        $this->tracker->checkForChanges(9);
-
-        $this->assertTrue(true, 'returned before comparing');
-    }
-
-    #[Test]
-    public function a_check_that_cannot_reload_the_position_stops_quietly(): void
-    {
-        expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
-
-        // Capture succeeds; the reload afterwards comes back empty.
-        $this->repository->method('findById')
-            ->willReturnOnConsecutiveCalls($this->position(), null);
-
-        $this->tracker->captureOriginalPosition(9);
-        $this->tracker->checkForChanges(9);
-
-        $this->assertTrue(true, 'no event fired without an updated position');
-    }
-
-    #[Test]
-    public function a_check_failure_is_swallowed(): void
-    {
-        expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
-
-        $this->repository->method('findById')
-            ->willReturnOnConsecutiveCalls(
-                $this->position(),
-                $this->throwException(new Exception('boom'))
-            );
-
-        $this->tracker->captureOriginalPosition(9);
-        $this->tracker->checkForChanges(9);
-
-        $this->assertTrue(true, 'a failed check must not abort the save');
-    }
-
-    #[Test]
-    public function a_renamed_position_has_its_post_title_synced(): void
-    {
-        expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
-
-        $this->repository->method('findById')->willReturnOnConsecutiveCalls(
-            $this->position('Old Name'),
-            $this->position('New Name')
+    $this->repository->method('findById')
+        ->willReturnOnConsecutiveCalls(
+            failingPosition(),
+            $this->throwException(new Exception('boom'))
         );
 
-        // The stored title still holds the old long name.
-        expect('get_post')
-            ->andReturn((object) ['ID' => 9, 'post_title' => 'Old Name']);
+    $this->tracker->captureOriginalPosition(9);
+    $this->tracker->checkForChanges(9);
 
-        $updatedPost = [];
-        expect('wp_update_post')->andReturnUsing(
-            function (array $args) use (&$updatedPost): int {
-                $updatedPost = $args;
+    // A failed check must not abort the save.
+})->throwsNoExceptions();
 
-                return 9;
-            }
-        );
+test('a renamed position has its post title synced', function () {
+    Functions\expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
 
-        $this->tracker->captureOriginalPosition(9);
-        $this->tracker->checkForChanges(9);
+    $this->repository->method('findById')->willReturnOnConsecutiveCalls(
+        failingPosition('Old Name'),
+        failingPosition('New Name')
+    );
 
-        $this->assertSame(9, $updatedPost['ID'] ?? null);
-        $this->assertSame('New Name', $updatedPost['post_title'] ?? null);
-    }
+    // The stored title still holds the old long name.
+    Functions\expect('get_post')
+        ->andReturn((object) ['ID' => 9, 'post_title' => 'Old Name']);
 
-    #[Test]
-    public function a_matching_post_title_is_left_alone(): void
-    {
-        expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
-
-        $this->repository->method('findById')->willReturnOnConsecutiveCalls(
-            $this->position('Old Name'),
-            $this->position('New Name')
-        );
-
-        // post_title already matches the new long name — no write needed.
-        expect('get_post')
-            ->andReturn((object) ['ID' => 9, 'post_title' => 'New Name']);
-
-        $called = false;
-        expect('wp_update_post')->andReturnUsing(function () use (&$called): int {
-            $called = true;
+    $updatedPost = [];
+    Functions\expect('wp_update_post')->andReturnUsing(
+        function (array $args) use (&$updatedPost): int {
+            $updatedPost = $args;
 
             return 9;
-        });
+        }
+    );
 
-        $this->tracker->captureOriginalPosition(9);
-        $this->tracker->checkForChanges(9);
+    $this->tracker->captureOriginalPosition(9);
+    $this->tracker->checkForChanges(9);
 
-        $this->assertFalse($called, 'An already-correct title should not be rewritten.');
-    }
-}
+    expect($updatedPost['ID'] ?? null)->toBe(9)
+        ->and($updatedPost['post_title'] ?? null)->toBe('New Name');
+});
+
+test('a matching post title is left alone', function () {
+    Functions\expect('get_post_type')->andReturn(TsmlPositionFields::POST_TYPE);
+
+    $this->repository->method('findById')->willReturnOnConsecutiveCalls(
+        failingPosition('Old Name'),
+        failingPosition('New Name')
+    );
+
+    // post_title already matches the new long name — no write needed.
+    Functions\expect('get_post')
+        ->andReturn((object) ['ID' => 9, 'post_title' => 'New Name']);
+
+    $called = false;
+    Functions\expect('wp_update_post')->andReturnUsing(function () use (&$called): int {
+        $called = true;
+
+        return 9;
+    });
+
+    $this->tracker->captureOriginalPosition(9);
+    $this->tracker->checkForChanges(9);
+
+    expect($called)->toBeFalse('An already-correct title should not be rewritten.');
+});

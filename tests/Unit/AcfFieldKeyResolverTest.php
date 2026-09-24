@@ -4,100 +4,76 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use function Brain\Monkey\Functions\expect;
+use Brain\Monkey\Functions;
 use TsmlForUnity\IntergroupMeetings\AcfFieldKeyResolver;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingFields;
-use TsmlForUnity\Tests\TestCase;
 
-/**
+/*
  * Tests for AcfFieldKeyResolver
  */
-#[CoversClass(\TsmlForUnity\IntergroupMeetings\AcfFieldKeyResolver::class)]
-class AcfFieldKeyResolverTest extends TestCase
-{
-    #[Test]
-    public function resolve_is_a_no_op_when_acf_is_unavailable(): void
-    {
-        // acf_get_field() is not defined in the test runtime, so resolve()
-        // must bail out and return an empty mapping without writing options.
-        $this->assertFalse(function_exists('acf_get_field'));
 
-        $this->assertSame([], AcfFieldKeyResolver::resolve());
-    }
+covers(\TsmlForUnity\IntergroupMeetings\AcfFieldKeyResolver::class);
 
-    #[Test]
-    public function get_key_returns_the_cached_key_when_present(): void
-    {
-        expect('get_option')
-            ->with('tsml_unity_acf_field_keys', [])
-            ->andReturn([
-                TsmlIntergroupMeetingFields::FIELD_ATTENDEES => 'field_cached123',
-            ]);
+test('resolve is a no op when acf is unavailable', function () {
+    // acf_get_field() is not defined in the test runtime, so resolve()
+    // must bail out and return an empty mapping without writing options.
+    expect(function_exists('acf_get_field'))->toBeFalse();
 
-        $this->assertSame(
-            'field_cached123',
-            AcfFieldKeyResolver::getKey(TsmlIntergroupMeetingFields::FIELD_ATTENDEES)
-        );
-    }
+    expect(AcfFieldKeyResolver::resolve())->toBe([]);
+});
 
-    #[Test]
-    public function get_key_falls_back_to_the_hardcoded_constant_when_uncached(): void
-    {
-        expect('get_option')
-            ->with('tsml_unity_acf_field_keys', [])
-            ->andReturn([]);
+test('get key returns the cached key when present', function () {
+    Functions\expect('get_option')
+        ->with('tsml_unity_acf_field_keys', [])
+        ->andReturn([
+            TsmlIntergroupMeetingFields::FIELD_ATTENDEES => 'field_cached123',
+        ]);
 
-        $this->assertSame(
-            TsmlIntergroupMeetingFields::FIELD_KEY_DATE,
-            AcfFieldKeyResolver::getKey(TsmlIntergroupMeetingFields::FIELD_DATE)
-        );
-    }
+    expect(AcfFieldKeyResolver::getKey(TsmlIntergroupMeetingFields::FIELD_ATTENDEES))->toBe('field_cached123');
+});
 
-    #[Test]
-    public function get_key_returns_null_for_an_unknown_uncached_field(): void
-    {
-        expect('get_option')
-            ->with('tsml_unity_acf_field_keys', [])
-            ->andReturn([]);
+test('get key falls back to the hardcoded constant when uncached', function () {
+    Functions\expect('get_option')
+        ->with('tsml_unity_acf_field_keys', [])
+        ->andReturn([]);
 
-        $this->assertNull(AcfFieldKeyResolver::getKey('a_field_nobody_configured'));
-    }
+    expect(AcfFieldKeyResolver::getKey(TsmlIntergroupMeetingFields::FIELD_DATE))->toBe(TsmlIntergroupMeetingFields::FIELD_KEY_DATE);
+});
 
-    #[Test]
-    public function is_cached_reflects_whether_the_option_is_populated(): void
-    {
-        expect('get_option')
-            ->with('tsml_unity_acf_field_keys', [])
-            ->andReturn(['x' => 'field_1']);
+test('get key returns null for an unknown uncached field', function () {
+    Functions\expect('get_option')
+        ->with('tsml_unity_acf_field_keys', [])
+        ->andReturn([]);
 
-        $this->assertTrue(AcfFieldKeyResolver::isCached());
-    }
+    expect(AcfFieldKeyResolver::getKey('a_field_nobody_configured'))->toBeNull();
+});
 
-    #[Test]
-    public function is_cached_is_false_for_an_empty_mapping(): void
-    {
-        expect('get_option')
-            ->with('tsml_unity_acf_field_keys', [])
-            ->andReturn([]);
+test('is cached reflects whether the option is populated', function () {
+    Functions\expect('get_option')
+        ->with('tsml_unity_acf_field_keys', [])
+        ->andReturn(['x' => 'field_1']);
 
-        $this->assertFalse(AcfFieldKeyResolver::isCached());
-    }
+    expect(AcfFieldKeyResolver::isCached())->toBeTrue();
+});
 
-    #[Test]
-    public function clear_deletes_the_cached_option(): void
-    {
-        $deleted = null;
-        expect('delete_option')
-            ->once()
-            ->andReturnUsing(function ($option) use (&$deleted) {
-                $deleted = $option;
-                return true;
-            });
+test('is cached is false for an empty mapping', function () {
+    Functions\expect('get_option')
+        ->with('tsml_unity_acf_field_keys', [])
+        ->andReturn([]);
 
-        AcfFieldKeyResolver::clear();
+    expect(AcfFieldKeyResolver::isCached())->toBeFalse();
+});
 
-        $this->assertSame('tsml_unity_acf_field_keys', $deleted);
-    }
-}
+test('clear deletes the cached option', function () {
+    $deleted = null;
+    Functions\expect('delete_option')
+        ->once()
+        ->andReturnUsing(function ($option) use (&$deleted) {
+            $deleted = $option;
+            return true;
+        });
+
+    AcfFieldKeyResolver::clear();
+
+    expect($deleted)->toBe('tsml_unity_acf_field_keys');
+});

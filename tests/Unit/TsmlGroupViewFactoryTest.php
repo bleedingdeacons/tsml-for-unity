@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Groups\TsmlGroup;
 use TsmlForUnity\Groups\TsmlGroupViewFactory;
 use TsmlForUnity\Members\TsmlMember;
@@ -14,81 +11,72 @@ use Unity\Groups\Interfaces\GroupRepository;
 use Unity\Groups\Interfaces\GroupViewFactory;
 use Unity\Members\Interfaces\MemberRepository;
 
-/**
+/*
  * Tests for TsmlGroupViewFactory
  */
-#[CoversClass(\TsmlForUnity\Groups\TsmlGroupViewFactory::class)]
-class TsmlGroupViewFactoryTest extends TestCase
-{
-    #[Test]
-    public function it_implements_the_factory_interface(): void
-    {
-        $factory = new TsmlGroupViewFactory(
-            $this->createMock(GroupRepository::class),
-            $this->createMock(MemberRepository::class)
-        );
 
-        $this->assertInstanceOf(GroupViewFactory::class, $factory);
-    }
+covers(\TsmlForUnity\Groups\TsmlGroupViewFactory::class);
 
-    #[Test]
-    public function create_from_returns_null_for_a_missing_group(): void
-    {
-        $groups = $this->createMock(GroupRepository::class);
-        $groups->method('findById')->with(99)->willReturn(null);
+it('implements the factory interface', function () {
+    $factory = new TsmlGroupViewFactory(
+        $this->createMock(GroupRepository::class),
+        $this->createMock(MemberRepository::class)
+    );
 
-        $factory = new TsmlGroupViewFactory($groups, $this->createMock(MemberRepository::class));
+    expect($factory)->toBeInstanceOf(GroupViewFactory::class);
+});
 
-        $this->assertNull($factory->createFrom(99));
-    }
+test('create from returns null for a missing group', function () {
+    $groups = $this->createMock(GroupRepository::class);
+    $groups->method('findById')->with(99)->willReturn(null);
 
-    #[Test]
-    public function create_from_attaches_only_members_whose_home_group_matches(): void
-    {
-        $group = new TsmlGroup(
-            id: 10,
-            title: 'Tuesday Group',
-            email: 'group@example.com',
-            link: 'https://example.com/group'
-        );
+    $factory = new TsmlGroupViewFactory($groups, $this->createMock(MemberRepository::class));
 
-        $groups = $this->createMock(GroupRepository::class);
-        $groups->method('findById')->with(10)->willReturn($group);
+    expect($factory->createFrom(99))->toBeNull();
+});
 
-        $inGroup    = new TsmlMember(id: 1, anonymousName: 'In', homeGroup: 10);
-        $otherGroup = new TsmlMember(id: 2, anonymousName: 'Out', homeGroup: 20);
-        $noGroup    = new TsmlMember(id: 3, anonymousName: 'None');
+test('create from attaches only members whose home group matches', function () {
+    $group = new TsmlGroup(
+        id: 10,
+        title: 'Tuesday Group',
+        email: 'group@example.com',
+        link: 'https://example.com/group'
+    );
 
-        $members = $this->createMock(MemberRepository::class);
-        $members->method('findAll')->willReturn([$inGroup, $otherGroup, $noGroup]);
+    $groups = $this->createMock(GroupRepository::class);
+    $groups->method('findById')->with(10)->willReturn($group);
 
-        $factory = new TsmlGroupViewFactory($groups, $members);
-        $view = $factory->createFrom(10);
+    $inGroup    = new TsmlMember(id: 1, anonymousName: 'In', homeGroup: 10);
+    $otherGroup = new TsmlMember(id: 2, anonymousName: 'Out', homeGroup: 20);
+    $noGroup    = new TsmlMember(id: 3, anonymousName: 'None');
 
-        $this->assertNotNull($view);
-        $this->assertSame(10, $view->getId());
-        $this->assertSame('Tuesday Group', $view->getTitle());
-        $this->assertSame('group@example.com', $view->getEmail());
-        $this->assertSame('https://example.com/group', $view->getLink());
-        $this->assertSame([$inGroup], $view->getMembers());
-    }
+    $members = $this->createMock(MemberRepository::class);
+    $members->method('findAll')->willReturn([$inGroup, $otherGroup, $noGroup]);
 
-    #[Test]
-    public function create_from_yields_no_members_when_none_match(): void
-    {
-        $group = new TsmlGroup(id: 10, title: 'Lonely Group');
+    $factory = new TsmlGroupViewFactory($groups, $members);
+    $view = $factory->createFrom(10);
 
-        $groups = $this->createMock(GroupRepository::class);
-        $groups->method('findById')->with(10)->willReturn($group);
+    expect($view)->not->toBeNull()
+        ->and($view->getId())->toBe(10)
+        ->and($view->getTitle())->toBe('Tuesday Group')
+        ->and($view->getEmail())->toBe('group@example.com')
+        ->and($view->getLink())->toBe('https://example.com/group')
+        ->and($view->getMembers())->toBe([$inGroup]);
+});
 
-        $members = $this->createMock(MemberRepository::class);
-        $members->method('findAll')->willReturn([
-            new TsmlMember(id: 1, homeGroup: 20),
-        ]);
+test('create from yields no members when none match', function () {
+    $group = new TsmlGroup(id: 10, title: 'Lonely Group');
 
-        $factory = new TsmlGroupViewFactory($groups, $members);
-        $view = $factory->createFrom(10);
+    $groups = $this->createMock(GroupRepository::class);
+    $groups->method('findById')->with(10)->willReturn($group);
 
-        $this->assertSame([], $view->getMembers());
-    }
-}
+    $members = $this->createMock(MemberRepository::class);
+    $members->method('findAll')->willReturn([
+        new TsmlMember(id: 1, homeGroup: 20),
+    ]);
+
+    $factory = new TsmlGroupViewFactory($groups, $members);
+    $view = $factory->createFrom(10);
+
+    expect($view->getMembers())->toBe([]);
+});

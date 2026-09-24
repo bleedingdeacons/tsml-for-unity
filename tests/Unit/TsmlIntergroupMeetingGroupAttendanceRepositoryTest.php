@@ -4,20 +4,15 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\MockObject\MockObject;
-use function Brain\Monkey\Functions\expect;
+use Brain\Monkey\Functions;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendance;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceFactory;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceRepository;
 use TsmlForUnity\Tests\Support\FakeWpdb;
-use TsmlForUnity\Tests\TestCase;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingGroupAttendance;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingGroupAttendanceRepository;
 
-/**
+/*
  * Tests for TsmlIntergroupMeetingGroupAttendanceRepository.
  *
  * This repository builds SQL by hand against a custom table, so the tests
@@ -27,330 +22,253 @@ use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingGroupAttendanceReposito
  * directly into the statement, so an unrecognised value must fall back to
  * `id` rather than reach the database.
  */
-#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceRepository::class)]
-class TsmlIntergroupMeetingGroupAttendanceRepositoryTest extends TestCase
+
+covers(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendanceRepository::class);
+
+beforeEach(function () {
+    Functions\expect('esc_sql')->andReturnUsing(static fn ($v) => $v);
+
+    $this->previousWpdb = $GLOBALS['wpdb'] ?? null;
+    $this->wpdb = new FakeWpdb();
+    $GLOBALS['wpdb'] = $this->wpdb;
+
+    $this->factory = $this->createMock(TsmlIntergroupMeetingGroupAttendanceFactory::class);
+    $this->repository = new TsmlIntergroupMeetingGroupAttendanceRepository($this->factory);
+});
+
+afterEach(function () {
+    $GLOBALS['wpdb'] = $this->previousWpdb;
+});
+
+/** A stand-in attendance record with the getters save() reads. */
+function groupAttendance(int $id = 0): IntergroupMeetingGroupAttendance
 {
-    private FakeWpdb $wpdb;
-    private $previousWpdb;
+    $record = test()->createMock(IntergroupMeetingGroupAttendance::class);
+    $record->method('getId')->willReturn($id);
+    $record->method('getIntergroupMeetingId')->willReturn(42);
+    $record->method('getMeetingLabel')->willReturn('July 2026');
+    $record->method('getGroupId')->willReturn(10);
+    $record->method('getMemberId')->willReturn(7);
+    $record->method('getMeetingGroup')->willReturn('Tuesday Group');
+    $record->method('getGsrName')->willReturn('Alex');
+    $record->method('isGsrProxy')->willReturn(true);
+    $record->method('getGsrProxyName')->willReturn('Sam');
 
-    /** @var TsmlIntergroupMeetingGroupAttendanceFactory&MockObject */
-    private $factory;
-
-    private TsmlIntergroupMeetingGroupAttendanceRepository $repository;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        expect('esc_sql')->andReturnUsing(static fn ($v) => $v);
-
-        $this->previousWpdb = $GLOBALS['wpdb'] ?? null;
-        $this->wpdb = new FakeWpdb();
-        $GLOBALS['wpdb'] = $this->wpdb;
-
-        $this->factory = $this->createMock(TsmlIntergroupMeetingGroupAttendanceFactory::class);
-        $this->repository = new TsmlIntergroupMeetingGroupAttendanceRepository($this->factory);
-    }
-
-    protected function tearDown(): void
-    {
-        $GLOBALS['wpdb'] = $this->previousWpdb;
-        parent::tearDown();
-    }
-
-    /** A stand-in attendance record with the getters save() reads. */
-    private function attendance(int $id = 0): IntergroupMeetingGroupAttendance
-    {
-        $record = $this->createMock(IntergroupMeetingGroupAttendance::class);
-        $record->method('getId')->willReturn($id);
-        $record->method('getIntergroupMeetingId')->willReturn(42);
-        $record->method('getMeetingLabel')->willReturn('July 2026');
-        $record->method('getGroupId')->willReturn(10);
-        $record->method('getMemberId')->willReturn(7);
-        $record->method('getMeetingGroup')->willReturn('Tuesday Group');
-        $record->method('getGsrName')->willReturn('Alex');
-        $record->method('isGsrProxy')->willReturn(true);
-        $record->method('getGsrProxyName')->willReturn('Sam');
-
-        return $record;
-    }
-
-    #[Test]
-    public function it_implements_the_repository_interface(): void
-    {
-        $this->assertInstanceOf(IntergroupMeetingGroupAttendanceRepository::class, $this->repository);
-    }
-
-    // ─── findById ───────────────────────────────────────────────────
-    #[Test]
-    public function find_by_id_hydrates_the_row_through_the_factory(): void
-    {
-        $this->wpdb->row = ['id' => '5', 'group_id' => '10'];
-        $hydrated = $this->createMock(TsmlIntergroupMeetingGroupAttendance::class);
-        $this->factory->expects($this->once())
-            ->method('hydrateFromRow')
-            ->with(['id' => '5', 'group_id' => '10'])
-            ->willReturn($hydrated);
-
-        $this->assertSame($hydrated, $this->repository->findById(5));
-        $this->assertStringContainsString('WHERE id = 5', $this->wpdb->lastQuery());
-    }
-
-    #[Test]
-    public function find_by_id_returns_null_when_there_is_no_row(): void
-    {
-        $this->wpdb->row = null;
-        $this->factory->expects($this->never())->method('hydrateFromRow');
-
-        $this->assertNull($this->repository->findById(404));
-    }
-
-    // ─── findAll ────────────────────────────────────────────────────
-    #[Test]
-    public function find_all_without_filters_selects_everything_ordered_by_id(): void
-    {
-        $this->wpdb->results = [];
-
-        $this->assertSame([], $this->repository->findAll());
-
-        $sql = $this->wpdb->lastQuery();
-        $this->assertStringNotContainsString('WHERE', $sql);
-        $this->assertStringContainsString('ORDER BY id ASC', $sql);
-    }
-
-    #[Test]
-    public function find_all_hydrates_every_row(): void
-    {
-        $this->wpdb->results = [['id' => '1'], ['id' => '2']];
-        $this->factory->expects($this->exactly(2))
-            ->method('hydrateFromRow')
-            ->willReturn($this->createMock(TsmlIntergroupMeetingGroupAttendance::class));
-
-        $this->assertCount(2, $this->repository->findAll());
-    }
-
-    #[Test]
-    public function find_all_returns_an_empty_array_when_the_query_yields_no_rows(): void
-    {
-        $this->wpdb->results = [];
-
-        $this->assertSame([], $this->repository->findAll(['group_id' => 3]));
-    }
-
-    #[DataProvider('filterProvider')]
-    #[Test]
-    public function find_all_turns_each_documented_filter_into_a_where_clause(
-        string $key,
-        mixed $value,
-        string $expected
-    ): void {
-        $this->repository->findAll([$key => $value]);
-
-        $this->assertStringContainsString('WHERE', $this->wpdb->lastQuery());
-        $this->assertStringContainsString($expected, $this->wpdb->lastQuery());
-    }
-
-    /** @return array<string, array{0: string, 1: mixed, 2: string}> */
-    public static function filterProvider(): array
-    {
-        return [
-            'intergroup meeting' => ['intergroup_meeting_id', 42, 'intergroup_meeting_id = 42'],
-            'meeting label'      => ['meeting_label', 'July', "meeting_label = 'July'"],
-            'group'              => ['group_id', 10, 'group_id = 10'],
-            'member'             => ['member_id', 7, 'member_id = 7'],
-            'meeting group'      => ['meeting_group', 'Tuesday', "meeting_group = 'Tuesday'"],
-            'gsr name'           => ['gsr_name', 'Alex', "gsr_name = 'Alex'"],
-        ];
-    }
-
-    #[Test]
-    public function find_all_combines_multiple_filters_with_and(): void
-    {
-        $this->repository->findAll(['group_id' => 10, 'member_id' => 7]);
-
-        $this->assertStringContainsString('group_id = 10 AND member_id = 7', $this->wpdb->lastQuery());
-    }
-
-    #[Test]
-    public function find_all_accepts_a_whitelisted_order_column_and_direction(): void
-    {
-        $this->repository->findAll(['orderby' => 'gsr_name', 'order' => 'desc']);
-
-        $this->assertStringContainsString('ORDER BY gsr_name DESC', $this->wpdb->lastQuery());
-    }
-
-    #[Test]
-    public function find_all_falls_back_to_id_for_an_unrecognised_order_column(): void
-    {
-        // orderby is interpolated straight into the SQL, so anything outside
-        // the whitelist must be discarded rather than passed through.
-        $this->repository->findAll(['orderby' => 'id; DROP TABLE wp_posts']);
-
-        $sql = $this->wpdb->lastQuery();
-        $this->assertStringContainsString('ORDER BY id ASC', $sql);
-        $this->assertStringNotContainsString('DROP TABLE', $sql);
-    }
-
-    #[Test]
-    public function find_all_applies_limit_and_offset_only_when_a_positive_number_is_given(): void
-    {
-        $this->repository->findAll(['number' => 5, 'offset' => 10]);
-        $this->assertStringContainsString('LIMIT 5 OFFSET 10', $this->wpdb->lastQuery());
-
-        $this->repository->findAll(['number' => -1]);
-        $this->assertStringNotContainsString('LIMIT', $this->wpdb->lastQuery());
-    }
-
-    #[Test]
-    public function find_all_defaults_the_offset_to_zero(): void
-    {
-        $this->repository->findAll(['number' => 3]);
-
-        $this->assertStringContainsString('LIMIT 3 OFFSET 0', $this->wpdb->lastQuery());
-    }
-
-    #[Test]
-    public function find_by_intergroup_meeting_filters_on_the_parent_meeting(): void
-    {
-        $this->repository->findByIntergroupMeeting(99);
-
-        $this->assertStringContainsString('intergroup_meeting_id = 99', $this->wpdb->lastQuery());
-    }
-
-    // ─── count ──────────────────────────────────────────────────────
-    #[Test]
-    public function count_returns_the_scalar_from_the_database(): void
-    {
-        $this->wpdb->var = '17';
-
-        $this->assertSame(17, $this->repository->count());
-        $this->assertStringContainsString('SELECT COUNT(*)', $this->wpdb->lastQuery());
-    }
-
-    #[Test]
-    public function count_applies_the_same_filters_as_find_all(): void
-    {
-        $this->wpdb->var = '3';
-
-        $this->assertSame(3, $this->repository->count([
-            'intergroup_meeting_id' => 42,
-            'meeting_label'         => 'July',
-            'group_id'              => 10,
-            'member_id'             => 7,
-            'meeting_group'         => 'Tuesday',
-            'gsr_name'              => 'Alex',
-        ]));
-
-        $sql = $this->wpdb->lastQuery();
-        $this->assertStringContainsString('intergroup_meeting_id = 42', $sql);
-        $this->assertStringContainsString("gsr_name = 'Alex'", $sql);
-    }
-
-    // ─── save ───────────────────────────────────────────────────────
-    #[Test]
-    public function saving_a_new_record_inserts_it(): void
-    {
-        $this->assertTrue($this->repository->save($this->attendance(0)));
-
-        $this->assertCount(1, $this->wpdb->inserts);
-        $this->assertSame([], $this->wpdb->updates);
-
-        [$table, $data] = $this->wpdb->inserts[0];
-        $this->assertStringContainsString('group_attendance', $table);
-        $this->assertSame(42, $data['intergroup_meeting_id']);
-        $this->assertSame('Alex', $data['gsr_name']);
-        // The proxy flag is stored as a tinyint, not a bool.
-        $this->assertSame(1, $data['gsr_proxy']);
-    }
-
-    #[Test]
-    public function saving_an_existing_record_updates_it_by_id(): void
-    {
-        $this->assertTrue($this->repository->save($this->attendance(5)));
-
-        $this->assertCount(1, $this->wpdb->updates);
-        $this->assertSame([], $this->wpdb->inserts);
-        $this->assertSame(['id' => 5], $this->wpdb->updates[0][2]);
-    }
-
-    #[Test]
-    public function a_failed_insert_is_reported(): void
-    {
-        $this->wpdb->insertResult = false;
-
-        $this->assertFalse($this->repository->save($this->attendance(0)));
-    }
-
-    #[Test]
-    public function a_failed_update_is_reported(): void
-    {
-        $this->wpdb->updateResult = false;
-
-        $this->assertFalse($this->repository->save($this->attendance(5)));
-    }
-
-    // ─── delete ─────────────────────────────────────────────────────
-    #[Test]
-    public function delete_removes_the_row_by_id(): void
-    {
-        $this->assertTrue($this->repository->delete(5));
-
-        $this->assertSame(['id' => 5], $this->wpdb->deletes[0][1]);
-    }
-
-    #[Test]
-    public function a_failed_delete_is_reported(): void
-    {
-        $this->wpdb->deleteResult = false;
-
-        $this->assertFalse($this->repository->delete(5));
-    }
-
-    #[Test]
-    public function delete_by_meeting_and_member_scopes_to_both(): void
-    {
-        $this->assertTrue($this->repository->deleteByIntergroupMeetingAndMember(42, 7));
-
-        $this->assertSame(
-            ['intergroup_meeting_id' => 42, 'member_id' => 7],
-            $this->wpdb->deletes[0][1]
-        );
-    }
-
-    #[Test]
-    public function delete_by_meeting_and_group_scopes_to_both(): void
-    {
-        $this->assertTrue($this->repository->deleteByIntergroupMeetingAndGroup(42, 10));
-
-        $this->assertSame(
-            ['intergroup_meeting_id' => 42, 'group_id' => 10],
-            $this->wpdb->deletes[0][1]
-        );
-    }
-
-    #[Test]
-    public function a_failed_scoped_delete_is_reported(): void
-    {
-        $this->wpdb->deleteResult = false;
-
-        $this->assertFalse($this->repository->deleteByIntergroupMeetingAndMember(42, 7));
-        $this->assertFalse($this->repository->deleteByIntergroupMeetingAndGroup(42, 10));
-    }
-
-    // ─── existsForMeetingAndGroup ───────────────────────────────────
-    #[Test]
-    public function exists_is_true_when_the_count_is_positive(): void
-    {
-        $this->wpdb->var = '1';
-
-        $this->assertTrue($this->repository->existsForMeetingAndGroup(42, 10));
-        $this->assertStringContainsString('intergroup_meeting_id = 42 AND group_id = 10', $this->wpdb->lastQuery());
-    }
-
-    #[Test]
-    public function exists_is_false_when_nothing_matches(): void
-    {
-        $this->wpdb->var = '0';
-
-        $this->assertFalse($this->repository->existsForMeetingAndGroup(42, 10));
-    }
+    return $record;
 }
+
+it('implements the repository interface', function () {
+    expect($this->repository)->toBeInstanceOf(IntergroupMeetingGroupAttendanceRepository::class);
+});
+
+// ─── findById ───────────────────────────────────────────────────
+test('find by id hydrates the row through the factory', function () {
+    $this->wpdb->row = ['id' => '5', 'group_id' => '10'];
+    $hydrated = $this->createMock(TsmlIntergroupMeetingGroupAttendance::class);
+    $this->factory->expects($this->once())
+        ->method('hydrateFromRow')
+        ->with(['id' => '5', 'group_id' => '10'])
+        ->willReturn($hydrated);
+
+    expect($this->repository->findById(5))->toBe($hydrated)
+        ->and($this->wpdb->lastQuery())->toContain('WHERE id = 5');
+});
+
+test('find by id returns null when there is no row', function () {
+    $this->wpdb->row = null;
+    $this->factory->expects($this->never())->method('hydrateFromRow');
+
+    expect($this->repository->findById(404))->toBeNull();
+});
+
+// ─── findAll ────────────────────────────────────────────────────
+test('find all without filters selects everything ordered by id', function () {
+    $this->wpdb->results = [];
+
+    expect($this->repository->findAll())->toBe([]);
+
+    $sql = $this->wpdb->lastQuery();
+    expect($sql)->not->toContain('WHERE')
+        ->and($sql)->toContain('ORDER BY id ASC');
+});
+
+test('find all hydrates every row', function () {
+    $this->wpdb->results = [['id' => '1'], ['id' => '2']];
+    $this->factory->expects($this->exactly(2))
+        ->method('hydrateFromRow')
+        ->willReturn($this->createMock(TsmlIntergroupMeetingGroupAttendance::class));
+
+    expect($this->repository->findAll())->toHaveCount(2);
+});
+
+test('find all returns an empty array when the query yields no rows', function () {
+    $this->wpdb->results = [];
+
+    expect($this->repository->findAll(['group_id' => 3]))->toBe([]);
+});
+
+test('find all turns each documented filter into a where clause', function (
+    string $key,
+    mixed $value,
+    string $expected
+) {
+    $this->repository->findAll([$key => $value]);
+
+    expect($this->wpdb->lastQuery())->toContain('WHERE')
+        ->and($this->wpdb->lastQuery())->toContain($expected);
+})->with([
+    'intergroup meeting' => ['intergroup_meeting_id', 42, 'intergroup_meeting_id = 42'],
+    'meeting label'      => ['meeting_label', 'July', "meeting_label = 'July'"],
+    'group'              => ['group_id', 10, 'group_id = 10'],
+    'member'             => ['member_id', 7, 'member_id = 7'],
+    'meeting group'      => ['meeting_group', 'Tuesday', "meeting_group = 'Tuesday'"],
+    'gsr name'           => ['gsr_name', 'Alex', "gsr_name = 'Alex'"],
+]);
+
+test('find all combines multiple filters with and', function () {
+    $this->repository->findAll(['group_id' => 10, 'member_id' => 7]);
+
+    expect($this->wpdb->lastQuery())->toContain('group_id = 10 AND member_id = 7');
+});
+
+test('find all accepts a whitelisted order column and direction', function () {
+    $this->repository->findAll(['orderby' => 'gsr_name', 'order' => 'desc']);
+
+    expect($this->wpdb->lastQuery())->toContain('ORDER BY gsr_name DESC');
+});
+
+test('find all falls back to id for an unrecognised order column', function () {
+    // orderby is interpolated straight into the SQL, so anything outside
+    // the whitelist must be discarded rather than passed through.
+    $this->repository->findAll(['orderby' => 'id; DROP TABLE wp_posts']);
+
+    $sql = $this->wpdb->lastQuery();
+    expect($sql)->toContain('ORDER BY id ASC')
+        ->and($sql)->not->toContain('DROP TABLE');
+});
+
+test('find all applies limit and offset only when a positive number is given', function () {
+    $this->repository->findAll(['number' => 5, 'offset' => 10]);
+    expect($this->wpdb->lastQuery())->toContain('LIMIT 5 OFFSET 10');
+
+    $this->repository->findAll(['number' => -1]);
+    expect($this->wpdb->lastQuery())->not->toContain('LIMIT');
+});
+
+test('find all defaults the offset to zero', function () {
+    $this->repository->findAll(['number' => 3]);
+
+    expect($this->wpdb->lastQuery())->toContain('LIMIT 3 OFFSET 0');
+});
+
+test('find by intergroup meeting filters on the parent meeting', function () {
+    $this->repository->findByIntergroupMeeting(99);
+
+    expect($this->wpdb->lastQuery())->toContain('intergroup_meeting_id = 99');
+});
+
+// ─── count ──────────────────────────────────────────────────────
+test('count returns the scalar from the database', function () {
+    $this->wpdb->var = '17';
+
+    expect($this->repository->count())->toBe(17)
+        ->and($this->wpdb->lastQuery())->toContain('SELECT COUNT(*)');
+});
+
+test('count applies the same filters as find all', function () {
+    $this->wpdb->var = '3';
+
+    expect($this->repository->count([
+        'intergroup_meeting_id' => 42,
+        'meeting_label'         => 'July',
+        'group_id'              => 10,
+        'member_id'             => 7,
+        'meeting_group'         => 'Tuesday',
+        'gsr_name'              => 'Alex',
+    ]))->toBe(3);
+
+    $sql = $this->wpdb->lastQuery();
+    expect($sql)->toContain('intergroup_meeting_id = 42')
+        ->and($sql)->toContain("gsr_name = 'Alex'");
+});
+
+// ─── save ───────────────────────────────────────────────────────
+test('saving a new record inserts it', function () {
+    expect($this->repository->save(groupAttendance(0)))->toBeTrue();
+
+    expect($this->wpdb->inserts)->toHaveCount(1)
+        ->and($this->wpdb->updates)->toBe([]);
+
+    [$table, $data] = $this->wpdb->inserts[0];
+    expect($table)->toContain('group_attendance')
+        ->and($data['intergroup_meeting_id'])->toBe(42)
+        ->and($data['gsr_name'])->toBe('Alex');
+    // The proxy flag is stored as a tinyint, not a bool.
+    expect($data['gsr_proxy'])->toBe(1);
+});
+
+test('saving an existing record updates it by id', function () {
+    expect($this->repository->save(groupAttendance(5)))->toBeTrue();
+
+    expect($this->wpdb->updates)->toHaveCount(1)
+        ->and($this->wpdb->inserts)->toBe([])
+        ->and($this->wpdb->updates[0][2])->toBe(['id' => 5]);
+});
+
+test('a failed insert is reported', function () {
+    $this->wpdb->insertResult = false;
+
+    expect($this->repository->save(groupAttendance(0)))->toBeFalse();
+});
+
+test('a failed update is reported', function () {
+    $this->wpdb->updateResult = false;
+
+    expect($this->repository->save(groupAttendance(5)))->toBeFalse();
+});
+
+// ─── delete ─────────────────────────────────────────────────────
+test('delete removes the row by id', function () {
+    expect($this->repository->delete(5))->toBeTrue();
+
+    expect($this->wpdb->deletes[0][1])->toBe(['id' => 5]);
+});
+
+test('a failed delete is reported', function () {
+    $this->wpdb->deleteResult = false;
+
+    expect($this->repository->delete(5))->toBeFalse();
+});
+
+test('delete by meeting and member scopes to both', function () {
+    expect($this->repository->deleteByIntergroupMeetingAndMember(42, 7))->toBeTrue();
+
+    expect($this->wpdb->deletes[0][1])->toBe(['intergroup_meeting_id' => 42, 'member_id' => 7]);
+});
+
+test('delete by meeting and group scopes to both', function () {
+    expect($this->repository->deleteByIntergroupMeetingAndGroup(42, 10))->toBeTrue();
+
+    expect($this->wpdb->deletes[0][1])->toBe(['intergroup_meeting_id' => 42, 'group_id' => 10]);
+});
+
+test('a failed scoped delete is reported', function () {
+    $this->wpdb->deleteResult = false;
+
+    expect($this->repository->deleteByIntergroupMeetingAndMember(42, 7))->toBeFalse()
+        ->and($this->repository->deleteByIntergroupMeetingAndGroup(42, 10))->toBeFalse();
+});
+
+// ─── existsForMeetingAndGroup ───────────────────────────────────
+test('exists is true when the count is positive', function () {
+    $this->wpdb->var = '1';
+
+    expect($this->repository->existsForMeetingAndGroup(42, 10))->toBeTrue()
+        ->and($this->wpdb->lastQuery())->toContain('intergroup_meeting_id = 42 AND group_id = 10');
+});
+
+test('exists is false when nothing matches', function () {
+    $this->wpdb->var = '0';
+
+    expect($this->repository->existsForMeetingAndGroup(42, 10))->toBeFalse();
+});

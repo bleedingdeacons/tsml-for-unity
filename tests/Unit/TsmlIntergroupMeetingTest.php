@@ -4,131 +4,105 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeeting;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeeting;
 
-/**
+/*
  * Tests for TsmlIntergroupMeeting entity
  */
-#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeeting::class)]
-class TsmlIntergroupMeetingTest extends TestCase
-{
-    #[Test]
-    public function it_implements_the_interface(): void
-    {
-        $this->assertInstanceOf(IntergroupMeeting::class, new TsmlIntergroupMeeting(id: 1));
-    }
 
-    #[Test]
-    public function it_exposes_constructor_values(): void
-    {
-        $meeting = new TsmlIntergroupMeeting(
-            id: 5,
-            title: 'July Intergroup',
-            groupAttendees: [10, 20],
-            officersAttending: [1, 2],
-            date: '2026-07-01',
-            updated: '2026-07-01 20:00:00'
-        );
+covers(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeeting::class);
 
-        $this->assertSame(5, $meeting->getId());
-        $this->assertSame('July Intergroup', $meeting->getTitle());
-        $this->assertSame([10, 20], $meeting->getGroupAttendees());
-        $this->assertSame([1, 2], $meeting->getOfficersAttending());
-        $this->assertSame('2026-07-01', $meeting->getDate());
-        $this->assertSame('2026-07-01 20:00:00', $meeting->getUpdated());
-    }
+it('implements the interface', function () {
+    expect(new TsmlIntergroupMeeting(id: 1))->toBeInstanceOf(IntergroupMeeting::class);
+});
 
-    #[Test]
-    public function it_defaults_collections_to_empty(): void
-    {
-        $meeting = new TsmlIntergroupMeeting(id: 1);
+it('exposes constructor values', function () {
+    $meeting = new TsmlIntergroupMeeting(
+        id: 5,
+        title: 'July Intergroup',
+        groupAttendees: [10, 20],
+        officersAttending: [1, 2],
+        date: '2026-07-01',
+        updated: '2026-07-01 20:00:00'
+    );
 
-        $this->assertSame('', $meeting->getTitle());
-        $this->assertSame([], $meeting->getGroupAttendees());
-        $this->assertSame([], $meeting->getOfficersAttending());
-        $this->assertSame('', $meeting->getDate());
-        $this->assertSame('', $meeting->getUpdated());
-    }
+    expect($meeting->getId())->toBe(5)
+        ->and($meeting->getTitle())->toBe('July Intergroup')
+        ->and($meeting->getGroupAttendees())->toBe([10, 20])
+        ->and($meeting->getOfficersAttending())->toBe([1, 2])
+        ->and($meeting->getDate())->toBe('2026-07-01')
+        ->and($meeting->getUpdated())->toBe('2026-07-01 20:00:00');
+});
 
-    // ── group attendee mutators ────────────────────────────────────────
-    #[Test]
-    public function adding_a_group_attendee_returns_true_and_records_it(): void
-    {
-        $meeting = new TsmlIntergroupMeeting(id: 1);
+it('defaults collections to empty', function () {
+    $meeting = new TsmlIntergroupMeeting(id: 1);
 
-        $this->assertTrue($meeting->addGroupAttendee(10));
-        $this->assertTrue($meeting->hasGroupAttendee(10));
-        $this->assertSame([10], $meeting->getGroupAttendees());
-    }
+    expect($meeting->getTitle())->toBe('')
+        ->and($meeting->getGroupAttendees())->toBe([])
+        ->and($meeting->getOfficersAttending())->toBe([])
+        ->and($meeting->getDate())->toBe('')
+        ->and($meeting->getUpdated())->toBe('');
+});
 
-    #[Test]
-    public function adding_a_duplicate_group_attendee_returns_false(): void
-    {
-        $meeting = new TsmlIntergroupMeeting(id: 1, groupAttendees: [10]);
+// ── group attendee mutators ────────────────────────────────────────
+test('adding a group attendee returns true and records it', function () {
+    $meeting = new TsmlIntergroupMeeting(id: 1);
 
-        $this->assertFalse($meeting->addGroupAttendee(10));
-        $this->assertSame([10], $meeting->getGroupAttendees());
-    }
+    expect($meeting->addGroupAttendee(10))->toBeTrue()
+        ->and($meeting->hasGroupAttendee(10))->toBeTrue()
+        ->and($meeting->getGroupAttendees())->toBe([10]);
+});
 
-    #[Test]
-    public function removing_a_group_attendee_reindexes_the_list(): void
-    {
-        $meeting = new TsmlIntergroupMeeting(id: 1, groupAttendees: [10, 20, 30]);
+test('adding a duplicate group attendee returns false', function () {
+    $meeting = new TsmlIntergroupMeeting(id: 1, groupAttendees: [10]);
 
-        $this->assertTrue($meeting->removeGroupAttendee(20));
-        $this->assertSame([10, 30], $meeting->getGroupAttendees());
-        $this->assertFalse($meeting->hasGroupAttendee(20));
-    }
+    expect($meeting->addGroupAttendee(10))->toBeFalse()
+        ->and($meeting->getGroupAttendees())->toBe([10]);
+});
 
-    #[Test]
-    public function removing_an_absent_group_attendee_returns_false(): void
-    {
-        $meeting = new TsmlIntergroupMeeting(id: 1, groupAttendees: [10]);
+test('removing a group attendee reindexes the list', function () {
+    $meeting = new TsmlIntergroupMeeting(id: 1, groupAttendees: [10, 20, 30]);
 
-        $this->assertFalse($meeting->removeGroupAttendee(99));
-        $this->assertSame([10], $meeting->getGroupAttendees());
-    }
+    expect($meeting->removeGroupAttendee(20))->toBeTrue()
+        ->and($meeting->getGroupAttendees())->toBe([10, 30])
+        ->and($meeting->hasGroupAttendee(20))->toBeFalse();
+});
 
-    // ── officer attendee mutators ──────────────────────────────────────
-    #[Test]
-    public function adding_an_officer_attendee_returns_true_and_records_it(): void
-    {
-        $meeting = new TsmlIntergroupMeeting(id: 1);
+test('removing an absent group attendee returns false', function () {
+    $meeting = new TsmlIntergroupMeeting(id: 1, groupAttendees: [10]);
 
-        $this->assertTrue($meeting->addOfficerAttendee(3));
-        $this->assertTrue($meeting->hasOfficerAttendee(3));
-        $this->assertSame([3], $meeting->getOfficersAttending());
-    }
+    expect($meeting->removeGroupAttendee(99))->toBeFalse()
+        ->and($meeting->getGroupAttendees())->toBe([10]);
+});
 
-    #[Test]
-    public function adding_a_duplicate_officer_attendee_returns_false(): void
-    {
-        $meeting = new TsmlIntergroupMeeting(id: 1, officersAttending: [3]);
+// ── officer attendee mutators ──────────────────────────────────────
+test('adding an officer attendee returns true and records it', function () {
+    $meeting = new TsmlIntergroupMeeting(id: 1);
 
-        $this->assertFalse($meeting->addOfficerAttendee(3));
-        $this->assertSame([3], $meeting->getOfficersAttending());
-    }
+    expect($meeting->addOfficerAttendee(3))->toBeTrue()
+        ->and($meeting->hasOfficerAttendee(3))->toBeTrue()
+        ->and($meeting->getOfficersAttending())->toBe([3]);
+});
 
-    #[Test]
-    public function removing_an_officer_attendee_reindexes_the_list(): void
-    {
-        $meeting = new TsmlIntergroupMeeting(id: 1, officersAttending: [3, 4, 5]);
+test('adding a duplicate officer attendee returns false', function () {
+    $meeting = new TsmlIntergroupMeeting(id: 1, officersAttending: [3]);
 
-        $this->assertTrue($meeting->removeOfficerAttendee(4));
-        $this->assertSame([3, 5], $meeting->getOfficersAttending());
-        $this->assertFalse($meeting->hasOfficerAttendee(4));
-    }
+    expect($meeting->addOfficerAttendee(3))->toBeFalse()
+        ->and($meeting->getOfficersAttending())->toBe([3]);
+});
 
-    #[Test]
-    public function removing_an_absent_officer_attendee_returns_false(): void
-    {
-        $meeting = new TsmlIntergroupMeeting(id: 1, officersAttending: [3]);
+test('removing an officer attendee reindexes the list', function () {
+    $meeting = new TsmlIntergroupMeeting(id: 1, officersAttending: [3, 4, 5]);
 
-        $this->assertFalse($meeting->removeOfficerAttendee(99));
-        $this->assertSame([3], $meeting->getOfficersAttending());
-    }
-}
+    expect($meeting->removeOfficerAttendee(4))->toBeTrue()
+        ->and($meeting->getOfficersAttending())->toBe([3, 5])
+        ->and($meeting->hasOfficerAttendee(4))->toBeFalse();
+});
+
+test('removing an absent officer attendee returns false', function () {
+    $meeting = new TsmlIntergroupMeeting(id: 1, officersAttending: [3]);
+
+    expect($meeting->removeOfficerAttendee(99))->toBeFalse()
+        ->and($meeting->getOfficersAttending())->toBe([3]);
+});

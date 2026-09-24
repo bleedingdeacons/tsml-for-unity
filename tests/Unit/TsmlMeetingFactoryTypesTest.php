@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use function Brain\Monkey\Functions\expect;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Meetings\TsmlMeetingFactory;
-use TsmlForUnity\Tests\TestCase;
 
-/**
+/*
  * Tests for meeting type resolution and the factory's failure handling.
  *
  * TSML records a meeting's types as short codes in postmeta, and the
@@ -23,179 +20,144 @@ use TsmlForUnity\Tests\TestCase;
  * try/catch and answers null, because a single malformed meeting must not
  * break a page listing a hundred of them.
  */
-#[CoversClass(\TsmlForUnity\Meetings\TsmlMeetingFactory::class)]
-class TsmlMeetingFactoryTypesTest extends TestCase
+
+covers(\TsmlForUnity\Meetings\TsmlMeetingFactory::class);
+
+beforeEach(function () {
+    Functions\expect('get_permalink')->andReturn('https://example.test/m/1');
+    Functions\expect('get_post_status')->andReturn('publish');
+    Functions\expect('get_post')
+        ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
+    Functions\expect('get_post_custom')->andReturn([]);
+    Functions\expect('is_serialized')->andReturn(false);
+    Functions\expect('maybe_unserialize')->andReturnUsing(static fn ($v) => $v);
+
+    $this->factory = new TsmlMeetingFactory();
+});
+
+function typesSource(array $overrides = []): array
 {
-    private TsmlMeetingFactory $factory;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        expect('get_permalink')->andReturn('https://example.test/m/1');
-        expect('get_post_status')->andReturn('publish');
-        expect('get_post')
-            ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
-        expect('get_post_custom')->andReturn([]);
-        expect('is_serialized')->andReturn(false);
-        expect('maybe_unserialize')->andReturnUsing(static fn ($v) => $v);
-
-        $this->factory = new TsmlMeetingFactory();
-    }
-
-    private function source(array $overrides = []): array
-    {
-        return array_merge([
-            'id'       => 1,
-            'name'     => 'Types Meeting',
-            'slug'     => 'types-meeting',
-            'location' => 'Hall',
-            'day'      => 1,
-        ], $overrides);
-    }
-
-    /** Make get_post_meta() answer with the given stored type codes. */
-    private function stubStoredTypes(mixed $types): void
-    {
-        expect('get_post_meta')->andReturn($types);
-    }
-
-    // ─── types from postmeta ────────────────────────────────────────
-    #[Test]
-    public function stored_type_codes_are_expanded_to_names(): void
-    {
-        $this->stubStoredTypes(['O', 'D']);
-
-        $meeting = $this->factory->createFromSource($this->source());
-
-        $this->assertNotNull($meeting);
-        $this->assertContains('Open', $meeting->getTypes());
-    }
-
-    #[Test]
-    public function the_online_code_marks_the_meeting_online(): void
-    {
-        // 'ONL' is TSML's online marker.
-        $this->stubStoredTypes(['ONL', 'O']);
-
-        $meeting = $this->factory->createFromSource($this->source());
-
-        $this->assertTrue($meeting->isOnline());
-    }
-
-    #[Test]
-    public function the_online_type_is_removed_from_the_type_list(): void
-    {
-        $this->stubStoredTypes(['ONL', 'O']);
-
-        $meeting = $this->factory->createFromSource($this->source());
-
-        // Online is expressed by the flag, not by a type entry, so a
-        // meeting is never both flagged and listed.
-        $this->assertTrue($meeting->isOnline());
-        $this->assertNotContains('Online', $meeting->getTypes());
-    }
-
-    #[Test]
-    public function unknown_stored_codes_are_discarded(): void
-    {
-        $this->stubStoredTypes(['NOT_A_CODE']);
-
-        $meeting = $this->factory->createFromSource($this->source());
-
-        $this->assertNotNull($meeting);
-        $this->assertNotContains('NOT_A_CODE', $meeting->getTypes());
-    }
-
-    #[Test]
-    public function stored_types_that_are_not_an_array_are_ignored(): void
-    {
-        // Older data can hold a bare string rather than an array.
-        $this->stubStoredTypes('O');
-
-        $this->assertNotNull($this->factory->createFromSource($this->source()));
-    }
-
-    #[Test]
-    public function empty_stored_types_are_ignored(): void
-    {
-        $this->stubStoredTypes([]);
-
-        $this->assertNotNull($this->factory->createFromSource($this->source()));
-    }
-
-    #[Test]
-    public function types_from_postmeta_and_from_the_source_are_both_included(): void
-    {
-        $this->stubStoredTypes(['O']);
-
-        $meeting = $this->factory->createFromSource($this->source(['types' => ['O', 'D']]));
-
-        $types = $meeting->getTypes();
-        $this->assertContains('Open', $types);
-        $this->assertContains('Discussion', $types);
-    }
-
-    /**
-     * Regression: a type recorded in both places was listed twice.
-     *
-     * The postmeta codes are expanded to names before the source codes are
-     * merged in, so 'Open' and 'O' are two representations of one type.
-     * Deduplicating before expansion compared them as strings, found them
-     * different, and kept both — which then expanded to 'Open' twice.
-     * Expansion now happens first, so the dedup sees like for like.
-     */
-    #[Test]
-    public function a_type_present_in_both_postmeta_and_source_is_listed_once(): void
-    {
-        $this->stubStoredTypes(['O']);
-
-        $meeting = $this->factory->createFromSource($this->source(['types' => ['O', 'D']]));
-
-        $types = $meeting->getTypes();
-        $this->assertSame(
-            1,
-            count(array_keys($types, 'Open', true)),
-            'The same type recorded in postmeta and source must appear once.'
-        );
-        $this->assertSame(['Open', 'Discussion'], array_values($types));
-    }
-
-    #[Test]
-    public function a_deduplicated_type_list_is_still_a_sequential_list(): void
-    {
-        // Removing a duplicate must not leave a gap in the keys: callers
-        // (and json_encode) treat a sparse array as an object, not a list.
-        $this->stubStoredTypes(['O']);
-
-        $types = $this->factory
-            ->createFromSource($this->source(['types' => ['O', 'D']]))
-            ->getTypes();
-
-        $this->assertSame(range(0, count($types) - 1), array_keys($types));
-    }
-
-    // ─── failure handling ───────────────────────────────────────────
-    #[Test]
-    public function a_non_positive_id_is_rejected_rather_than_built(): void
-    {
-        $this->stubStoredTypes([]);
-
-        // Throws internally, is caught, logged and answered as null.
-        $this->assertNull($this->factory->createFromSource($this->source(['id' => 0])));
-        $this->assertNull($this->factory->createFromSource($this->source(['id' => -3])));
-    }
-
-    #[Test]
-    public function postmeta_that_is_not_an_array_is_treated_as_empty(): void
-    {
-        $this->stubStoredTypes([]);
-        // get_post_custom() can return false when a post has no meta.
-        expect('get_post_custom')->andReturn(false);
-
-        $this->assertNotNull(
-            $this->factory->createFromSource($this->source()),
-            'A meeting with no meta at all is still a meeting.'
-        );
-    }
+    return array_merge([
+        'id'       => 1,
+        'name'     => 'Types Meeting',
+        'slug'     => 'types-meeting',
+        'location' => 'Hall',
+        'day'      => 1,
+    ], $overrides);
 }
+
+/** Make get_post_meta() answer with the given stored type codes. */
+function stubStoredTypes(mixed $types): void
+{
+    Functions\expect('get_post_meta')->andReturn($types);
+}
+
+// ─── types from postmeta ────────────────────────────────────────
+test('stored type codes are expanded to names', function () {
+    stubStoredTypes(['O', 'D']);
+
+    $meeting = $this->factory->createFromSource(typesSource());
+
+    expect($meeting)->not->toBeNull()
+        ->and($meeting->getTypes())->toContain('Open');
+});
+
+test('the online code marks the meeting online', function () {
+    // 'ONL' is TSML's online marker.
+    stubStoredTypes(['ONL', 'O']);
+
+    $meeting = $this->factory->createFromSource(typesSource());
+
+    expect($meeting->isOnline())->toBeTrue();
+});
+
+test('the online type is removed from the type list', function () {
+    stubStoredTypes(['ONL', 'O']);
+
+    $meeting = $this->factory->createFromSource(typesSource());
+
+    // Online is expressed by the flag, not by a type entry, so a
+    // meeting is never both flagged and listed.
+    expect($meeting->isOnline())->toBeTrue()
+        ->and($meeting->getTypes())->not->toContain('Online');
+});
+
+test('unknown stored codes are discarded', function () {
+    stubStoredTypes(['NOT_A_CODE']);
+
+    $meeting = $this->factory->createFromSource(typesSource());
+
+    expect($meeting)->not->toBeNull()
+        ->and($meeting->getTypes())->not->toContain('NOT_A_CODE');
+});
+
+test('stored types that are not an array are ignored', function () {
+    // Older data can hold a bare string rather than an array.
+    stubStoredTypes('O');
+
+    expect($this->factory->createFromSource(typesSource()))->not->toBeNull();
+});
+
+test('empty stored types are ignored', function () {
+    stubStoredTypes([]);
+
+    expect($this->factory->createFromSource(typesSource()))->not->toBeNull();
+});
+
+test('types from postmeta and from the source are both included', function () {
+    stubStoredTypes(['O']);
+
+    $meeting = $this->factory->createFromSource(typesSource(['types' => ['O', 'D']]));
+
+    $types = $meeting->getTypes();
+    expect($types)->toContain('Open')
+        ->and($types)->toContain('Discussion');
+});
+
+/*
+ * Regression: a type recorded in both places was listed twice.
+ *
+ * The postmeta codes are expanded to names before the source codes are
+ * merged in, so 'Open' and 'O' are two representations of one type.
+ * Deduplicating before expansion compared them as strings, found them
+ * different, and kept both — which then expanded to 'Open' twice.
+ * Expansion now happens first, so the dedup sees like for like.
+ */
+test('a type present in both postmeta and source is listed once', function () {
+    stubStoredTypes(['O']);
+
+    $meeting = $this->factory->createFromSource(typesSource(['types' => ['O', 'D']]));
+
+    $types = $meeting->getTypes();
+    expect(count(array_keys($types, 'Open', true)))->toBe(1, 'The same type recorded in postmeta and source must appear once.')
+        ->and(array_values($types))->toBe(['Open', 'Discussion']);
+});
+
+test('a deduplicated type list is still a sequential list', function () {
+    // Removing a duplicate must not leave a gap in the keys: callers
+    // (and json_encode) treat a sparse array as an object, not a list.
+    stubStoredTypes(['O']);
+
+    $types = $this->factory
+        ->createFromSource(typesSource(['types' => ['O', 'D']]))
+        ->getTypes();
+
+    expect(array_keys($types))->toBe(range(0, count($types) - 1));
+});
+
+// ─── failure handling ───────────────────────────────────────────
+test('a non positive id is rejected rather than built', function () {
+    stubStoredTypes([]);
+
+    // Throws internally, is caught, logged and answered as null.
+    expect($this->factory->createFromSource(typesSource(['id' => 0])))->toBeNull()
+        ->and($this->factory->createFromSource(typesSource(['id' => -3])))->toBeNull();
+});
+
+test('postmeta that is not an array is treated as empty', function () {
+    stubStoredTypes([]);
+    // get_post_custom() can return false when a post has no meta.
+    Functions\expect('get_post_custom')->andReturn(false);
+
+    expect($this->factory->createFromSource(typesSource()))->not->toBeNull('A meeting with no meta at all is still a meeting.');
+});

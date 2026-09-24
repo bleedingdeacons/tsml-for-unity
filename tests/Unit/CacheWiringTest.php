@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
 use TsmlForUnity\Meetings\TsmlMeetingFields;
 use TsmlForUnity\Meetings\TsmlMeetingRepository;
 use TsmlForUnity\Members\TsmlMemberFields;
 use TsmlForUnity\Members\TsmlMemberRepository;
 use TsmlForUnity\Plugin;
 use TsmlForUnity\Tests\Support\WpdbStub;
-use TsmlForUnity\Tests\TestCase;
 use Unity\Core\Interfaces\Cache;
 use Unity\Core\Interfaces\Configuration;
 use Unity\Meetings\CachingMeetingRepository;
@@ -22,7 +19,7 @@ use Unity\Members\Interfaces\MemberRepository;
 use Unity\Testing\Doubles\FakeContainer;
 use Unity\Testing\Doubles\InMemoryCache;
 
-/**
+/*
  * Wiring for Unity's member and meeting caches.
  *
  * Two halves that are only correct together: the repository is wrapped when
@@ -30,141 +27,112 @@ use Unity\Testing\Doubles\InMemoryCache;
  * member edited anywhere — the ACF screen, Reconcile, Scrutiny's pruner —
  * drops out of it.
  */
-#[CoversClass(\TsmlForUnity\Plugin::class)]
-class CacheWiringTest extends TestCase
-{
-    private FakeContainer $container;
 
-    private mixed $previousWpdb = null;
+covers(\TsmlForUnity\Plugin::class);
 
-    protected function setUp(): void
-    {
-        parent::setUp();
+beforeEach(function () {
+    $this->container = new FakeContainer();
+    $this->container->prime(Configuration::class, $this->createMock(Configuration::class));
 
-        $this->container = new FakeContainer();
-        $this->container->prime(Configuration::class, $this->createMock(Configuration::class));
+    // The credential repository takes a wpdb, and registerWithUnity()
+    // builds the whole graph.
+    $this->previousWpdb = $GLOBALS['wpdb'] ?? null;
+    $GLOBALS['wpdb'] = new WpdbStub();
+});
 
-        // The credential repository takes a wpdb, and registerWithUnity()
-        // builds the whole graph.
-        $this->previousWpdb = $GLOBALS['wpdb'] ?? null;
-        $GLOBALS['wpdb'] = new WpdbStub();
-    }
+afterEach(function () {
+    $GLOBALS['wpdb'] = $this->previousWpdb;
+});
 
-    protected function tearDown(): void
-    {
-        $GLOBALS['wpdb'] = $this->previousWpdb;
+test('the member repository is wrapped when a cache is available', function () {
+    $this->container->prime(Cache::class, new InMemoryCache());
 
-        parent::tearDown();
-    }
+    Plugin::registerWithUnity($this->container);
 
-    #[Test]
-    public function the_member_repository_is_wrapped_when_a_cache_is_available(): void
-    {
-        $this->container->prime(Cache::class, new InMemoryCache());
+    expect($this->container->get(MemberRepository::class))->toBeInstanceOf(CachingMemberRepository::class);
+});
 
-        Plugin::registerWithUnity($this->container);
+test('the bare repository is registered when there is no cache', function () {
+    Plugin::registerWithUnity($this->container);
 
-        $this->assertInstanceOf(CachingMemberRepository::class, $this->container->get(MemberRepository::class));
-    }
+    $repository = $this->container->get(MemberRepository::class);
 
-    #[Test]
-    public function the_bare_repository_is_registered_when_there_is_no_cache(): void
-    {
-        Plugin::registerWithUnity($this->container);
+    // Unity ships headless and a consumer may register no cache at all.
+    // Wrapping regardless would add a layer that can only ever miss.
+    expect($repository)->toBeInstanceOf(TsmlMemberRepository::class)
+        ->and($repository)->not->toBeInstanceOf(CachingMemberRepository::class);
+});
 
-        $repository = $this->container->get(MemberRepository::class);
+test('the invalidator hooks the post and meta actions when caching', function () {
+    $this->container->prime(Cache::class, new InMemoryCache());
+    Plugin::registerWithUnity($this->container);
 
-        // Unity ships headless and a consumer may register no cache at all.
-        // Wrapping regardless would add a layer that can only ever miss.
-        $this->assertInstanceOf(TsmlMemberRepository::class, $repository);
-        $this->assertNotInstanceOf(CachingMemberRepository::class, $repository);
-    }
+    Plugin::registerMemberCacheInvalidator($this->container);
 
-    #[Test]
-    public function the_invalidator_hooks_the_post_and_meta_actions_when_caching(): void
-    {
-        $this->container->prime(Cache::class, new InMemoryCache());
-        Plugin::registerWithUnity($this->container);
+    $this->assertActionAdded('save_post_' . TsmlMemberFields::POST_TYPE);
+    $this->assertActionAdded('before_delete_post');
+    $this->assertActionAdded('trashed_post');
+    $this->assertActionAdded('untrashed_post');
+    $this->assertActionAdded('added_post_meta');
+    $this->assertActionAdded('updated_post_meta');
+    $this->assertActionAdded('deleted_post_meta');
+});
 
-        Plugin::registerMemberCacheInvalidator($this->container);
+test('nothing is hooked when the repository is not caching', function () {
+    Plugin::registerWithUnity($this->container);
 
-        $this->assertActionAdded('save_post_' . TsmlMemberFields::POST_TYPE);
-        $this->assertActionAdded('before_delete_post');
-        $this->assertActionAdded('trashed_post');
-        $this->assertActionAdded('untrashed_post');
-        $this->assertActionAdded('added_post_meta');
-        $this->assertActionAdded('updated_post_meta');
-        $this->assertActionAdded('deleted_post_meta');
-    }
+    Plugin::registerMemberCacheInvalidator($this->container);
 
-    #[Test]
-    public function nothing_is_hooked_when_the_repository_is_not_caching(): void
-    {
-        Plugin::registerWithUnity($this->container);
+    // Nothing to invalidate, so these hooks would fire on every post and
+    // meta write on the site for no reason at all.
+    $this->assertActionNotAdded('updated_post_meta');
+    $this->assertActionNotAdded('save_post_' . TsmlMemberFields::POST_TYPE);
+});
 
-        Plugin::registerMemberCacheInvalidator($this->container);
+test('nothing is hooked when no member repository is registered', function () {
+    Plugin::registerMemberCacheInvalidator($this->container);
 
-        // Nothing to invalidate, so these hooks would fire on every post and
-        // meta write on the site for no reason at all.
-        $this->assertActionNotAdded('updated_post_meta');
-        $this->assertActionNotAdded('save_post_' . TsmlMemberFields::POST_TYPE);
-    }
+    $this->assertActionNotAdded('updated_post_meta');
+});
 
-    #[Test]
-    public function nothing_is_hooked_when_no_member_repository_is_registered(): void
-    {
-        Plugin::registerMemberCacheInvalidator($this->container);
+test('the meeting repository is wrapped when a cache is available', function () {
+    $this->container->prime(Cache::class, new InMemoryCache());
 
-        $this->assertActionNotAdded('updated_post_meta');
-    }
+    Plugin::registerWithUnity($this->container);
 
-    #[Test]
-    public function the_meeting_repository_is_wrapped_when_a_cache_is_available(): void
-    {
-        $this->container->prime(Cache::class, new InMemoryCache());
+    expect($this->container->get(MeetingRepository::class))->toBeInstanceOf(CachingMeetingRepository::class);
+});
 
-        Plugin::registerWithUnity($this->container);
+test('the bare meeting repository is registered when there is no cache', function () {
+    Plugin::registerWithUnity($this->container);
 
-        $this->assertInstanceOf(CachingMeetingRepository::class, $this->container->get(MeetingRepository::class));
-    }
+    $repository = $this->container->get(MeetingRepository::class);
 
-    #[Test]
-    public function the_bare_meeting_repository_is_registered_when_there_is_no_cache(): void
-    {
-        Plugin::registerWithUnity($this->container);
+    expect($repository)->toBeInstanceOf(TsmlMeetingRepository::class)
+        ->and($repository)->not->toBeInstanceOf(CachingMeetingRepository::class);
+});
 
-        $repository = $this->container->get(MeetingRepository::class);
+test('the meeting invalidator hooks the meeting post type', function () {
+    $this->container->prime(Cache::class, new InMemoryCache());
+    Plugin::registerWithUnity($this->container);
 
-        $this->assertInstanceOf(TsmlMeetingRepository::class, $repository);
-        $this->assertNotInstanceOf(CachingMeetingRepository::class, $repository);
-    }
+    Plugin::registerCacheInvalidators($this->container);
 
-    #[Test]
-    public function the_meeting_invalidator_hooks_the_meeting_post_type(): void
-    {
-        $this->container->prime(Cache::class, new InMemoryCache());
-        Plugin::registerWithUnity($this->container);
+    // MeetingRepository is read-only, so this is the only thing that can
+    // ever clear a cached meeting. Without it, an edited meeting keeps
+    // serving its old day and time.
+    $this->assertActionAdded('save_post_' . TsmlMeetingFields::POST_TYPE);
+    $this->assertActionAdded('updated_post_meta');
 
-        Plugin::registerCacheInvalidators($this->container);
+    // And the member half is hooked by the same call.
+    $this->assertActionAdded('save_post_' . TsmlMemberFields::POST_TYPE);
+});
 
-        // MeetingRepository is read-only, so this is the only thing that can
-        // ever clear a cached meeting. Without it, an edited meeting keeps
-        // serving its old day and time.
-        $this->assertActionAdded('save_post_' . TsmlMeetingFields::POST_TYPE);
-        $this->assertActionAdded('updated_post_meta');
+test('no meeting hooks without a cache', function () {
+    Plugin::registerWithUnity($this->container);
 
-        // And the member half is hooked by the same call.
-        $this->assertActionAdded('save_post_' . TsmlMemberFields::POST_TYPE);
-    }
+    Plugin::registerCacheInvalidators($this->container);
 
-    #[Test]
-    public function no_meeting_hooks_without_a_cache(): void
-    {
-        Plugin::registerWithUnity($this->container);
-
-        Plugin::registerCacheInvalidators($this->container);
-
-        $this->assertActionNotAdded('save_post_' . TsmlMeetingFields::POST_TYPE);
-        $this->assertActionNotAdded('updated_post_meta');
-    }
-}
+    $this->assertActionNotAdded('save_post_' . TsmlMeetingFields::POST_TYPE);
+    $this->assertActionNotAdded('updated_post_meta');
+});

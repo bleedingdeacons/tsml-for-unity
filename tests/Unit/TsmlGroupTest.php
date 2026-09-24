@@ -4,104 +4,90 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Contacts\TsmlContact;
 use TsmlForUnity\Groups\TsmlGroup;
 use Unity\Groups\Interfaces\Group;
 
-/**
+/*
  * Tests for TsmlGroup entity
  */
-#[CoversClass(\TsmlForUnity\Groups\TsmlGroup::class)]
-class TsmlGroupTest extends TestCase
-{
-    #[Test]
-    public function it_implements_group_interface(): void
-    {
-        $this->assertInstanceOf(Group::class, new TsmlGroup(id: 1));
-    }
 
-    #[Test]
-    public function it_defaults_every_optional_field(): void
-    {
-        $group = new TsmlGroup(id: 7);
+covers(\TsmlForUnity\Groups\TsmlGroup::class);
 
-        $this->assertSame(7, $group->getId());
-        $this->assertSame('', $group->getTitle());
-        $this->assertSame('', $group->getEmail());
-        $this->assertSame([], $group->getMeetings());
-        $this->assertSame('', $group->getLink());
-        $this->assertSame('', $group->getGroupNotes());
-        $this->assertSame('', $group->getWebsite());
-        $this->assertSame('', $group->getPhone());
-        $this->assertSame('', $group->getVenmo());
-        $this->assertSame('', $group->getPaypal());
-        $this->assertSame('', $group->getSquare());
-        $this->assertNull($group->getDistrictId());
-        $this->assertNull($group->getLastContact());
-        $this->assertSame([], $group->getContacts());
-        $this->assertSame('', $group->getUpdated());
-    }
+it('implements group interface', function () {
+    expect(new TsmlGroup(id: 1))->toBeInstanceOf(Group::class);
+});
 
-    #[Test]
-    public function it_exposes_every_field_passed_to_the_constructor(): void
-    {
-        $contact = new TsmlContact('Jane', 'jane@example.com', '0700', '2026-01-01');
+it('defaults every optional field', function () {
+    $group = new TsmlGroup(id: 7);
 
-        $group = new TsmlGroup(
-            id: 42,
-            title: 'Tuesday Group',
-            email: 'group@example.com',
-            meetings: ['m1', 'm2'],
-            link: 'https://example.com/group',
-            groupNotes: 'Meets weekly',
-            website: 'https://group.example.com',
-            phone: '01234 567890',
-            venmo: '@group',
-            paypal: 'grouppaypal',
-            square: '$group',
-            districtId: 5,
-            lastContact: '2026-05-01',
-            contacts: [$contact],
-            updated: '2026-06-01 10:00:00'
-        );
+    expect($group->getId())->toBe(7)
+        ->and($group->getTitle())->toBe('')
+        ->and($group->getEmail())->toBe('')
+        ->and($group->getMeetings())->toBe([])
+        ->and($group->getLink())->toBe('')
+        ->and($group->getGroupNotes())->toBe('')
+        ->and($group->getWebsite())->toBe('')
+        ->and($group->getPhone())->toBe('')
+        ->and($group->getVenmo())->toBe('')
+        ->and($group->getPaypal())->toBe('')
+        ->and($group->getSquare())->toBe('')
+        ->and($group->getDistrictId())->toBeNull()
+        ->and($group->getLastContact())->toBeNull()
+        ->and($group->getContacts())->toBe([])
+        ->and($group->getUpdated())->toBe('');
+});
 
-        $this->assertSame(42, $group->getId());
-        $this->assertSame('Tuesday Group', $group->getTitle());
-        $this->assertSame('group@example.com', $group->getEmail());
-        $this->assertSame(['m1', 'm2'], $group->getMeetings());
-        $this->assertSame('https://example.com/group', $group->getLink());
-        $this->assertSame('Meets weekly', $group->getGroupNotes());
-        $this->assertSame('https://group.example.com', $group->getWebsite());
-        $this->assertSame('01234 567890', $group->getPhone());
-        $this->assertSame('@group', $group->getVenmo());
-        $this->assertSame('grouppaypal', $group->getPaypal());
-        $this->assertSame('$group', $group->getSquare());
-        $this->assertSame(5, $group->getDistrictId());
-        $this->assertSame('2026-05-01', $group->getLastContact());
-        $this->assertSame([$contact], $group->getContacts());
-        $this->assertSame('2026-06-01 10:00:00', $group->getUpdated());
-    }
+it('exposes every field passed to the constructor', function () {
+    $contact = new TsmlContact('Jane', 'jane@example.com', '0700', '2026-01-01');
 
-    #[Test]
-    public function is_valid_requires_a_title(): void
-    {
-        $this->assertFalse((new TsmlGroup(id: 0))->isValid());
-        $this->assertFalse((new TsmlGroup(id: 99, title: ''))->isValid());
-        // Validity covers the data, not persistence: an unsaved group (id 0)
-        // with a title is still valid.
-        $this->assertTrue((new TsmlGroup(id: 0, title: 'Named'))->isValid());
-        $this->assertTrue((new TsmlGroup(id: 3, title: 'Named'))->isValid());
-    }
+    $group = new TsmlGroup(
+        id: 42,
+        title: 'Tuesday Group',
+        email: 'group@example.com',
+        meetings: ['m1', 'm2'],
+        link: 'https://example.com/group',
+        groupNotes: 'Meets weekly',
+        website: 'https://group.example.com',
+        phone: '01234 567890',
+        venmo: '@group',
+        paypal: 'grouppaypal',
+        square: '$group',
+        districtId: 5,
+        lastContact: '2026-05-01',
+        contacts: [$contact],
+        updated: '2026-06-01 10:00:00'
+    );
 
-    #[Test]
-    public function has_contribution_options_is_true_when_any_handle_is_set(): void
-    {
-        $this->assertFalse((new TsmlGroup(id: 1))->hasContributionOptions());
-        $this->assertTrue((new TsmlGroup(id: 1, venmo: '@g'))->hasContributionOptions());
-        $this->assertTrue((new TsmlGroup(id: 1, paypal: 'g'))->hasContributionOptions());
-        $this->assertTrue((new TsmlGroup(id: 1, square: '$g'))->hasContributionOptions());
-    }
-}
+    expect($group->getId())->toBe(42)
+        ->and($group->getTitle())->toBe('Tuesday Group')
+        ->and($group->getEmail())->toBe('group@example.com')
+        ->and($group->getMeetings())->toBe(['m1', 'm2'])
+        ->and($group->getLink())->toBe('https://example.com/group')
+        ->and($group->getGroupNotes())->toBe('Meets weekly')
+        ->and($group->getWebsite())->toBe('https://group.example.com')
+        ->and($group->getPhone())->toBe('01234 567890')
+        ->and($group->getVenmo())->toBe('@group')
+        ->and($group->getPaypal())->toBe('grouppaypal')
+        ->and($group->getSquare())->toBe('$group')
+        ->and($group->getDistrictId())->toBe(5)
+        ->and($group->getLastContact())->toBe('2026-05-01')
+        ->and($group->getContacts())->toBe([$contact])
+        ->and($group->getUpdated())->toBe('2026-06-01 10:00:00');
+});
+
+test('is valid requires a title', function () {
+    expect((new TsmlGroup(id: 0))->isValid())->toBeFalse()
+        ->and((new TsmlGroup(id: 99, title: ''))->isValid())->toBeFalse();
+    // Validity covers the data, not persistence: an unsaved group (id 0)
+    // with a title is still valid.
+    expect((new TsmlGroup(id: 0, title: 'Named'))->isValid())->toBeTrue()
+        ->and((new TsmlGroup(id: 3, title: 'Named'))->isValid())->toBeTrue();
+});
+
+test('has contribution options is true when any handle is set', function () {
+    expect((new TsmlGroup(id: 1))->hasContributionOptions())->toBeFalse()
+        ->and((new TsmlGroup(id: 1, venmo: '@g'))->hasContributionOptions())->toBeTrue()
+        ->and((new TsmlGroup(id: 1, paypal: 'g'))->hasContributionOptions())->toBeTrue()
+        ->and((new TsmlGroup(id: 1, square: '$g'))->hasContributionOptions())->toBeTrue();
+});

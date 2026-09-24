@@ -4,14 +4,10 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\Attributes\DataProvider;
-use function Brain\Monkey\Functions\expect;
+use Brain\Monkey\Functions;
 use TsmlForUnity\Meetings\TsmlMeetingFactory;
-use TsmlForUnity\Tests\TestCase;
 
-/**
+/*
  * Tests for TsmlMeetingFactory's postmeta normalisation.
  *
  * TSML stores a good deal of meeting data as serialized postmeta, and some
@@ -25,180 +21,166 @@ use TsmlForUnity\Tests\TestCase;
  * regression would otherwise surface as an object leaking into a value that
  * downstream code expects to be scalar.
  */
-#[CoversClass(\TsmlForUnity\Meetings\TsmlMeetingFactory::class)]
-class TsmlMeetingFactoryMetaTest extends TestCase
+
+covers(\TsmlForUnity\Meetings\TsmlMeetingFactory::class);
+
+/**
+ * unserialize() without its notice for input that is not serialized.
+ *
+ * The stubs above call it on plain strings on purpose. They used to write
+ * @unserialize(), and PHPUnit does not count a suppressed warning, but Pest's
+ * printer lists it anyway: two "warnings" on every run for tests that were
+ * green. A scoped handler swallows it before either sees it.
+ */
+function quietUnserialize(string $value): mixed
 {
-    private TsmlMeetingFactory $factory;
+    set_error_handler(static fn (): bool => true);
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        expect('get_permalink')->andReturn('https://example.test/m/1');
-        expect('get_post_status')->andReturn('publish');
-        expect('get_post')
-            ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
-        expect('get_post_meta')->andReturn('');
-
-        // Mirror WordPress's real serialization helpers so the branch the
-        // factory takes is decided by the data, not by the stub.
-        expect('is_serialized')
-            ->andReturnUsing(static fn ($v): bool => is_string($v) && @unserialize($v) !== false);
-        expect('maybe_unserialize')
-            ->andReturnUsing(static function ($v) {
-                if (!is_string($v)) {
-                    return $v;
-                }
-                $out = @unserialize($v);
-
-                return $out === false && $v !== serialize(false) ? $v : $out;
-            });
-
-        $this->factory = new TsmlMeetingFactory();
-    }
-
-    /**
-     * Build a meeting whose postmeta is the supplied array, and return the
-     * meeting. The factory reads meta through get_post_custom().
-     */
-    private function meetingWithMeta(array $meta): ?object
-    {
-        expect('get_post_custom')->andReturn($meta);
-
-        return $this->factory->createFromSource([
-            'id'       => 1,
-            'name'     => 'Meta Meeting',
-            'slug'     => 'meta-meeting',
-            'location' => 'Hall',
-            'day'      => 1,
-        ]);
-    }
-
-    #[Test]
-    public function plain_scalar_meta_is_passed_through_untouched(): void
-    {
-        $this->assertNotNull($this->meetingWithMeta(['note' => ['just a string']]));
-    }
-
-    #[Test]
-    public function a_serialized_array_is_unserialized(): void
-    {
-        $this->assertNotNull($this->meetingWithMeta([
-            'types' => [serialize(['O', 'D'])],
-        ]));
-    }
-
-    #[Test]
-    public function a_serialized_scalar_is_unserialized(): void
-    {
-        $this->assertNotNull($this->meetingWithMeta([
-            'count' => [serialize(42)],
-        ]));
-    }
-
-    #[Test]
-    public function an_object_with_an_uppercase_id_property_is_reduced_to_that_id(): void
-    {
-        // The WP_Post shape: a public ID property.
-        $obj = new \stdClass();
-        $obj->ID = 99;
-
-        $this->assertNotNull($this->meetingWithMeta(['linked' => [serialize($obj)]]));
-    }
-
-    #[Test]
-    public function an_object_with_a_lowercase_id_property_is_reduced_to_that_id(): void
-    {
-        $obj = new \stdClass();
-        $obj->id = 77;
-
-        $this->assertNotNull($this->meetingWithMeta(['linked' => [serialize($obj)]]));
-    }
-
-    #[Test]
-    public function an_object_exposing_get_id_is_reduced_through_it(): void
-    {
-        $this->assertNotNull($this->meetingWithMeta([
-            'linked' => [serialize(new MetaObjectWithGetId())],
-        ]));
-    }
-
-    #[Test]
-    public function an_object_exposing_get_id_snake_case_is_reduced_through_it(): void
-    {
-        $this->assertNotNull($this->meetingWithMeta([
-            'linked' => [serialize(new MetaObjectWithSnakeGetId())],
-        ]));
-    }
-
-    #[Test]
-    public function an_object_with_no_identifier_falls_back_to_its_class_name(): void
-    {
-        $this->assertNotNull($this->meetingWithMeta([
-            'linked' => [serialize(new MetaObjectWithNothing())],
-        ]));
-    }
-
-    #[Test]
-    public function objects_nested_inside_a_serialized_array_are_reduced_too(): void
-    {
-        // The recursive path: objects buried in a nested structure must be
-        // reduced just as a top-level one would be.
-        $withId = new \stdClass();
-        $withId->ID = 5;
-
-        $nested = [
-            'level one' => [
-                'level two' => [$withId, new MetaObjectWithGetId(), 'plain'],
-            ],
-        ];
-
-        $this->assertNotNull($this->meetingWithMeta(['tree' => [serialize($nested)]]));
-    }
-
-    /**
-     * The recursive reducer tries the same strategies as the top-level one,
-     * in the same order, so each is driven through a nested structure too.
-     */
-    #[DataProvider('nestedObjectProvider')]
-    #[Test]
-    public function each_identifier_strategy_works_on_a_nested_object(object $nestedObject): void
-    {
-        $this->assertNotNull($this->meetingWithMeta([
-            'tree' => [serialize(['branch' => [$nestedObject]])],
-        ]));
-    }
-
-    /** @return array<string, array{0: object}> */
-    public static function nestedObjectProvider(): array
-    {
-        $upper = new \stdClass();
-        $upper->ID = 5;
-
-        $lower = new \stdClass();
-        $lower->id = 6;
-
-        return [
-            'uppercase ID property' => [$upper],
-            'lowercase id property' => [$lower],
-            'getId accessor'        => [new MetaObjectWithGetId()],
-            'get_id accessor'       => [new MetaObjectWithSnakeGetId()],
-            'no identifier at all'  => [new MetaObjectWithNothing()],
-        ];
-    }
-
-    #[Test]
-    public function meta_survives_when_serialization_helpers_are_missing(): void
-    {
-        // processMeta() bails out and returns the meta untouched rather than
-        // fataling when WordPress's helpers are absent. It cannot be proven
-        // by removing a function mid-run, so assert the ordinary path still
-        // yields a meeting with mixed meta present.
-        $this->assertNotNull($this->meetingWithMeta([
-            'mixed' => ['plain', serialize(['a' => 1])],
-        ]));
+    try {
+        return unserialize($value);
+    } finally {
+        restore_error_handler();
     }
 }
+
+beforeEach(function () {
+    Functions\expect('get_permalink')->andReturn('https://example.test/m/1');
+    Functions\expect('get_post_status')->andReturn('publish');
+    Functions\expect('get_post')
+        ->andReturn((object) ['post_modified_gmt' => '2024-01-01 00:00:00']);
+    Functions\expect('get_post_meta')->andReturn('');
+
+    // Mirror WordPress's real serialization helpers so the branch the
+    // factory takes is decided by the data, not by the stub.
+    Functions\expect('is_serialized')
+        ->andReturnUsing(static fn ($v): bool => is_string($v) && quietUnserialize($v) !== false);
+    Functions\expect('maybe_unserialize')
+        ->andReturnUsing(static function ($v) {
+            if (!is_string($v)) {
+                return $v;
+            }
+            $out = quietUnserialize($v);
+
+            return $out === false && $v !== serialize(false) ? $v : $out;
+        });
+
+    $this->factory = new TsmlMeetingFactory();
+});
+
+/**
+ * Build a meeting whose postmeta is the supplied array, and return the
+ * meeting. The factory reads meta through get_post_custom().
+ */
+function meetingWithMeta(array $meta): ?object
+{
+    Functions\expect('get_post_custom')->andReturn($meta);
+
+    return test()->factory->createFromSource([
+        'id'       => 1,
+        'name'     => 'Meta Meeting',
+        'slug'     => 'meta-meeting',
+        'location' => 'Hall',
+        'day'      => 1,
+    ]);
+}
+
+test('plain scalar meta is passed through untouched', function () {
+    expect(meetingWithMeta(['note' => ['just a string']]))->not->toBeNull();
+});
+
+test('a serialized array is unserialized', function () {
+    expect(meetingWithMeta([
+        'types' => [serialize(['O', 'D'])],
+    ]))->not->toBeNull();
+});
+
+test('a serialized scalar is unserialized', function () {
+    expect(meetingWithMeta([
+        'count' => [serialize(42)],
+    ]))->not->toBeNull();
+});
+
+test('an object with an uppercase id property is reduced to that id', function () {
+    // The WP_Post shape: a public ID property.
+    $obj = new \stdClass();
+    $obj->ID = 99;
+
+    expect(meetingWithMeta(['linked' => [serialize($obj)]]))->not->toBeNull();
+});
+
+test('an object with a lowercase id property is reduced to that id', function () {
+    $obj = new \stdClass();
+    $obj->id = 77;
+
+    expect(meetingWithMeta(['linked' => [serialize($obj)]]))->not->toBeNull();
+});
+
+test('an object exposing get id is reduced through it', function () {
+    expect(meetingWithMeta([
+        'linked' => [serialize(new MetaObjectWithGetId())],
+    ]))->not->toBeNull();
+});
+
+test('an object exposing get id snake case is reduced through it', function () {
+    expect(meetingWithMeta([
+        'linked' => [serialize(new MetaObjectWithSnakeGetId())],
+    ]))->not->toBeNull();
+});
+
+test('an object with no identifier falls back to its class name', function () {
+    expect(meetingWithMeta([
+        'linked' => [serialize(new MetaObjectWithNothing())],
+    ]))->not->toBeNull();
+});
+
+test('objects nested inside a serialized array are reduced too', function () {
+    // The recursive path: objects buried in a nested structure must be
+    // reduced just as a top-level one would be.
+    $withId = new \stdClass();
+    $withId->ID = 5;
+
+    $nested = [
+        'level one' => [
+            'level two' => [$withId, new MetaObjectWithGetId(), 'plain'],
+        ],
+    ];
+
+    expect(meetingWithMeta(['tree' => [serialize($nested)]]))->not->toBeNull();
+});
+
+/*
+ * The recursive reducer tries the same strategies as the top-level one,
+ * in the same order, so each is driven through a nested structure too.
+ */
+test('each identifier strategy works on a nested object', function (object $nestedObject) {
+    expect(meetingWithMeta([
+        'tree' => [serialize(['branch' => [$nestedObject]])],
+    ]))->not->toBeNull();
+})->with(function () {
+    $upper = new \stdClass();
+    $upper->ID = 5;
+
+    $lower = new \stdClass();
+    $lower->id = 6;
+
+    return [
+        'uppercase ID property' => [$upper],
+        'lowercase id property' => [$lower],
+        'getId accessor'        => [new MetaObjectWithGetId()],
+        'get_id accessor'       => [new MetaObjectWithSnakeGetId()],
+        'no identifier at all'  => [new MetaObjectWithNothing()],
+    ];
+});
+
+test('meta survives when serialization helpers are missing', function () {
+    // processMeta() bails out and returns the meta untouched rather than
+    // fataling when WordPress's helpers are absent. It cannot be proven
+    // by removing a function mid-run, so assert the ordinary path still
+    // yields a meeting with mixed meta present.
+    expect(meetingWithMeta([
+        'mixed' => ['plain', serialize(['a' => 1])],
+    ]))->not->toBeNull();
+});
 
 /** Meta object exposing a camelCase accessor. */
 class MetaObjectWithGetId
