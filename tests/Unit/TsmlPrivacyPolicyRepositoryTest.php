@@ -4,245 +4,196 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\MockObject\MockObject;
-use function Brain\Monkey\Functions\expect;
+use Brain\Monkey\Functions;
 use function Brain\Monkey\Actions\expectDone;
 use TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicy;
 use TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicyFields;
 use TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicyRepository;
 use TsmlForUnity\Tests\Support\ActionExpectations;
-use TsmlForUnity\Tests\TestCase;
 use Unity\PrivacyPolicies\Interfaces\PrivacyPolicyFactory;
 use Unity\PrivacyPolicies\Interfaces\PrivacyPolicyRepository;
 
-/**
+/*
  * Tests for TsmlPrivacyPolicyRepository.
  */
-#[CoversClass(\TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicyRepository::class)]
-class TsmlPrivacyPolicyRepositoryTest extends TestCase
+
+covers(\TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicyRepository::class);
+
+uses(ActionExpectations::class);
+
+beforeEach(function () {
+    $this->factory = $this->createMock(PrivacyPolicyFactory::class);
+    $this->repository = new TsmlPrivacyPolicyRepository($this->factory);
+});
+
+function policy(int $id = 0, string $title = 'Policy'): TsmlPrivacyPolicy
 {
-    use ActionExpectations;
-
-    /** @var PrivacyPolicyFactory&MockObject */
-    private $factory;
-
-    private TsmlPrivacyPolicyRepository $repository;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->factory = $this->createMock(PrivacyPolicyFactory::class);
-        $this->repository = new TsmlPrivacyPolicyRepository($this->factory);
-    }
-
-    private function policy(int $id = 0, string $title = 'Policy'): TsmlPrivacyPolicy
-    {
-        return new TsmlPrivacyPolicy($id, $title, 'body', '1.0', true, '');
-    }
-
-    #[Test]
-    public function it_implements_the_repository_interface(): void
-    {
-        $this->assertInstanceOf(PrivacyPolicyRepository::class, $this->repository);
-    }
-
-    // ─── findById ───────────────────────────────────────────────────
-    #[Test]
-    public function find_by_id_returns_null_for_a_missing_post(): void
-    {
-        expect('get_post')->with(9)->andReturn(null);
-
-        $this->assertNull($this->repository->findById(9));
-    }
-
-    #[Test]
-    public function find_by_id_returns_null_for_the_wrong_post_type(): void
-    {
-        expect('get_post')->with(9)->andReturn((object) ['post_type' => 'page']);
-
-        $this->assertNull($this->repository->findById(9));
-    }
-
-    #[Test]
-    public function find_by_id_delegates_to_the_factory_for_a_matching_post(): void
-    {
-        expect('get_post')->with(5)->andReturn(
-            (object) ['post_type' => TsmlPrivacyPolicyFields::POST_TYPE]
-        );
-
-        $expected = $this->policy(5);
-        $this->factory->expects($this->once())
-            ->method('createFromSource')->with(5)->willReturn($expected);
-
-        $this->assertSame($expected, $this->repository->findById(5));
-    }
-
-    // ─── findActive / findAll / count ───────────────────────────────
-    #[Test]
-    public function find_active_returns_null_when_no_active_policy_exists(): void
-    {
-        expect('get_posts')->once()->andReturn([]);
-
-        $this->assertNull($this->repository->findActive());
-    }
-
-    #[Test]
-    public function find_active_reads_back_the_first_matching_policy(): void
-    {
-        expect('get_posts')->once()->andReturn([new \WP_Post(['ID' => 5])]);
-        expect('get_post')->with(5)->andReturn(
-            (object) ['post_type' => TsmlPrivacyPolicyFields::POST_TYPE]
-        );
-
-        $active = $this->policy(5);
-        $this->factory->method('createFromSource')->with(5)->willReturn($active);
-
-        $this->assertSame($active, $this->repository->findActive());
-    }
-
-    #[Test]
-    public function find_all_maps_posts_through_find_by_id(): void
-    {
-        expect('get_posts')->once()->andReturn([
-            new \WP_Post(['ID' => 1]),
-            new \WP_Post(['ID' => 2]),
-        ]);
-        expect('get_post')->andReturnUsing(
-            fn ($id) => (object) ['post_type' => TsmlPrivacyPolicyFields::POST_TYPE]
-        );
-
-        $a = $this->policy(1);
-        $b = $this->policy(2);
-        $this->factory->method('createFromSource')->willReturnMap([[1, $a], [2, $b]]);
-
-        $this->assertSame([$a, $b], $this->repository->findAll());
-    }
-
-    #[Test]
-    public function count_returns_the_number_of_ids(): void
-    {
-        expect('get_posts')->once()->andReturn([10, 11, 12]);
-
-        $this->assertSame(3, $this->repository->count());
-    }
-
-    #[Test]
-    public function count_is_zero_when_the_query_finds_nothing(): void
-    {
-        // Was "returns a non-array", stubbed as null. WordPress always hands
-        // back an array and wp-mocks types get_posts() that way, so the null
-        // this used to simulate was never reachable in production.
-        expect('get_posts')->once()->andReturn([]);
-
-        $this->assertSame(0, $this->repository->count());
-    }
-
-    // ─── save / create / update / delete ────────────────────────────
-    #[Test]
-    public function save_inserts_a_new_policy_and_fires_created(): void
-    {
-        expect('wp_insert_post')->once()->andReturn(77);
-        expect('update_field')->andReturn(true);
-        expect('get_post')->with(77)->andReturn(
-            (object) ['post_type' => TsmlPrivacyPolicyFields::POST_TYPE]
-        );
-
-        $created = $this->policy(77);
-        $this->factory->method('createFromSource')->with(77)->willReturn($created);
-
-        expectDone('unity/privacy_policy_created')->once()->with($created);
-
-        $this->assertTrue($this->repository->save($this->policy(0)));
-    }
-
-    #[Test]
-    public function save_returns_false_when_the_insert_fails(): void
-    {
-        $error = new \WP_Error('db_error', 'the write failed');
-        expect('wp_insert_post')->once()->andReturn($error);
-
-        $this->assertFalse($this->repository->save($this->policy(0)));
-    }
-
-    #[Test]
-    public function save_with_an_existing_id_delegates_to_update(): void
-    {
-        // update() path: no wp_insert_post, uses wp_update_post instead.
-        expect('get_post')->with(5)->andReturn(
-            (object) ['post_type' => TsmlPrivacyPolicyFields::POST_TYPE]
-        );
-        expect('wp_update_post')->once()->andReturn(5);
-        expect('update_field')->andReturn(true);
-
-        $persisted = $this->policy(5);
-        $this->factory->method('createFromSource')->with(5)->willReturn($persisted);
-
-        // Both before/after snapshots resolve to the same re-read instance.
-        expectDone('unity/privacy_policy_changing')->once()->with($persisted, $persisted);
-
-        $this->assertTrue($this->repository->save($this->policy(5)));
-    }
-
-    #[Test]
-    public function create_inserts_a_titled_post_and_returns_its_id(): void
-    {
-        expect('wp_insert_post')->once()->andReturn(88);
-        expect('get_post')->with(88)->andReturn(
-            (object) ['post_type' => TsmlPrivacyPolicyFields::POST_TYPE]
-        );
-        $created = $this->policy(88);
-        $this->factory->method('createFromSource')->with(88)->willReturn($created);
-
-        expectDone('unity/privacy_policy_created')->once()->with($created);
-
-        $this->assertSame(88, $this->repository->create('New Policy'));
-    }
-
-    #[Test]
-    public function create_returns_zero_when_the_insert_fails(): void
-    {
-        $error = new \WP_Error('db_error', 'the write failed');
-        expect('wp_insert_post')->once()->andReturn($error);
-
-        $this->assertSame(0, $this->repository->create('New Policy'));
-    }
-
-    #[Test]
-    public function update_returns_false_for_a_zero_id(): void
-    {
-        $this->assertFalse($this->repository->update($this->policy(0)));
-    }
-
-    #[Test]
-    public function update_returns_false_when_wp_update_post_fails(): void
-    {
-        expect('get_post')->with(5)->andReturn(
-            (object) ['post_type' => TsmlPrivacyPolicyFields::POST_TYPE]
-        );
-        $this->factory->method('createFromSource')->with(5)->willReturn($this->policy(5));
-
-        $error = new \WP_Error('db_error', 'the write failed');
-        expect('wp_update_post')->once()->andReturn($error);
-
-        $this->assertFalse($this->repository->update($this->policy(5)));
-    }
-
-    #[Test]
-    public function delete_force_deletes_the_post(): void
-    {
-        expect('wp_delete_post')->once()->with(5, true)->andReturn((object) ['ID' => 5]);
-
-        $this->assertTrue($this->repository->delete(5));
-    }
-
-    #[Test]
-    public function delete_returns_false_when_the_post_cannot_be_removed(): void
-    {
-        expect('wp_delete_post')->once()->with(5, true)->andReturn(false);
-
-        $this->assertFalse($this->repository->delete(5));
-    }
+    return new TsmlPrivacyPolicy($id, $title, 'body', '1.0', true, '');
 }
+
+it('implements the repository interface', function () {
+    expect($this->repository)->toBeInstanceOf(PrivacyPolicyRepository::class);
+});
+
+// ─── findById ───────────────────────────────────────────────────
+test('find by id returns null for a missing post', function () {
+    Functions\expect('get_post')->with(9)->andReturn(null);
+
+    expect($this->repository->findById(9))->toBeNull();
+});
+
+test('find by id returns null for the wrong post type', function () {
+    Functions\expect('get_post')->with(9)->andReturn((object) ['post_type' => 'page']);
+
+    expect($this->repository->findById(9))->toBeNull();
+});
+
+test('find by id delegates to the factory for a matching post', function () {
+    Functions\expect('get_post')->with(5)->andReturn(
+        (object) ['post_type' => TsmlPrivacyPolicyFields::POST_TYPE]
+    );
+
+    $expected = policy(5);
+    $this->factory->expects($this->once())
+        ->method('createFromSource')->with(5)->willReturn($expected);
+
+    expect($this->repository->findById(5))->toBe($expected);
+});
+
+// ─── findActive / findAll / count ───────────────────────────────
+test('find active returns null when no active policy exists', function () {
+    Functions\expect('get_posts')->once()->andReturn([]);
+
+    expect($this->repository->findActive())->toBeNull();
+});
+
+test('find active reads back the first matching policy', function () {
+    Functions\expect('get_posts')->once()->andReturn([new \WP_Post(['ID' => 5])]);
+    Functions\expect('get_post')->with(5)->andReturn(
+        (object) ['post_type' => TsmlPrivacyPolicyFields::POST_TYPE]
+    );
+
+    $active = policy(5);
+    $this->factory->method('createFromSource')->with(5)->willReturn($active);
+
+    expect($this->repository->findActive())->toBe($active);
+});
+
+test('find all maps posts through find by id', function () {
+    Functions\expect('get_posts')->once()->andReturn([
+        new \WP_Post(['ID' => 1]),
+        new \WP_Post(['ID' => 2]),
+    ]);
+    Functions\expect('get_post')->andReturnUsing(
+        fn ($id) => (object) ['post_type' => TsmlPrivacyPolicyFields::POST_TYPE]
+    );
+
+    $a = policy(1);
+    $b = policy(2);
+    $this->factory->method('createFromSource')->willReturnMap([[1, $a], [2, $b]]);
+
+    expect($this->repository->findAll())->toBe([$a, $b]);
+});
+
+test('count returns the number of ids', function () {
+    Functions\expect('get_posts')->once()->andReturn([10, 11, 12]);
+
+    expect($this->repository->count())->toBe(3);
+});
+
+test('count is zero when the query finds nothing', function () {
+    // Was "returns a non-array", stubbed as null. WordPress always hands
+    // back an array and wp-mocks types get_posts() that way, so the null
+    // this used to simulate was never reachable in production.
+    Functions\expect('get_posts')->once()->andReturn([]);
+
+    expect($this->repository->count())->toBe(0);
+});
+
+// ─── save / create / update / delete ────────────────────────────
+test('save inserts a new policy and fires created', function () {
+    Functions\expect('wp_insert_post')->once()->andReturn(77);
+    Functions\expect('update_field')->andReturn(true);
+    Functions\expect('get_post')->with(77)->andReturn(
+        (object) ['post_type' => TsmlPrivacyPolicyFields::POST_TYPE]
+    );
+
+    $created = policy(77);
+    $this->factory->method('createFromSource')->with(77)->willReturn($created);
+
+    expectDone('unity/privacy_policy_created')->once()->with($created);
+
+    expect($this->repository->save(policy(0)))->toBeTrue();
+});
+
+test('save returns false when the insert fails', function () {
+    $error = new \WP_Error('db_error', 'the write failed');
+    Functions\expect('wp_insert_post')->once()->andReturn($error);
+
+    expect($this->repository->save(policy(0)))->toBeFalse();
+});
+
+test('save with an existing id delegates to update', function () {
+    // update() path: no wp_insert_post, uses wp_update_post instead.
+    Functions\expect('get_post')->with(5)->andReturn(
+        (object) ['post_type' => TsmlPrivacyPolicyFields::POST_TYPE]
+    );
+    Functions\expect('wp_update_post')->once()->andReturn(5);
+    Functions\expect('update_field')->andReturn(true);
+
+    $persisted = policy(5);
+    $this->factory->method('createFromSource')->with(5)->willReturn($persisted);
+
+    // Both before/after snapshots resolve to the same re-read instance.
+    expectDone('unity/privacy_policy_changing')->once()->with($persisted, $persisted);
+
+    expect($this->repository->save(policy(5)))->toBeTrue();
+});
+
+test('create inserts a titled post and returns its id', function () {
+    Functions\expect('wp_insert_post')->once()->andReturn(88);
+    Functions\expect('get_post')->with(88)->andReturn(
+        (object) ['post_type' => TsmlPrivacyPolicyFields::POST_TYPE]
+    );
+    $created = policy(88);
+    $this->factory->method('createFromSource')->with(88)->willReturn($created);
+
+    expectDone('unity/privacy_policy_created')->once()->with($created);
+
+    expect($this->repository->create('New Policy'))->toBe(88);
+});
+
+test('create returns zero when the insert fails', function () {
+    $error = new \WP_Error('db_error', 'the write failed');
+    Functions\expect('wp_insert_post')->once()->andReturn($error);
+
+    expect($this->repository->create('New Policy'))->toBe(0);
+});
+
+test('update returns false for a zero id', function () {
+    expect($this->repository->update(policy(0)))->toBeFalse();
+});
+
+test('update returns false when wp update post fails', function () {
+    Functions\expect('get_post')->with(5)->andReturn(
+        (object) ['post_type' => TsmlPrivacyPolicyFields::POST_TYPE]
+    );
+    $this->factory->method('createFromSource')->with(5)->willReturn(policy(5));
+
+    $error = new \WP_Error('db_error', 'the write failed');
+    Functions\expect('wp_update_post')->once()->andReturn($error);
+
+    expect($this->repository->update(policy(5)))->toBeFalse();
+});
+
+test('delete force deletes the post', function () {
+    Functions\expect('wp_delete_post')->once()->with(5, true)->andReturn((object) ['ID' => 5]);
+
+    expect($this->repository->delete(5))->toBeTrue();
+});
+
+test('delete returns false when the post cannot be removed', function () {
+    Functions\expect('wp_delete_post')->once()->with(5, true)->andReturn(false);
+
+    expect($this->repository->delete(5))->toBeFalse();
+});

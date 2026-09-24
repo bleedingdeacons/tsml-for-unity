@@ -4,153 +4,129 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendance;
 use Unity\IntergroupMeetings\Interfaces\IntergroupMeetingGroupAttendance;
 
-/**
+/*
  * Tests for TsmlIntergroupMeetingGroupAttendance entity
  */
-#[CoversClass(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendance::class)]
-class TsmlIntergroupMeetingGroupAttendanceTest extends TestCase
-{
-    #[Test]
-    public function it_implements_intergroup_meeting_attendance_interface(): void
-    {
-        $attendance = new TsmlIntergroupMeetingGroupAttendance();
 
-        $this->assertInstanceOf(IntergroupMeetingGroupAttendance::class, $attendance);
-    }
+covers(\TsmlForUnity\IntergroupMeetings\TsmlIntergroupMeetingGroupAttendance::class);
 
-    #[Test]
-    public function it_can_be_instantiated_with_default_values(): void
-    {
-        $attendance = new TsmlIntergroupMeetingGroupAttendance();
+it('implements intergroup meeting attendance interface', function () {
+    $attendance = new TsmlIntergroupMeetingGroupAttendance();
 
-        $this->assertEquals(0, $attendance->getId());
-        $this->assertEquals(0, $attendance->getIntergroupMeetingId());
-        $this->assertEquals('', $attendance->getMeetingLabel());
-        $this->assertEquals(0, $attendance->getMemberId());
-        $this->assertEquals('', $attendance->getMeetingGroup());
-        $this->assertEquals('', $attendance->getGsrName());
-        $this->assertFalse($attendance->isGsrProxy());
-        $this->assertEquals('', $attendance->getGsrProxyName());
-    }
+    expect($attendance)->toBeInstanceOf(IntergroupMeetingGroupAttendance::class);
+});
 
-    #[Test]
-    public function it_can_be_instantiated_with_all_values(): void
-    {
-        $attendance = new TsmlIntergroupMeetingGroupAttendance(
-            id: 42,
-            intergroupMeetingId: 100,
-            meetingLabel: 'Monthly Meeting — January 15, 2025',
-            memberId: 55,
-            meetingGroup: 'Saturday Morning Group',
-            gsrName: 'John D.',
-            gsrProxy: true,
-            gsrProxyName: 'Jane S.'
-        );
+it('can be instantiated with default values', function () {
+    $attendance = new TsmlIntergroupMeetingGroupAttendance();
 
-        $this->assertEquals(42, $attendance->getId());
-        $this->assertEquals(100, $attendance->getIntergroupMeetingId());
-        $this->assertEquals('Monthly Meeting — January 15, 2025', $attendance->getMeetingLabel());
-        $this->assertEquals(55, $attendance->getMemberId());
-        $this->assertEquals('Saturday Morning Group', $attendance->getMeetingGroup());
-        $this->assertEquals('John D.', $attendance->getGsrName());
-        $this->assertTrue($attendance->isGsrProxy());
-        $this->assertEquals('Jane S.', $attendance->getGsrProxyName());
-    }
+    expect($attendance->getId())->toEqual(0)
+        ->and($attendance->getIntergroupMeetingId())->toEqual(0)
+        ->and($attendance->getMeetingLabel())->toEqual('')
+        ->and($attendance->getMemberId())->toEqual(0)
+        ->and($attendance->getMeetingGroup())->toEqual('')
+        ->and($attendance->getGsrName())->toEqual('')
+        ->and($attendance->isGsrProxy())->toBeFalse()
+        ->and($attendance->getGsrProxyName())->toEqual('');
+});
 
-    #[Test]
-    public function proxy_flag_defaults_to_false(): void
-    {
-        $attendance = new TsmlIntergroupMeetingGroupAttendance(
-            id: 1,
-            intergroupMeetingId: 10,
-            memberId: 20,
-            meetingGroup: 'Some Group',
-            gsrName: 'Bob R.'
-        );
+it('can be instantiated with all values', function () {
+    $attendance = new TsmlIntergroupMeetingGroupAttendance(
+        id: 42,
+        intergroupMeetingId: 100,
+        meetingLabel: 'Monthly Meeting — January 15, 2025',
+        memberId: 55,
+        meetingGroup: 'Saturday Morning Group',
+        gsrName: 'John D.',
+        gsrProxy: true,
+        gsrProxyName: 'Jane S.'
+    );
 
-        $this->assertFalse($attendance->isGsrProxy());
-        $this->assertEquals('', $attendance->getGsrProxyName());
-    }
+    expect($attendance->getId())->toEqual(42)
+        ->and($attendance->getIntergroupMeetingId())->toEqual(100)
+        ->and($attendance->getMeetingLabel())->toEqual('Monthly Meeting — January 15, 2025')
+        ->and($attendance->getMemberId())->toEqual(55)
+        ->and($attendance->getMeetingGroup())->toEqual('Saturday Morning Group')
+        ->and($attendance->getGsrName())->toEqual('John D.')
+        ->and($attendance->isGsrProxy())->toBeTrue()
+        ->and($attendance->getGsrProxyName())->toEqual('Jane S.');
+});
 
-    #[Test]
-    public function proxy_name_is_independent_of_proxy_flag(): void
-    {
-        $attendance = new TsmlIntergroupMeetingGroupAttendance(
-            id: 1,
-            gsrProxy: false,
-            gsrProxyName: 'Orphaned Name'
-        );
+test('proxy flag defaults to false', function () {
+    $attendance = new TsmlIntergroupMeetingGroupAttendance(
+        id: 1,
+        intergroupMeetingId: 10,
+        memberId: 20,
+        meetingGroup: 'Some Group',
+        gsrName: 'Bob R.'
+    );
 
-        $this->assertFalse($attendance->isGsrProxy());
-        $this->assertEquals('Orphaned Name', $attendance->getGsrProxyName());
-    }
+    expect($attendance->isGsrProxy())->toBeFalse()
+        ->and($attendance->getGsrProxyName())->toEqual('');
+});
 
-    #[Test]
-    public function it_stores_meeting_group_as_plain_text(): void
-    {
-        $attendance = new TsmlIntergroupMeetingGroupAttendance(
-            id: 1,
-            meetingGroup: 'Tuesday Night Big Book Study'
-        );
+test('proxy name is independent of proxy flag', function () {
+    $attendance = new TsmlIntergroupMeetingGroupAttendance(
+        id: 1,
+        gsrProxy: false,
+        gsrProxyName: 'Orphaned Name'
+    );
 
-        $this->assertIsString($attendance->getMeetingGroup());
-        $this->assertEquals('Tuesday Night Big Book Study', $attendance->getMeetingGroup());
-    }
+    expect($attendance->isGsrProxy())->toBeFalse()
+        ->and($attendance->getGsrProxyName())->toEqual('Orphaned Name');
+});
 
-    #[Test]
-    public function it_stores_gsr_name_as_plain_text(): void
-    {
-        $attendance = new TsmlIntergroupMeetingGroupAttendance(
-            id: 1,
-            gsrName: 'Mary K.'
-        );
+it('stores meeting group as plain text', function () {
+    $attendance = new TsmlIntergroupMeetingGroupAttendance(
+        id: 1,
+        meetingGroup: 'Tuesday Night Big Book Study'
+    );
 
-        $this->assertIsString($attendance->getGsrName());
-        $this->assertEquals('Mary K.', $attendance->getGsrName());
-    }
+    expect($attendance->getMeetingGroup())->toBeString()
+        ->and($attendance->getMeetingGroup())->toEqual('Tuesday Night Big Book Study');
+});
 
-    #[Test]
-    public function it_handles_empty_strings_for_text_fields(): void
-    {
-        $attendance = new TsmlIntergroupMeetingGroupAttendance(
-            id: 1,
-            meetingGroup: '',
-            gsrName: '',
-            gsrProxyName: ''
-        );
+it('stores gsr name as plain text', function () {
+    $attendance = new TsmlIntergroupMeetingGroupAttendance(
+        id: 1,
+        gsrName: 'Mary K.'
+    );
 
-        $this->assertEmpty($attendance->getMeetingGroup());
-        $this->assertEmpty($attendance->getGsrName());
-        $this->assertEmpty($attendance->getGsrProxyName());
-    }
+    expect($attendance->getGsrName())->toBeString()
+        ->and($attendance->getGsrName())->toEqual('Mary K.');
+});
 
-    #[Test]
-    public function it_stores_member_id_as_integer(): void
-    {
-        $attendance = new TsmlIntergroupMeetingGroupAttendance(
-            id: 1,
-            memberId: 55
-        );
+it('handles empty strings for text fields', function () {
+    $attendance = new TsmlIntergroupMeetingGroupAttendance(
+        id: 1,
+        meetingGroup: '',
+        gsrName: '',
+        gsrProxyName: ''
+    );
 
-        $this->assertIsInt($attendance->getMemberId());
-        $this->assertEquals(55, $attendance->getMemberId());
-    }
+    expect($attendance->getMeetingGroup())->toBeEmpty()
+        ->and($attendance->getGsrName())->toBeEmpty()
+        ->and($attendance->getGsrProxyName())->toBeEmpty();
+});
 
-    #[Test]
-    public function it_stores_intergroup_meeting_id_as_integer(): void
-    {
-        $attendance = new TsmlIntergroupMeetingGroupAttendance(
-            id: 1,
-            intergroupMeetingId: 999
-        );
+it('stores member id as integer', function () {
+    $attendance = new TsmlIntergroupMeetingGroupAttendance(
+        id: 1,
+        memberId: 55
+    );
 
-        $this->assertIsInt($attendance->getIntergroupMeetingId());
-        $this->assertEquals(999, $attendance->getIntergroupMeetingId());
-    }
-}
+    expect($attendance->getMemberId())->toBeInt()
+        ->and($attendance->getMemberId())->toEqual(55);
+});
+
+it('stores intergroup meeting id as integer', function () {
+    $attendance = new TsmlIntergroupMeetingGroupAttendance(
+        id: 1,
+        intergroupMeetingId: 999
+    );
+
+    expect($attendance->getIntergroupMeetingId())->toBeInt()
+        ->and($attendance->getIntergroupMeetingId())->toEqual(999);
+});

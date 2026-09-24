@@ -4,165 +4,141 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Members\TsmlMember;
 use TsmlForUnity\Positions\TsmlPosition;
 use TsmlForUnity\Positions\TsmlPositionView;
 use TsmlForUnity\Positions\TsmlPositionViewCollection;
 
-/**
+/*
  * Tests for TsmlPositionViewCollection
  */
-#[CoversClass(\TsmlForUnity\Positions\TsmlPositionViewCollection::class)]
-class TsmlPositionViewCollectionTest extends TestCase
+
+covers(\TsmlForUnity\Positions\TsmlPositionViewCollection::class);
+
+test('an empty collection counts zero', function () {
+    $collection = new TsmlPositionViewCollection();
+
+    expect($collection->count())->toBe(0)
+        ->and($collection->getAll())->toBe([]);
+});
+
+it('separates filled from vacant positions', function () {
+    $filled = view('Chair', 'chair@example.com', member: collectionMember('John D.'));
+    $vacant = view('Treasurer', 'treasurer@example.com');
+
+    $collection = new TsmlPositionViewCollection([$filled, $vacant]);
+
+    expect(array_values($collection->getFilledPositions()->getAll()))->toBe([$filled])
+        ->and(array_values($collection->getVacantPositions()->getAll()))->toBe([$vacant]);
+});
+
+test('rotating soon selects positions within the window', function () {
+    $soon = view('Chair', 'c@example.com', member: memberRotatingIn(10));
+    $far  = view('Sec', 's@example.com', member: memberRotatingIn(400));
+    $overdue = view('Treas', 't@example.com', member: memberRotatingIn(-5));
+
+    $collection = new TsmlPositionViewCollection([$soon, $far, $overdue]);
+
+    $rotatingSoon = array_values($collection->getPositionsRotatingSoon(30)->getAll());
+    expect($rotatingSoon)->toBe([$soon]);
+});
+
+test('overdue selects positions past their rotation date', function () {
+    $overdue = view('Treas', 't@example.com', member: memberRotatingIn(-5));
+    $soon    = view('Chair', 'c@example.com', member: memberRotatingIn(10));
+
+    $collection = new TsmlPositionViewCollection([$overdue, $soon]);
+
+    expect(array_values($collection->getOverduePositions()->getAll()))->toBe([$overdue]);
+});
+
+test('sort by days until rotation puts nearest first and nulls last', function () {
+    $far     = view('Far', 'f@example.com', member: memberRotatingIn(400));
+    $soon    = view('Soon', 's@example.com', member: memberRotatingIn(10));
+    $noDate  = view('None', 'n@example.com', member: collectionMember('No Date'));
+
+    $collection = new TsmlPositionViewCollection([$far, $noDate, $soon]);
+
+    $sorted = $collection->sortByDaysUntilRotation()->getAll();
+
+    expect($sorted)->toBe([$soon, $far, $noDate]);
+});
+
+test('sort by days descending reverses the order', function () {
+    $far  = view('Far', 'f@example.com', member: memberRotatingIn(400));
+    $soon = view('Soon', 's@example.com', member: memberRotatingIn(10));
+
+    $collection = new TsmlPositionViewCollection([$soon, $far]);
+
+    expect($collection->sortByDaysUntilRotation(false)->getAll())->toBe([$far, $soon]);
+});
+
+test('sort by name orders by position long name', function () {
+    $zebra = view('Zebra', 'z@example.com', longName: 'Zebra');
+    $alpha = view('Alpha', 'a@example.com', longName: 'Alpha');
+
+    $collection = new TsmlPositionViewCollection([$zebra, $alpha]);
+
+    expect($collection->sortByName()->getAll())->toBe([$alpha, $zebra])
+        ->and($collection->sortByName(false)->getAll())->toBe([$zebra, $alpha]);
+});
+
+test('sort by title orders by short description', function () {
+    $b = view('B title', 'b@example.com');
+    $a = view('A title', 'a@example.com');
+
+    $collection = new TsmlPositionViewCollection([$b, $a]);
+
+    expect($collection->sortByTitle()->getAll())->toBe([$a, $b]);
+});
+
+test('sort by email orders by position email', function () {
+    $b = view('Chair', 'b@example.com');
+    $a = view('Sec', 'a@example.com');
+
+    $collection = new TsmlPositionViewCollection([$b, $a]);
+
+    expect($collection->sortByEmail()->getAll())->toBe([$a, $b])
+        ->and($collection->sortByEmail(false)->getAll())->toBe([$b, $a]);
+});
+
+test('filter applies an arbitrary predicate', function () {
+    $filled = view('Chair', 'c@example.com', member: collectionMember('John'));
+    $vacant = view('Sec', 's@example.com');
+
+    $collection = new TsmlPositionViewCollection([$filled, $vacant]);
+
+    $result = $collection->filter(fn ($view) => !$view->isVacant());
+
+    expect($result->count())->toBe(1)
+        ->and(array_values($result->getAll()))->toBe([$filled]);
+});
+
+function view(
+    string $title,
+    string $email,
+    ?TsmlMember $member = null,
+    string $longName = ''
+): TsmlPositionView {
+    $position = new TsmlPosition(
+        id: 1,
+        email: $email,
+        longName: $longName !== '' ? $longName : $title,
+        shortDescription: $title,
+        summary: 'summary',
+    );
+
+    return new TsmlPositionView($position, $member);
+}
+
+function collectionMember(string $name): TsmlMember
 {
-    #[Test]
-    public function an_empty_collection_counts_zero(): void
-    {
-        $collection = new TsmlPositionViewCollection();
+    return new TsmlMember(id: 1, anonymousName: $name);
+}
 
-        $this->assertSame(0, $collection->count());
-        $this->assertSame([], $collection->getAll());
-    }
+function memberRotatingIn(int $days): TsmlMember
+{
+    $date = (new \DateTime('today'))->modify(sprintf('%+d days', $days))->format('Y-m-d');
 
-    #[Test]
-    public function it_separates_filled_from_vacant_positions(): void
-    {
-        $filled = $this->view('Chair', 'chair@example.com', member: $this->member('John D.'));
-        $vacant = $this->view('Treasurer', 'treasurer@example.com');
-
-        $collection = new TsmlPositionViewCollection([$filled, $vacant]);
-
-        $this->assertSame([$filled], array_values($collection->getFilledPositions()->getAll()));
-        $this->assertSame([$vacant], array_values($collection->getVacantPositions()->getAll()));
-    }
-
-    #[Test]
-    public function rotating_soon_selects_positions_within_the_window(): void
-    {
-        $soon = $this->view('Chair', 'c@example.com', member: $this->memberRotatingIn(10));
-        $far  = $this->view('Sec', 's@example.com', member: $this->memberRotatingIn(400));
-        $overdue = $this->view('Treas', 't@example.com', member: $this->memberRotatingIn(-5));
-
-        $collection = new TsmlPositionViewCollection([$soon, $far, $overdue]);
-
-        $rotatingSoon = array_values($collection->getPositionsRotatingSoon(30)->getAll());
-        $this->assertSame([$soon], $rotatingSoon);
-    }
-
-    #[Test]
-    public function overdue_selects_positions_past_their_rotation_date(): void
-    {
-        $overdue = $this->view('Treas', 't@example.com', member: $this->memberRotatingIn(-5));
-        $soon    = $this->view('Chair', 'c@example.com', member: $this->memberRotatingIn(10));
-
-        $collection = new TsmlPositionViewCollection([$overdue, $soon]);
-
-        $this->assertSame([$overdue], array_values($collection->getOverduePositions()->getAll()));
-    }
-
-    #[Test]
-    public function sort_by_days_until_rotation_puts_nearest_first_and_nulls_last(): void
-    {
-        $far     = $this->view('Far', 'f@example.com', member: $this->memberRotatingIn(400));
-        $soon    = $this->view('Soon', 's@example.com', member: $this->memberRotatingIn(10));
-        $noDate  = $this->view('None', 'n@example.com', member: $this->member('No Date'));
-
-        $collection = new TsmlPositionViewCollection([$far, $noDate, $soon]);
-
-        $sorted = $collection->sortByDaysUntilRotation()->getAll();
-
-        $this->assertSame([$soon, $far, $noDate], $sorted);
-    }
-
-    #[Test]
-    public function sort_by_days_descending_reverses_the_order(): void
-    {
-        $far  = $this->view('Far', 'f@example.com', member: $this->memberRotatingIn(400));
-        $soon = $this->view('Soon', 's@example.com', member: $this->memberRotatingIn(10));
-
-        $collection = new TsmlPositionViewCollection([$soon, $far]);
-
-        $this->assertSame([$far, $soon], $collection->sortByDaysUntilRotation(false)->getAll());
-    }
-
-    #[Test]
-    public function sort_by_name_orders_by_position_long_name(): void
-    {
-        $zebra = $this->view('Zebra', 'z@example.com', longName: 'Zebra');
-        $alpha = $this->view('Alpha', 'a@example.com', longName: 'Alpha');
-
-        $collection = new TsmlPositionViewCollection([$zebra, $alpha]);
-
-        $this->assertSame([$alpha, $zebra], $collection->sortByName()->getAll());
-        $this->assertSame([$zebra, $alpha], $collection->sortByName(false)->getAll());
-    }
-
-    #[Test]
-    public function sort_by_title_orders_by_short_description(): void
-    {
-        $b = $this->view('B title', 'b@example.com');
-        $a = $this->view('A title', 'a@example.com');
-
-        $collection = new TsmlPositionViewCollection([$b, $a]);
-
-        $this->assertSame([$a, $b], $collection->sortByTitle()->getAll());
-    }
-
-    #[Test]
-    public function sort_by_email_orders_by_position_email(): void
-    {
-        $b = $this->view('Chair', 'b@example.com');
-        $a = $this->view('Sec', 'a@example.com');
-
-        $collection = new TsmlPositionViewCollection([$b, $a]);
-
-        $this->assertSame([$a, $b], $collection->sortByEmail()->getAll());
-        $this->assertSame([$b, $a], $collection->sortByEmail(false)->getAll());
-    }
-
-    #[Test]
-    public function filter_applies_an_arbitrary_predicate(): void
-    {
-        $filled = $this->view('Chair', 'c@example.com', member: $this->member('John'));
-        $vacant = $this->view('Sec', 's@example.com');
-
-        $collection = new TsmlPositionViewCollection([$filled, $vacant]);
-
-        $result = $collection->filter(fn ($view) => !$view->isVacant());
-
-        $this->assertSame(1, $result->count());
-        $this->assertSame([$filled], array_values($result->getAll()));
-    }
-
-    private function view(
-        string $title,
-        string $email,
-        ?TsmlMember $member = null,
-        string $longName = ''
-    ): TsmlPositionView {
-        $position = new TsmlPosition(
-            id: 1,
-            email: $email,
-            longName: $longName !== '' ? $longName : $title,
-            shortDescription: $title,
-            summary: 'summary',
-        );
-
-        return new TsmlPositionView($position, $member);
-    }
-
-    private function member(string $name): TsmlMember
-    {
-        return new TsmlMember(id: 1, anonymousName: $name);
-    }
-
-    private function memberRotatingIn(int $days): TsmlMember
-    {
-        $date = (new \DateTime('today'))->modify(sprintf('%+d days', $days))->format('Y-m-d');
-
-        return new TsmlMember(id: 1, intergroupPositionRotation: $date);
-    }
+    return new TsmlMember(id: 1, intergroupPositionRotation: $date);
 }

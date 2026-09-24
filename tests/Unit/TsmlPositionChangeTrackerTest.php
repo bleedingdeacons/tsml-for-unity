@@ -4,20 +4,15 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\MockObject\MockObject;
-use function Brain\Monkey\Functions\expect;
+use Brain\Monkey\Functions;
 use function Brain\Monkey\Actions\expectDone;
 use TsmlForUnity\Positions\TsmlPosition;
 use TsmlForUnity\Positions\TsmlPositionChangeTracker;
 use TsmlForUnity\Positions\TsmlPositionFields;
 use TsmlForUnity\Tests\Support\ActionExpectations;
-use TsmlForUnity\Tests\TestCase;
 use Unity\Positions\Interfaces\PositionRepository;
 
-/**
+/*
  * Tests for TsmlPositionChangeTracker.
  *
  * Mirrors the member change tracker: captureOriginalPosition snapshots at
@@ -25,176 +20,141 @@ use Unity\Positions\Interfaces\PositionRepository;
  * pin the routing between unity/position_changing (a real change) and the
  * quiet path (no change), plus the guards that make both early-return.
  */
-#[CoversClass(\TsmlForUnity\Positions\TsmlPositionChangeTracker::class)]
-class TsmlPositionChangeTrackerTest extends TestCase
+
+covers(\TsmlForUnity\Positions\TsmlPositionChangeTracker::class);
+
+uses(ActionExpectations::class);
+
+beforeEach(function () {
+    $this->repository = $this->createMock(PositionRepository::class);
+    $this->tracker = new TsmlPositionChangeTracker($this->repository);
+});
+
+afterEach(function () {
+    $reflection = new \ReflectionClass(TsmlPositionChangeTracker::class);
+    $reflection->getProperty('originalPosition')->setValue(null, null);
+});
+
+function stubPositionPostTypeGuard(int $postId): void
 {
-    use ActionExpectations;
-
-    /** @var PositionRepository&MockObject */
-    private $repository;
-
-    private TsmlPositionChangeTracker $tracker;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-
-        $this->repository = $this->createMock(PositionRepository::class);
-        $this->tracker = new TsmlPositionChangeTracker($this->repository);
-    }
-
-    protected function tearDown(): void
-    {
-
-        $reflection = new \ReflectionClass(TsmlPositionChangeTracker::class);
-        $reflection->getProperty('originalPosition')->setValue(null, null);
-
-        parent::tearDown();
-    }
-
-    private function stubPostTypeGuard(int $postId): void
-    {
-        expect('get_post_type')
-            ->with($postId)
-            ->andReturn(TsmlPositionFields::POST_TYPE);
-    }
-
-    private function stubTitleSyncIsNoop(int $postId, string $existingTitle): void
-    {
-        expect('get_post')
-            ->with($postId)
-            ->andReturn((object) ['ID' => $postId, 'post_title' => $existingTitle]);
-    }
-
-    private function position(string $email = 'chair@example.com'): TsmlPosition
-    {
-        return new TsmlPosition(
-            id: 42,
-            minimumSobriety: 6,
-            termYears: 1,
-            email: $email,
-            longName: 'Chair',
-            shortDescription: 'Chairs',
-            summary: 'Runs intergroup',
-        );
-    }
-
-    #[Test]
-    public function editing_a_field_fires_position_changing(): void
-    {
-        $postId = 42;
-
-        $original = $this->position('old@example.com');
-        $updated  = $this->position('new@example.com');
-
-        $this->stubPostTypeGuard($postId);
-        // post_title already matches the encoded long name, so the title
-        // sync does not call wp_update_post.
-        $this->stubTitleSyncIsNoop($postId, 'Chair');
-
-        $this->repository->expects($this->exactly(2))
-            ->method('findById')
-            ->with($postId)
-            ->willReturnOnConsecutiveCalls($original, $updated);
-
-        expectDone('unity/position_before_save')->once()->with($postId, $original);
-        expectDone('unity/position_changing')->once()->with($updated, $original);
-        expectDone('unity/position_changed')->once()->with($postId, $updated, $original);
-
-        $this->tracker->captureOriginalPosition($postId);
-        $this->tracker->checkForChanges($postId);
-    }
-
-    #[Test]
-    public function saving_with_no_field_changes_stays_quiet(): void
-    {
-        $postId = 42;
-
-        $original = $this->position();
-        $updated  = $this->position();
-
-        $this->stubPostTypeGuard($postId);
-
-        $this->repository->expects($this->exactly(2))
-            ->method('findById')
-            ->with($postId)
-            ->willReturnOnConsecutiveCalls($original, $updated);
-
-        // Only the catch-all "changed" event fires; "changing" stays silent.
-        expectDone('unity/position_changed')->once()->with($postId, $updated, $original);
-        $this->expectActionNotFired('unity/position_changing', $updated, $original);
-
-        $this->tracker->captureOriginalPosition($postId);
-        $this->tracker->checkForChanges($postId);
-    }
-
-    #[Test]
-    public function capture_ignores_a_non_position_post_type(): void
-    {
-        $postId = 99;
-        expect('get_post_type')->with($postId)->andReturn('page');
-
-        // A wrong post type must not reach the repository.
-        $this->repository->expects($this->never())->method('findById');
-
-        $this->tracker->captureOriginalPosition($postId);
-
-        $this->assertTrue(true);
-    }
-
-    #[Test]
-    public function check_for_changes_returns_early_without_a_captured_original(): void
-    {
-        $postId = 42;
-        $this->stubPostTypeGuard($postId);
-
-        // No capture happened, so findById must not be called by check.
-        $this->repository->expects($this->never())->method('findById');
-
-        $this->tracker->checkForChanges($postId);
-
-        $this->assertTrue(true);
-    }
-
-    #[DataProvider('changedFieldProvider')]
-    #[Test]
-    public function each_tracked_field_triggers_a_change(TsmlPosition $original, TsmlPosition $updated): void
-    {
-        $postId = 42;
-
-        $this->stubPostTypeGuard($postId);
-        $this->stubTitleSyncIsNoop($postId, 'Chair');
-
-        $this->repository->expects($this->exactly(2))
-            ->method('findById')
-            ->with($postId)
-            ->willReturnOnConsecutiveCalls($original, $updated);
-
-        expectDone('unity/position_changing')->once()->with($updated, $original);
-
-        $this->tracker->captureOriginalPosition($postId);
-        $this->tracker->checkForChanges($postId);
-    }
-
-    /**
-     * @return array<string, array{TsmlPosition, TsmlPosition}>
-     */
-    public static function changedFieldProvider(): array
-    {
-        $base = fn (array $o = []) => new TsmlPosition(...array_merge([
-            'id' => 42, 'minimumSobriety' => 6, 'termYears' => 1,
-            'email' => 'chair@example.com', 'longName' => 'Chair',
-            'shortDescription' => 'Chairs', 'summary' => 'Runs',
-            'link' => 'https://example.com/c',
-        ], $o));
-
-        return [
-            'sobriety'    => [$base(), $base(['minimumSobriety' => 12])],
-            'term'        => [$base(), $base(['termYears' => 2])],
-            'short desc'  => [$base(), $base(['shortDescription' => 'Different'])],
-            'summary'     => [$base(), $base(['summary' => 'Different'])],
-            'link'        => [$base(), $base(['link' => 'https://example.com/other'])],
-        ];
-    }
+    Functions\expect('get_post_type')
+        ->with($postId)
+        ->andReturn(TsmlPositionFields::POST_TYPE);
 }
+
+function stubPositionTitleSyncIsNoop(int $postId, string $existingTitle): void
+{
+    Functions\expect('get_post')
+        ->with($postId)
+        ->andReturn((object) ['ID' => $postId, 'post_title' => $existingTitle]);
+}
+
+function trackedPosition(string $email = 'chair@example.com'): TsmlPosition
+{
+    return new TsmlPosition(
+        id: 42,
+        minimumSobriety: 6,
+        termYears: 1,
+        email: $email,
+        longName: 'Chair',
+        shortDescription: 'Chairs',
+        summary: 'Runs intergroup',
+    );
+}
+
+test('editing a field fires position changing', function () {
+    $postId = 42;
+
+    $original = trackedPosition('old@example.com');
+    $updated  = trackedPosition('new@example.com');
+
+    stubPositionPostTypeGuard($postId);
+    // post_title already matches the encoded long name, so the title
+    // sync does not call wp_update_post.
+    stubPositionTitleSyncIsNoop($postId, 'Chair');
+
+    $this->repository->expects($this->exactly(2))
+        ->method('findById')
+        ->with($postId)
+        ->willReturnOnConsecutiveCalls($original, $updated);
+
+    expectDone('unity/position_before_save')->once()->with($postId, $original);
+    expectDone('unity/position_changing')->once()->with($updated, $original);
+    expectDone('unity/position_changed')->once()->with($postId, $updated, $original);
+
+    $this->tracker->captureOriginalPosition($postId);
+    $this->tracker->checkForChanges($postId);
+});
+
+test('saving with no field changes stays quiet', function () {
+    $postId = 42;
+
+    $original = trackedPosition();
+    $updated  = trackedPosition();
+
+    stubPositionPostTypeGuard($postId);
+
+    $this->repository->expects($this->exactly(2))
+        ->method('findById')
+        ->with($postId)
+        ->willReturnOnConsecutiveCalls($original, $updated);
+
+    // Only the catch-all "changed" event fires; "changing" stays silent.
+    expectDone('unity/position_changed')->once()->with($postId, $updated, $original);
+    $this->expectActionNotFired('unity/position_changing', $updated, $original);
+
+    $this->tracker->captureOriginalPosition($postId);
+    $this->tracker->checkForChanges($postId);
+});
+
+test('capture ignores a non position post type', function () {
+    $postId = 99;
+    Functions\expect('get_post_type')->with($postId)->andReturn('page');
+
+    // A wrong post type must not reach the repository.
+    $this->repository->expects($this->never())->method('findById');
+
+    $this->tracker->captureOriginalPosition($postId);
+});
+
+test('check for changes returns early without a captured original', function () {
+    $postId = 42;
+    stubPositionPostTypeGuard($postId);
+
+    // No capture happened, so findById must not be called by check.
+    $this->repository->expects($this->never())->method('findById');
+
+    $this->tracker->checkForChanges($postId);
+});
+
+test('each tracked field triggers a change', function (TsmlPosition $original, TsmlPosition $updated) {
+    $postId = 42;
+
+    stubPositionPostTypeGuard($postId);
+    stubPositionTitleSyncIsNoop($postId, 'Chair');
+
+    $this->repository->expects($this->exactly(2))
+        ->method('findById')
+        ->with($postId)
+        ->willReturnOnConsecutiveCalls($original, $updated);
+
+    expectDone('unity/position_changing')->once()->with($updated, $original);
+
+    $this->tracker->captureOriginalPosition($postId);
+    $this->tracker->checkForChanges($postId);
+})->with(function () {
+    $base = fn (array $o = []) => new TsmlPosition(...array_merge([
+        'id' => 42, 'minimumSobriety' => 6, 'termYears' => 1,
+        'email' => 'chair@example.com', 'longName' => 'Chair',
+        'shortDescription' => 'Chairs', 'summary' => 'Runs',
+        'link' => 'https://example.com/c',
+    ], $o));
+
+    return [
+        'sobriety'    => [$base(), $base(['minimumSobriety' => 12])],
+        'term'        => [$base(), $base(['termYears' => 2])],
+        'short desc'  => [$base(), $base(['shortDescription' => 'Different'])],
+        'summary'     => [$base(), $base(['summary' => 'Different'])],
+        'link'        => [$base(), $base(['link' => 'https://example.com/other'])],
+    ];
+});

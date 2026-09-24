@@ -4,108 +4,88 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicy;
 use Unity\PrivacyPolicies\Interfaces\PrivacyPolicy;
 
-/**
+/*
  * Tests for TsmlPrivacyPolicy entity
  */
-#[CoversClass(\TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicy::class)]
-class TsmlPrivacyPolicyTest extends TestCase
-{
-    #[Test]
-    public function it_implements_privacy_policy_interface(): void
-    {
-        $policy = new TsmlPrivacyPolicy(id: 1);
 
-        $this->assertInstanceOf(PrivacyPolicy::class, $policy);
-    }
+covers(\TsmlForUnity\PrivacyPolicies\TsmlPrivacyPolicy::class);
 
-    #[Test]
-    public function it_can_be_instantiated_with_minimal_values(): void
-    {
-        $policy = new TsmlPrivacyPolicy(id: 1);
+it('implements privacy policy interface', function () {
+    $policy = new TsmlPrivacyPolicy(id: 1);
 
-        $this->assertEquals(1, $policy->getId());
-        $this->assertEquals('', $policy->getTitle());
-        $this->assertEquals('', $policy->getPolicy());
-        $this->assertEquals('', $policy->getVersion());
-        $this->assertFalse($policy->isActive());
-        $this->assertEquals('', $policy->getUpdated());
-    }
+    expect($policy)->toBeInstanceOf(PrivacyPolicy::class);
+});
 
-    #[Test]
-    public function it_can_be_instantiated_with_all_values(): void
-    {
-        $policy = new TsmlPrivacyPolicy(
-            id: 42,
-            title: 'GDPR Privacy Policy',
-            policy: '<p>We respect your privacy.</p>',
-            version: '2.1',
-            active: true,
-            updated: '2026-05-06 12:34:56'
-        );
+it('can be instantiated with minimal values', function () {
+    $policy = new TsmlPrivacyPolicy(id: 1);
 
-        $this->assertEquals(42, $policy->getId());
-        $this->assertEquals('GDPR Privacy Policy', $policy->getTitle());
-        $this->assertEquals('<p>We respect your privacy.</p>', $policy->getPolicy());
-        $this->assertEquals('2.1', $policy->getVersion());
-        $this->assertTrue($policy->isActive());
-        $this->assertEquals('2026-05-06 12:34:56', $policy->getUpdated());
-    }
+    expect($policy->getId())->toEqual(1)
+        ->and($policy->getTitle())->toEqual('')
+        ->and($policy->getPolicy())->toEqual('')
+        ->and($policy->getVersion())->toEqual('')
+        ->and($policy->isActive())->toBeFalse()
+        ->and($policy->getUpdated())->toEqual('');
+});
 
-    #[Test]
-    public function active_flag_can_be_toggled(): void
-    {
-        $activePolicy = new TsmlPrivacyPolicy(id: 1, active: true);
-        $inactivePolicy = new TsmlPrivacyPolicy(id: 2, active: false);
+it('can be instantiated with all values', function () {
+    $policy = new TsmlPrivacyPolicy(
+        id: 42,
+        title: 'GDPR Privacy Policy',
+        policy: '<p>We respect your privacy.</p>',
+        version: '2.1',
+        active: true,
+        updated: '2026-05-06 12:34:56'
+    );
 
-        $this->assertTrue($activePolicy->isActive());
-        $this->assertFalse($inactivePolicy->isActive());
-    }
+    expect($policy->getId())->toEqual(42)
+        ->and($policy->getTitle())->toEqual('GDPR Privacy Policy')
+        ->and($policy->getPolicy())->toEqual('<p>We respect your privacy.</p>')
+        ->and($policy->getVersion())->toEqual('2.1')
+        ->and($policy->isActive())->toBeTrue()
+        ->and($policy->getUpdated())->toEqual('2026-05-06 12:34:56');
+});
 
-    #[Test]
-    public function it_handles_empty_strings_for_optional_fields(): void
-    {
-        $policy = new TsmlPrivacyPolicy(
-            id: 1,
-            title: '',
-            policy: '',
-            version: ''
-        );
+test('active flag can be toggled', function () {
+    $activePolicy = new TsmlPrivacyPolicy(id: 1, active: true);
+    $inactivePolicy = new TsmlPrivacyPolicy(id: 2, active: false);
 
-        $this->assertEmpty($policy->getTitle());
-        $this->assertEmpty($policy->getPolicy());
-        $this->assertEmpty($policy->getVersion());
-    }
+    expect($activePolicy->isActive())->toBeTrue()
+        ->and($inactivePolicy->isActive())->toBeFalse();
+});
 
-    #[Test]
-    public function it_preserves_html_content_in_policy_body(): void
-    {
-        $body = '<h1>Policy</h1><p>Lorem <strong>ipsum</strong>.</p>';
-        $policy = new TsmlPrivacyPolicy(id: 1, policy: $body);
+it('handles empty strings for optional fields', function () {
+    $policy = new TsmlPrivacyPolicy(
+        id: 1,
+        title: '',
+        policy: '',
+        version: ''
+    );
 
-        $this->assertEquals($body, $policy->getPolicy());
-    }
+    expect($policy->getTitle())->toBeEmpty()
+        ->and($policy->getPolicy())->toBeEmpty()
+        ->and($policy->getVersion())->toBeEmpty();
+});
 
-    #[Test]
-    public function unsaved_policy_has_zero_id(): void
-    {
-        $policy = new TsmlPrivacyPolicy(id: 0, title: 'Draft');
+it('preserves html content in policy body', function () {
+    $body = '<h1>Policy</h1><p>Lorem <strong>ipsum</strong>.</p>';
+    $policy = new TsmlPrivacyPolicy(id: 1, policy: $body);
 
-        $this->assertEquals(0, $policy->getId());
-        $this->assertEquals('Draft', $policy->getTitle());
-    }
+    expect($policy->getPolicy())->toEqual($body);
+});
 
-    #[Test]
-    public function version_is_stored_as_string(): void
-    {
-        $policy = new TsmlPrivacyPolicy(id: 1, version: '2026-05');
+test('unsaved policy has zero id', function () {
+    $policy = new TsmlPrivacyPolicy(id: 0, title: 'Draft');
 
-        $this->assertIsString($policy->getVersion());
-        $this->assertEquals('2026-05', $policy->getVersion());
-    }
-}
+    expect($policy->getId())->toEqual(0)
+        ->and($policy->getTitle())->toEqual('Draft');
+});
+
+test('version is stored as string', function () {
+    $policy = new TsmlPrivacyPolicy(id: 1, version: '2026-05');
+
+    expect($policy->getVersion())->toBeString()
+        ->and($policy->getVersion())->toEqual('2026-05');
+});

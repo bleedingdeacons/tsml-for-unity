@@ -4,165 +4,139 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Members\TsmlMember;
 use TsmlForUnity\Positions\TsmlPosition;
 use TsmlForUnity\Positions\TsmlPositionView;
 use Unity\Positions\Interfaces\PositionView;
 
-/**
+/*
  * Tests for TsmlPositionView
  */
-#[CoversClass(\TsmlForUnity\Positions\TsmlPositionView::class)]
-class TsmlPositionViewTest extends TestCase
+
+covers(\TsmlForUnity\Positions\TsmlPositionView::class);
+
+it('implements position view interface', function () {
+    $view = new TsmlPositionView(viewPosition());
+
+    expect($view)->toBeInstanceOf(PositionView::class);
+});
+
+test('a view with no member is vacant', function () {
+    $view = new TsmlPositionView(viewPosition());
+
+    expect($view->isVacant())->toBeTrue()
+        ->and($view->getMember())->toBeNull()
+        ->and($view->getMembers())->toBe([])
+        ->and($view->getOfficerDisplayName())->toBe('')
+        ->and($view->getPublicDisplayName())->toBe('')
+        ->and($view->getPersonalEmail())->toBeNull()
+        ->and($view->getMobileNumber())->toBeNull()
+        ->and($view->getRotationDate())->toBeNull()
+        ->and($view->getMonthsUntilRotation())->toBeNull()
+        ->and($view->getDaysUntilRotation())->toBeNull();
+});
+
+it('derives title email and description from the position', function () {
+    $view = new TsmlPositionView(viewPosition());
+
+    expect($view->getTitle())->toBe('Chairs the meeting')
+        ->and($view->getDescription())->toBe('Chairs the meeting')
+        ->and($view->getPositionEmail())->toBe('chair@example.com');
+});
+
+test('a view with a member pulls contact details from it', function () {
+    $member = new TsmlMember(
+        id: 1,
+        anonymousName: 'John D.',
+        showAnonymousName: true,
+        personalEmail: 'john@example.com',
+        mobileNumber: '0700 111',
+    );
+
+    $view = new TsmlPositionView(viewPosition(), $member);
+
+    expect($view->isVacant())->toBeFalse()
+        ->and($view->getMember())->toBe($member)
+        ->and($view->getMembers())->toBe([$member])
+        ->and($view->getPersonalEmail())->toBe('john@example.com')
+        ->and($view->getMobileNumber())->toBe('0700 111')
+        ->and($view->getOfficerDisplayName())->toBe('John D.')
+        ->and($view->getPublicDisplayName())->toBe('John D.');
+});
+
+test('public display name is hidden when the member opts out', function () {
+    $member = new TsmlMember(id: 1, anonymousName: 'John D.', showAnonymousName: false);
+
+    $view = new TsmlPositionView(viewPosition(), $member);
+
+    expect($view->getPublicDisplayName())->toBe('');
+});
+
+test('officer display name joins all members', function () {
+    $a = new TsmlMember(id: 1, anonymousName: 'John D.');
+    $b = new TsmlMember(id: 2, anonymousName: 'Jane B.');
+
+    $view = new TsmlPositionView(viewPosition(), $a, [$a, $b]);
+
+    expect($view->getOfficerDisplayName())->toBe('John D., Jane B.')
+        ->and($view->getMembers())->toBe([$a, $b]);
+});
+
+it('parses an iso rotation date in the future', function () {
+    $future = (new \DateTime('today'))->modify('+40 days')->format('Y-m-d');
+    $member = new TsmlMember(id: 1, intergroupPositionRotation: $future);
+
+    $view = new TsmlPositionView(viewPosition(), $member);
+
+    expect($view->getRotationDate())->toBeInstanceOf(\DateTime::class)
+        ->and($view->getRotationDate()->format('Y-m-d'))->toBe($future)
+        ->and($view->getDaysUntilRotation())->toBe(40)
+        ->and($view->getMonthsUntilRotation())->toBeGreaterThan(0);
+});
+
+it('parses a uk format rotation date', function () {
+    $member = new TsmlMember(id: 1, intergroupPositionRotation: '25/12/2099');
+
+    $view = new TsmlPositionView(viewPosition(), $member);
+
+    expect($view->getRotationDate()->format('Y-m-d'))->toBe('2099-12-25');
+});
+
+test('a past rotation date reports zero days but negative months', function () {
+    $past = (new \DateTime('today'))->modify('-40 days')->format('Y-m-d');
+    $member = new TsmlMember(id: 1, intergroupPositionRotation: $past);
+
+    $view = new TsmlPositionView(viewPosition(), $member);
+
+    expect($view->getDaysUntilRotation())->toBe(0)
+        ->and($view->getMonthsUntilRotation())->toBeLessThan(0);
+});
+
+test('an unparseable rotation date yields no rotation', function () {
+    $member = new TsmlMember(id: 1, intergroupPositionRotation: 'not-a-date');
+
+    $view = new TsmlPositionView(viewPosition(), $member);
+
+    expect($view->getRotationDate())->toBeNull()
+        ->and($view->getDaysUntilRotation())->toBeNull()
+        ->and($view->getMonthsUntilRotation())->toBeNull();
+});
+
+test('is archivist matches the role case insensitively', function () {
+    $archivist = new TsmlPositionView(new TsmlPosition(shortDescription: 'archivist'));
+    $chair     = new TsmlPositionView(viewPosition());
+
+    expect($archivist->isArchivist())->toBeTrue()
+        ->and($chair->isArchivist())->toBeFalse();
+});
+
+function viewPosition(): TsmlPosition
 {
-    #[Test]
-    public function it_implements_position_view_interface(): void
-    {
-        $view = new TsmlPositionView($this->position());
-
-        $this->assertInstanceOf(PositionView::class, $view);
-    }
-
-    #[Test]
-    public function a_view_with_no_member_is_vacant(): void
-    {
-        $view = new TsmlPositionView($this->position());
-
-        $this->assertTrue($view->isVacant());
-        $this->assertNull($view->getMember());
-        $this->assertSame([], $view->getMembers());
-        $this->assertSame('', $view->getOfficerDisplayName());
-        $this->assertSame('', $view->getPublicDisplayName());
-        $this->assertNull($view->getPersonalEmail());
-        $this->assertNull($view->getMobileNumber());
-        $this->assertNull($view->getRotationDate());
-        $this->assertNull($view->getMonthsUntilRotation());
-        $this->assertNull($view->getDaysUntilRotation());
-    }
-
-    #[Test]
-    public function it_derives_title_email_and_description_from_the_position(): void
-    {
-        $view = new TsmlPositionView($this->position());
-
-        $this->assertSame('Chairs the meeting', $view->getTitle());
-        $this->assertSame('Chairs the meeting', $view->getDescription());
-        $this->assertSame('chair@example.com', $view->getPositionEmail());
-    }
-
-    #[Test]
-    public function a_view_with_a_member_pulls_contact_details_from_it(): void
-    {
-        $member = new TsmlMember(
-            id: 1,
-            anonymousName: 'John D.',
-            showAnonymousName: true,
-            personalEmail: 'john@example.com',
-            mobileNumber: '0700 111',
-        );
-
-        $view = new TsmlPositionView($this->position(), $member);
-
-        $this->assertFalse($view->isVacant());
-        $this->assertSame($member, $view->getMember());
-        $this->assertSame([$member], $view->getMembers());
-        $this->assertSame('john@example.com', $view->getPersonalEmail());
-        $this->assertSame('0700 111', $view->getMobileNumber());
-        $this->assertSame('John D.', $view->getOfficerDisplayName());
-        $this->assertSame('John D.', $view->getPublicDisplayName());
-    }
-
-    #[Test]
-    public function public_display_name_is_hidden_when_the_member_opts_out(): void
-    {
-        $member = new TsmlMember(id: 1, anonymousName: 'John D.', showAnonymousName: false);
-
-        $view = new TsmlPositionView($this->position(), $member);
-
-        $this->assertSame('', $view->getPublicDisplayName());
-    }
-
-    #[Test]
-    public function officer_display_name_joins_all_members(): void
-    {
-        $a = new TsmlMember(id: 1, anonymousName: 'John D.');
-        $b = new TsmlMember(id: 2, anonymousName: 'Jane B.');
-
-        $view = new TsmlPositionView($this->position(), $a, [$a, $b]);
-
-        $this->assertSame('John D., Jane B.', $view->getOfficerDisplayName());
-        $this->assertSame([$a, $b], $view->getMembers());
-    }
-
-    #[Test]
-    public function it_parses_an_iso_rotation_date_in_the_future(): void
-    {
-        $future = (new \DateTime('today'))->modify('+40 days')->format('Y-m-d');
-        $member = new TsmlMember(id: 1, intergroupPositionRotation: $future);
-
-        $view = new TsmlPositionView($this->position(), $member);
-
-        $this->assertInstanceOf(\DateTime::class, $view->getRotationDate());
-        $this->assertSame($future, $view->getRotationDate()->format('Y-m-d'));
-        $this->assertSame(40, $view->getDaysUntilRotation());
-        $this->assertGreaterThan(0, $view->getMonthsUntilRotation());
-    }
-
-    #[Test]
-    public function it_parses_a_uk_format_rotation_date(): void
-    {
-        $member = new TsmlMember(id: 1, intergroupPositionRotation: '25/12/2099');
-
-        $view = new TsmlPositionView($this->position(), $member);
-
-        $this->assertSame('2099-12-25', $view->getRotationDate()->format('Y-m-d'));
-    }
-
-    #[Test]
-    public function a_past_rotation_date_reports_zero_days_but_negative_months(): void
-    {
-        $past = (new \DateTime('today'))->modify('-40 days')->format('Y-m-d');
-        $member = new TsmlMember(id: 1, intergroupPositionRotation: $past);
-
-        $view = new TsmlPositionView($this->position(), $member);
-
-        $this->assertSame(0, $view->getDaysUntilRotation());
-        $this->assertLessThan(0, $view->getMonthsUntilRotation());
-    }
-
-    #[Test]
-    public function an_unparseable_rotation_date_yields_no_rotation(): void
-    {
-        $member = new TsmlMember(id: 1, intergroupPositionRotation: 'not-a-date');
-
-        $view = new TsmlPositionView($this->position(), $member);
-
-        $this->assertNull($view->getRotationDate());
-        $this->assertNull($view->getDaysUntilRotation());
-        $this->assertNull($view->getMonthsUntilRotation());
-    }
-
-    #[Test]
-    public function is_archivist_matches_the_role_case_insensitively(): void
-    {
-        $archivist = new TsmlPositionView(new TsmlPosition(shortDescription: 'archivist'));
-        $chair     = new TsmlPositionView($this->position());
-
-        $this->assertTrue($archivist->isArchivist());
-        $this->assertFalse($chair->isArchivist());
-    }
-
-    private function position(): TsmlPosition
-    {
-        return new TsmlPosition(
-            id: 5,
-            email: 'chair@example.com',
-            longName: 'Intergroup Chair',
-            shortDescription: 'Chairs the meeting',
-            summary: 'Runs intergroup',
-        );
-    }
+    return new TsmlPosition(
+        id: 5,
+        email: 'chair@example.com',
+        longName: 'Intergroup Chair',
+        shortDescription: 'Chairs the meeting',
+        summary: 'Runs intergroup',
+    );
 }

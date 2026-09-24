@@ -4,90 +4,71 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Test;
-use TsmlForUnity\Tests\TestCase;
 use TsmlForUnity\Contacts\TsmlContact;
 use TsmlForUnity\Contacts\TsmlContactFactory;
 use Unity\Contacts\Interfaces\Contact;
 
-/**
+/*
  * Tests for TsmlContact and TsmlContactFactory
  */
-#[CoversClass(\TsmlForUnity\Contacts\TsmlContact::class)]
-#[CoversClass(\TsmlForUnity\Contacts\TsmlContactFactory::class)]
-class TsmlContactTest extends TestCase
-{
-    #[Test]
-    public function contact_implements_the_interface(): void
-    {
-        $this->assertInstanceOf(Contact::class, new TsmlContact());
-    }
 
-    #[Test]
-    public function contact_defaults_to_empty_strings(): void
-    {
-        $contact = new TsmlContact();
+covers(\TsmlForUnity\Contacts\TsmlContact::class, \TsmlForUnity\Contacts\TsmlContactFactory::class);
 
-        $this->assertSame('', $contact->getName());
-        $this->assertSame('', $contact->getEmail());
-        $this->assertSame('', $contact->getPhone());
-        $this->assertSame('', $contact->getUpdated());
-    }
+test('contact implements the interface', function () {
+    expect(new TsmlContact())->toBeInstanceOf(Contact::class);
+});
 
-    #[Test]
-    public function contact_exposes_constructor_values(): void
-    {
-        $contact = new TsmlContact('Jane Doe', 'jane@example.com', '0700 123456', '2026-06-01');
+test('contact defaults to empty strings', function () {
+    $contact = new TsmlContact();
 
-        $this->assertSame('Jane Doe', $contact->getName());
-        $this->assertSame('jane@example.com', $contact->getEmail());
-        $this->assertSame('0700 123456', $contact->getPhone());
-        $this->assertSame('2026-06-01', $contact->getUpdated());
-    }
+    expect($contact->getName())->toBe('')
+        ->and($contact->getEmail())->toBe('')
+        ->and($contact->getPhone())->toBe('')
+        ->and($contact->getUpdated())->toBe('');
+});
 
-    #[Test]
-    public function factory_creates_from_a_source_array(): void
-    {
-        $contact = (new TsmlContactFactory())->createFromSource([
-            'name'  => 'John Smith',
-            'email' => 'john@example.com',
-            'phone' => '0800 999',
-        ]);
+test('contact exposes constructor values', function () {
+    $contact = new TsmlContact('Jane Doe', 'jane@example.com', '0700 123456', '2026-06-01');
 
-        $this->assertInstanceOf(TsmlContact::class, $contact);
-        $this->assertSame('John Smith', $contact->getName());
-        $this->assertSame('john@example.com', $contact->getEmail());
-        $this->assertSame('0800 999', $contact->getPhone());
-    }
+    expect($contact->getName())->toBe('Jane Doe')
+        ->and($contact->getEmail())->toBe('jane@example.com')
+        ->and($contact->getPhone())->toBe('0700 123456')
+        ->and($contact->getUpdated())->toBe('2026-06-01');
+});
 
-    #[Test]
-    public function factory_tolerates_missing_source_keys(): void
-    {
-        $contact = (new TsmlContactFactory())->createFromSource([]);
+test('factory creates from a source array', function () {
+    $contact = (new TsmlContactFactory())->createFromSource([
+        'name'  => 'John Smith',
+        'email' => 'john@example.com',
+        'phone' => '0800 999',
+    ]);
 
-        $this->assertSame('', $contact->getName());
-        $this->assertSame('', $contact->getEmail());
-        $this->assertSame('', $contact->getPhone());
-    }
+    expect($contact)->toBeInstanceOf(TsmlContact::class)
+        ->and($contact->getName())->toBe('John Smith')
+        ->and($contact->getEmail())->toBe('john@example.com')
+        ->and($contact->getPhone())->toBe('0800 999');
+});
 
-    #[Test]
-    public function factory_create_builds_from_explicit_arguments(): void
-    {
-        $contact = (new TsmlContactFactory())->create('Al', 'al@example.com', '111');
+test('factory tolerates missing source keys', function () {
+    $contact = (new TsmlContactFactory())->createFromSource([]);
 
-        $this->assertSame('Al', $contact->getName());
-        $this->assertSame('al@example.com', $contact->getEmail());
-        $this->assertSame('111', $contact->getPhone());
-    }
+    expect($contact->getName())->toBe('')
+        ->and($contact->getEmail())->toBe('')
+        ->and($contact->getPhone())->toBe('');
+});
 
-    #[Test]
-    public function factory_create_defaults_to_an_empty_contact(): void
-    {
-        $contact = (new TsmlContactFactory())->create();
+test('factory create builds from explicit arguments', function () {
+    $contact = (new TsmlContactFactory())->create('Al', 'al@example.com', '111');
 
-        $this->assertSame('', $contact->getName());
-        $this->assertSame('', $contact->getEmail());
-        $this->assertSame('', $contact->getPhone());
-    }
-}
+    expect($contact->getName())->toBe('Al')
+        ->and($contact->getEmail())->toBe('al@example.com')
+        ->and($contact->getPhone())->toBe('111');
+});
+
+test('factory create defaults to an empty contact', function () {
+    $contact = (new TsmlContactFactory())->create();
+
+    expect($contact->getName())->toBe('')
+        ->and($contact->getEmail())->toBe('')
+        ->and($contact->getPhone())->toBe('');
+});
