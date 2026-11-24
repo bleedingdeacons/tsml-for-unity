@@ -370,3 +370,55 @@ test('update writes mobile when the preference has no landline behind it', funct
     expect($captured[TsmlMemberFields::FIELD_LANDLINE_NUMBER])->toBe('')
         ->and($captured[TsmlMemberFields::FIELD_PREFERRED_CONTACT])->toBe('Mobile');
 });
+
+// ─── findByValue() ──────────────────────────────────────────────
+test('find by value queries the prefixed extended value meta key', function () {
+    $postId = 4242;
+
+    Functions\expect('get_posts')
+        ->once()
+        ->withArgs(function ($args) {
+            $clause = $args['meta_query'][0] ?? null;
+
+            return $args['post_type'] === TsmlMemberFields::POST_TYPE
+                && $args['numberposts'] === 2
+                && $clause !== null
+                && $clause['key'] === 'unity_kv_AppleUserId'
+                && $clause['value'] === 'apple-sub'
+                && $clause['compare'] === '=';
+        })
+        ->andReturn([new \WP_Post(['ID' => $postId])]);
+
+    stubExistingPost($postId);
+
+    $expected = new MemberStub(id: $postId);
+    $this->factory->expects($this->once())
+        ->method('createFromSource')
+        ->with($postId)
+        ->willReturn($expected);
+
+    expect($this->repository->findByValue('AppleUserId', 'apple-sub'))->toBe($expected);
+});
+
+test('find by value refuses to choose between two members carrying the value', function () {
+    Functions\expect('get_posts')
+        ->once()
+        ->andReturn([new \WP_Post(['ID' => 1]), new \WP_Post(['ID' => 2])]);
+
+    stubExistingPost(1);
+    stubExistingPost(2);
+    $this->factory->method('createFromSource')
+        ->willReturnCallback(static fn (int $id): MemberStub => new MemberStub(id: $id));
+
+    expect($this->repository->findByValue('AppleUserId', 'shared'))->toBeNull();
+});
+
+test('find by value returns null for an empty value without querying', function () {
+    Functions\expect('get_posts')->never();
+
+    expect($this->repository->findByValue('AppleUserId', ''))->toBeNull();
+});
+
+test('find by value refuses an invalid key', function () {
+    $this->repository->findByValue('bad key', 'x');
+})->throws(\InvalidArgumentException::class);

@@ -9,9 +9,16 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use Unity\Core\Interfaces\KeyValueStoreInterface;
+use Unity\Core\StoredValueKey;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\PreferredContact;
 use Unity\Members\ResponderCertification;
+
+use function delete_post_meta;
+use function get_post_meta;
+use function update_post_meta;
+use function wp_slash;
 
 /**
  * Member Class
@@ -146,6 +153,62 @@ class TsmlMember implements Member
     public function getId(): int
     {
         return $this->id;
+    }
+
+    /**
+     * Extended values live in post meta, read and written on every call, so
+     * they are not part of this immutable snapshot and survive {@see with()}
+     * and the member cache unchanged.
+     */
+    public function getUnityExtendedValue(string $key): ?string
+    {
+        StoredValueKey::assertValid($key);
+
+        $value = get_post_meta($this->id, TsmlMemberFields::EXTENDED_VALUE_META_PREFIX . $key, true);
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    public function setUnityExtendedValue(string $key, string $value): void
+    {
+        StoredValueKey::assertValid($key);
+
+        // update_post_meta() unslashes what it is given; slash first so a
+        // backslash in the value survives the round trip.
+        update_post_meta($this->id, TsmlMemberFields::EXTENDED_VALUE_META_PREFIX . $key, wp_slash($value));
+    }
+
+    public function deleteUnityExtendedValue(string $key): void
+    {
+        StoredValueKey::assertValid($key);
+
+        delete_post_meta($this->id, TsmlMemberFields::EXTENDED_VALUE_META_PREFIX . $key);
+    }
+
+    /** @return array<string, string> */
+    public function allUnityExtendedValues(): array
+    {
+        $prefix = TsmlMemberFields::EXTENDED_VALUE_META_PREFIX;
+        $meta   = get_post_meta($this->id);
+        $values = [];
+
+        foreach (is_array($meta) ? $meta : [] as $metaKey => $stored) {
+            if (!is_string($metaKey) || !str_starts_with($metaKey, $prefix)) {
+                continue;
+            }
+
+            $key = substr($metaKey, strlen($prefix));
+            // WordPress hands back every value under a key as a list.
+            $value = is_array($stored) ? reset($stored) : $stored;
+
+            if (preg_match(KeyValueStoreInterface::KEY_PATTERN, $key) === 1 && is_string($value) && $value !== '') {
+                $values[$key] = $value;
+            }
+        }
+
+        ksort($values, SORT_STRING);
+
+        return $values;
     }
 
     public function getAnonymousName(): string

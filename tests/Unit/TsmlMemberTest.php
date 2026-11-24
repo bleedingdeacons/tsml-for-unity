@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace TsmlForUnity\Tests\Unit;
 
+use BleedingDeacons\WpMocks\WpState;
 use TsmlForUnity\Members\TsmlMember;
+use TsmlForUnity\Members\TsmlMemberFields;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\PreferredContact;
 
@@ -379,3 +381,51 @@ function fullyPopulatedMember(): TsmlMember
         updated: '2026-04-27 15:45:00'
     );
 }
+
+// ─── Unity extended values ──────────────────────────────────────
+
+it('stores an extended value in post meta under the prefixed key, case kept', function () {
+    $member = new TsmlMember(id: 42);
+
+    $member->setUnityExtendedValue('AppleUserId', 'apple-sub-42');
+
+    expect(WpState::$postMeta[42]['unity_kv_AppleUserId'] ?? null)->toBe('apple-sub-42')
+        ->and($member->getUnityExtendedValue('AppleUserId'))->toBe('apple-sub-42')
+        ->and($member->getUnityExtendedValue('appleuserid'))->toBeNull();
+});
+
+it('sees a value written through another copy of the same member', function () {
+    $member = new TsmlMember(id: 42, anonymousName: 'John D.');
+    $copy   = $member->with(['anonymousName' => 'Johnny']);
+
+    $member->setUnityExtendedValue('AppleUserId', 'apple-sub-42');
+
+    expect($copy->getUnityExtendedValue('AppleUserId'))->toBe('apple-sub-42');
+});
+
+it('lists only its own extended values, sorted by key', function () {
+    WpState::$postMeta[42] = [
+        TsmlMemberFields::FIELD_PERSONAL_EMAIL => ['john@example.com'],
+        'unity_kv_Zeta'                        => ['z'],
+        'unity_kv_AppleUserId'                 => ['apple-sub-42'],
+        'unity_kv_bad key'                     => ['ignored'],
+    ];
+
+    expect((new TsmlMember(id: 42))->allUnityExtendedValues())
+        ->toBe(['AppleUserId' => 'apple-sub-42', 'Zeta' => 'z']);
+});
+
+it('deletes an extended value, and deleting an unset one is not an error', function () {
+    $member = new TsmlMember(id: 42);
+    $member->setUnityExtendedValue('AppleUserId', 'apple-sub-42');
+
+    $member->deleteUnityExtendedValue('AppleUserId');
+    $member->deleteUnityExtendedValue('NeverSet');
+
+    expect($member->getUnityExtendedValue('AppleUserId'))->toBeNull()
+        ->and($member->allUnityExtendedValues())->toBe([]);
+});
+
+it('refuses an extended value key outside the pattern', function () {
+    (new TsmlMember(id: 42))->setUnityExtendedValue('has space', 'x');
+})->throws(\InvalidArgumentException::class);

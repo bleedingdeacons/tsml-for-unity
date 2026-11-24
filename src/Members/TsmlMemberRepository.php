@@ -9,6 +9,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use Unity\Core\StoredValueKey;
 use Unity\Members\Interfaces\MemberFactory;
 use Unity\Members\Interfaces\Member;
 use Unity\Members\Interfaces\MemberRepository;
@@ -172,6 +173,40 @@ class TsmlMemberRepository implements MemberRepository
         ]);
 
         return $members[0] ?? null;
+    }
+
+    /**
+     * Find the one member carrying a Unity extended value
+     *
+     * Queries the post meta {@see TsmlMember} writes it to. Two posts are
+     * asked for so that a value shared by more than one member is seen, and
+     * answered with null rather than whichever came first: this decides who
+     * somebody is at sign-in.
+     *
+     * @param string $key
+     * @param string $value
+     * @return Member|null
+     */
+    public function findByValue(string $key, string $value): ?Member
+    {
+        StoredValueKey::assertValid($key);
+
+        if ($value === '') {
+            return null;
+        }
+
+        $members = $this->findAll([
+            'numberposts' => 2,
+            'meta_query' => [
+                [
+                    'key' => TsmlMemberFields::EXTENDED_VALUE_META_PREFIX . $key,
+                    'value' => $value,
+                    'compare' => '=',
+                ],
+            ],
+        ]);
+
+        return count($members) === 1 ? $members[0] : null;
     }
 
     /**

@@ -61,6 +61,15 @@ final class TsmlMemberFields
     public const KEY_GDPR_ACCEPTANCE_METHOD = 'field_69efdaf0524f0';
     public const KEY_GDPR_ACCEPTANCE_STATEMENT = 'field_69efdb05524f1';
 
+    /**
+     * Post meta prefix for a member's Unity extended values.
+     *
+     * The key follows it verbatim, case kept: `AppleUserId` is stored as
+     * `unity_kv_AppleUserId`. Not an ACF field, so the ACF admin screen and
+     * Reconcile never see it.
+     */
+    public const EXTENDED_VALUE_META_PREFIX = 'unity_kv_';
+
     private function __construct()
     {
     }
